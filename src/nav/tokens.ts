@@ -19,8 +19,8 @@ export const tokens = {
   /** Depth of the pill in 3D. */
   pillDepth: 8,
   /** Extra space reserved outside the pill for the clusters, so they never get clipped. */
-  clusterBleedX: 44,
-  clusterBleedY: 36,
+  clusterBleedX: 56,
+  clusterBleedY: 52,
   /** Hysteresis in px applied when switching modes, to avoid flapping. */
   modeHysteresis: 24,
   /** Cross-fade duration between 2D and 3D, in ms. */

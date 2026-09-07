@@ -74,7 +74,7 @@ export const defaultTuning: Tuning = {
     normalRepeat: 1.2,
   },
   env: { intensity: 1, rotation: 0 },
-  post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0008 },
+  post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }
 
 type TuningStore = Tuning & {
