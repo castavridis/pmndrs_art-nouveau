@@ -34,10 +34,10 @@ export function CmdPalette() {
     const d = dialogRef.current
     if (!d) return
     if (open && !d.open) {
-      d.showModal()
       setQuery('')
       setIndex(0)
-      requestAnimationFrame(() => inputRef.current?.focus())
+      d.showModal()
+      inputRef.current?.focus()
     } else if (!open && d.open) {
       d.close()
     }
@@ -59,10 +59,12 @@ export function CmdPalette() {
       ref={dialogRef}
       className={styles.dialog}
       aria-label="Command palette"
-      onClose={() => setOpen(false)}
-      // `cancel` fires synchronously on Escape; `close` is queued, which would leave the
-      // store saying "open" for a tick after the dialog has already gone.
+      // `cancel` fires synchronously on Escape; `close` is queued. If the palette was
+      // re-opened before the queued `close` lands, that stale event must not close it.
       onCancel={() => setOpen(false)}
+      onClose={(e) => {
+        if (!e.currentTarget.open) setOpen(false)
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) setOpen(false)
       }}
