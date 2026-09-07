@@ -1,0 +1,260 @@
+/*
+ * DOM fallback. Every length comes from tokens.ts via --nav-* custom properties
+ * set on .root by tokensToCssVars(). Mode is driven by [data-mode].
+ */
+.root {
+  --pad: var(--nav-pill-pad-x-full);
+  --gap: var(--nav-gap-full);
+  --fs: var(--nav-font-size-full);
+  --ink: #111;
+  --menu-h: 40px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  container-type: inline-size;
+}
+.root[data-mode='compact'] {
+  --pad: var(--nav-pill-pad-x-compact);
+  --gap: var(--nav-gap-compact);
+  --fs: var(--nav-font-size-compact);
+}
+.root[data-mode='collapsed'] {
+  --pad: var(--nav-pill-pad-x-collapsed);
+  --gap: var(--nav-gap-collapsed);
+  --fs: var(--nav-font-size-collapsed);
+}
+
+.nav {
+  position: relative;
+  display: inline-block;
+  /* Reserve room for clusters so they never clip or shift layout. */
+  padding: var(--nav-cluster-bleed-y) var(--nav-cluster-bleed-x);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  height: var(--nav-pill-height);
+  padding: 0 var(--pad);
+  width: max-content;
+  box-sizing: border-box;
+  border-radius: var(--nav-pill-radius);
+  font-size: var(--fs);
+  line-height: 1;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0) 40%, rgb(0 0 0 / 0.04)),
+    linear-gradient(100deg, #cfe3ff 0%, #e6d6ff 22%, #d2f7ee 45%, #fbe9d2 68%, #d6e4ff 100%);
+  background-blend-mode: soft-light, normal;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    inset 0 -1px 0 rgb(0 0 0 / 0.08),
+    0 0 0 1px rgb(255 255 255 / 0.35),
+    0 12px 40px rgb(180 200 255 / 0.18);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  transition:
+    gap 240ms ease,
+    padding 240ms ease,
+    font-size 240ms ease;
+}
+/* No JS (or not yet measured): clamp the pill and let the links scroll instead of overflowing. */
+.root:not([data-mode]) .pill {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+/* While Nav2D probes the natural width of each mode, transitions must not blur the numbers. */
+.root[data-probing],
+.root[data-probing] * {
+  transition: none !important;
+}
+
+.logo,
+.link,
+.cmd,
+.menuBtn {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  border-radius: 8px;
+  outline-offset: 4px;
+}
+.logo:focus-visible,
+.link:focus-visible,
+.cmd:focus-visible,
+.menuBtn:focus-visible {
+  outline: 2px solid var(--ink);
+}
+
+.logo {
+  font-size: var(--nav-logo-size);
+  flex: none;
+}
+.logo svg {
+  display: block;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.link {
+  position: relative;
+  padding: 2px 0;
+  transition: transform 160ms ease;
+}
+@media (hover: hover) {
+  .link:hover {
+    transform: translateY(-1px);
+  }
+}
+.link[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.cmd,
+.menuBtn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  flex: none;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.root:not([data-mode='full']) .kbd {
+  display: none;
+}
+.kbd {
+  font: inherit;
+  font-size: 0.7em;
+  margin-left: 0.5em;
+  padding: 0.15em 0.4em;
+  border-radius: 5px;
+  background: rgb(0 0 0 / 0.08);
+}
+.menuBtn {
+  display: none;
+  gap: 6px;
+}
+.menuBtn svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+/* --- collapsed: links become a disclosure ------------------------------- */
+.root[data-mode='collapsed'] .menuBtn {
+  display: inline-flex;
+}
+.root[data-mode='collapsed'] .links {
+  display: none;
+}
+.root[data-mode='collapsed'] .menu[data-open='true'] .links {
+  display: flex;
+}
+.menu {
+  display: none;
+}
+.root[data-mode='collapsed'] .menu {
+  display: block;
+  position: absolute;
+  left: var(--nav-cluster-bleed-x);
+  right: var(--nav-cluster-bleed-x);
+  top: calc(var(--nav-cluster-bleed-y) + var(--nav-pill-height) + 8px);
+  z-index: 2;
+}
+.root[data-mode='collapsed'] .menu .links {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--nav-pill-radius);
+  background: inherit;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.root[data-mode='collapsed'] .menu .link {
+  height: var(--menu-h);
+  padding: 0 12px;
+}
+.root[data-mode='collapsed'] .menu .link[aria-current='page']::after {
+  display: none;
+}
+.root[data-mode='collapsed'] .menu .link[aria-current='page'] {
+  background: rgb(0 0 0 / 0.06);
+}
+
+/* --- clusters ------------------------------------------------------------ */
+.cluster {
+  position: absolute;
+  top: 50%;
+  width: calc(var(--nav-pill-height) * 1.7);
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+.clusterLeft {
+  left: 0;
+  transform: translate(-4%, -62%);
+}
+.clusterRight {
+  right: 0;
+  transform: translate(4%, -36%);
+}
+
+/* --- petals (2D: purely decorative dots; hidden in compact/collapsed) ------ */
+.petal {
+  position: absolute;
+  width: 14px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(120deg, #e9d8ff, #d4fff1);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.8);
+  pointer-events: none;
+  z-index: 1;
+}
+.root:not([data-mode='full']) .petal {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill,
+  .link {
+    transition: none;
+  }
+}

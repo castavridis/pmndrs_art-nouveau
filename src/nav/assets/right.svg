@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+<defs><linearGradient id="iri" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9ecff"/><stop offset=".35" stop-color="#e9d8ff"/><stop offset=".65" stop-color="#d4fff1"/><stop offset="1" stop-color="#fff0d8"/></linearGradient></defs>
+<path d="M10 70 C 40 30, 90 20, 120 60 C 130 75, 110 80, 100 70" fill="none" stroke="url(#iri)" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+<g transform="translate(100 108) rotate(-15)">
+<ellipse rx="32" ry="17" cx="32" cy="0" fill="url(#iri)" stroke="#fff" stroke-opacity=".9" stroke-width="1.2"/>
+<ellipse rx="32" ry="17" cx="32" cy="0" fill="url(#iri)" stroke="#fff" stroke-opacity=".9" stroke-width="1.2" transform="rotate(72)"/>
+<ellipse rx="32" ry="17" cx="32" cy="0" fill="url(#iri)" stroke="#fff" stroke-opacity=".9" stroke-width="1.2" transform="rotate(144)"/>
+<ellipse rx="32" ry="17" cx="32" cy="0" fill="url(#iri)" stroke="#fff" stroke-opacity=".9" stroke-width="1.2" transform="rotate(216)"/>
+<ellipse rx="32" ry="17" cx="32" cy="0" fill="url(#iri)" stroke="#fff" stroke-opacity=".9" stroke-width="1.2" transform="rotate(288)"/>
+<circle r="6" fill="#fff" opacity=".8"/>
+</g>
+</svg>

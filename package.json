@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist/server && node scripts/prerender.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "gltfjsx": "gltfjsx src/nav/assets/*.glb --types --keepnames --transform --output src/nav/Nav3D/generated"
+    "gltfjsx": "gltfjsx src/nav/assets/*.glb --types --keepnames --transform --output src/nav/Nav3D/generated",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@react-spring/three": "^10.1.2",
@@ -33,17 +34,20 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
-    "@types/node": "^24.0.0",
     "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "^6.1.1",
+    "axe-core": "^4.13.0",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
-    "gltfjsx": "^6.5.3",
     "globals": "^17.12.0",
+    "gltfjsx": "^6.5.3",
     "prettier": "^3.9.6",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.70.0",
