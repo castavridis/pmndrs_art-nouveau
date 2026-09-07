@@ -33,7 +33,7 @@ export function App() {
       <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
         pmndrs nav demo
       </h1>
-      <header style={{ width: `${width}%`, margin: '0 auto', outline: '1px dashed #444', outlineOffset: 8 }}>
+      <header style={{ width: `${width}%`, margin: '0 auto', minWidth: 0, outline: '1px dashed #444', outlineOffset: 8 }}>
         <Nav links={links} />
       </header>
 
@@ -60,6 +60,7 @@ export function App() {
           style={{
             width: `${width}%`,
             margin: '0 auto',
+            minWidth: 0,
             height: tokens.pillHeight + tokens.clusterBleedY * 2,
             outline: '1px dashed #444',
             outlineOffset: 8,

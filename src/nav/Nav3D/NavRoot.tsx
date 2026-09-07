@@ -20,6 +20,7 @@ import { INK, triggerDom } from './dom'
 export function NavRoot() {
   const links = useNavStore((s) => s.links)
   const mode = useNavStore((s) => s.mode)
+  const reducedMotion = useNavStore((s) => s.reducedMotion)
   const rootRef = useRef<VanillaContainer>(null)
   const uiRef = useRef<Group>(null)
   const { logo } = useNavAssets()
@@ -46,7 +47,7 @@ export function NavRoot() {
   const spring = useSpring({
     width,
     // Skip the opening animation on first measure; animate every change after that.
-    immediate: measured === null,
+    immediate: measured === null || reducedMotion,
     config: { tension: 210, friction: 26 },
   })
 
@@ -57,7 +58,12 @@ export function NavRoot() {
       <Pill width={spring.width} />
       <Clusters width={spring.width} />
       {mode === 'full' && (
-        <Petals width={spring.width} layoutWidth={width} count={Math.min(Math.max(links.length, 1), 3)} />
+        <Petals
+          width={spring.width}
+          layoutWidth={width}
+          count={Math.min(Math.max(links.length, 1), 3)}
+          float={!reducedMotion}
+        />
       )}
       <group ref={uiRef} position-z={z}>
         <Suspense fallback={null}>
@@ -89,9 +95,12 @@ export function NavRoot() {
                 </mesh>
               </Content>
             </Container>
-            {links.map((l) => (
-              <NavItem key={l.id} id={l.id} label={l.label} />
-            ))}
+            {mode === 'collapsed' ? (
+              // Links live in Nav2D's disclosure; this item opens it.
+              <NavItem id="menu" label="Menu" />
+            ) : (
+              links.map((l) => <NavItem key={l.id} id={l.id} label={l.label} />)
+            )}
             <NavItem id="cmd" label="Cmd" />
           </Container>
         </Suspense>

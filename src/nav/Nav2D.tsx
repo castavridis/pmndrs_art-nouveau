@@ -139,6 +139,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
           <button
             type="button"
             className={styles.menuBtn}
+            data-id="menu"
             aria-expanded={menuOpen}
             aria-controls="nav-menu"
             onClick={() => setMenuOpen(!menuOpen)}

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { NavLink } from './types'
-import { useNavStore } from './store'
+import { useNavStore, watchReducedMotion } from './store'
 import { Nav2D } from './Nav2D'
 
 export interface NavProps {
@@ -17,6 +17,7 @@ export function Nav({ links }: NavProps) {
   // the store copy exists for the 3D layer and the command palette.
   const setLinks = useNavStore((s) => s.setLinks)
   useEffect(() => setLinks(links), [links, setLinks])
+  useEffect(watchReducedMotion, [])
   return <Nav2D links={links} />
 }
 

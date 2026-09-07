@@ -43,7 +43,8 @@ export function NavItem({ id, label }: NavItemProps) {
 function Label({ id, label }: { id: string; label: string }) {
   const lit = useNavStore((s) => s.hovered === id || s.focused === id)
   const active = useNavStore((s) => s.active === id)
-  const spring = useSpring({ t: lit ? 1 : 0, config: { tension: 300, friction: 18 } })
+  const reducedMotion = useNavStore((s) => s.reducedMotion)
+  const spring = useSpring({ t: lit ? 1 : 0, immediate: reducedMotion, config: { tension: 300, friction: 18 } })
   const anim = useMemo(() => new LabelAnim(), [])
   useFrame(() => anim.update(spring.t.get()))
   return (

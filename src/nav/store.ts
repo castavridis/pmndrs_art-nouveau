@@ -15,6 +15,8 @@ export interface NavState {
   menuOpen: boolean
   /** Cmd palette dialog. */
   paletteOpen: boolean
+  /** `prefers-reduced-motion: reduce`. Springs go immediate, Float is off. */
+  reducedMotion: boolean
 
   setLinks: (links: NavLink[]) => void
   setMode: (mode: NavMode) => void
@@ -24,6 +26,7 @@ export interface NavState {
   setIs3D: (is3D: boolean) => void
   setMenuOpen: (open: boolean) => void
   setPaletteOpen: (open: boolean) => void
+  setReducedMotion: (reduced: boolean) => void
 }
 
 export const useNavStore = create<NavState>()((set) => ({
@@ -35,6 +38,7 @@ export const useNavStore = create<NavState>()((set) => ({
   is3D: false,
   menuOpen: false,
   paletteOpen: false,
+  reducedMotion: false,
 
   setLinks: (links) => set({ links }),
   setMode: (mode) => set((s) => (s.mode === mode ? s : { mode, menuOpen: false })),
@@ -44,7 +48,18 @@ export const useNavStore = create<NavState>()((set) => ({
   setIs3D: (is3D) => set({ is3D }),
   setMenuOpen: (menuOpen) => set({ menuOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setReducedMotion: (reducedMotion) => set({ reducedMotion }),
 }))
+
+/** Keep `reducedMotion` in sync with the OS setting. Call once on the client. */
+export function watchReducedMotion(): () => void {
+  if (typeof window === 'undefined' || !window.matchMedia) return () => {}
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+  const apply = () => useNavStore.getState().setReducedMotion(mq.matches)
+  apply()
+  mq.addEventListener('change', apply)
+  return () => mq.removeEventListener('change', apply)
+}
 
 /**
  * Pure mode resolver with hysteresis. `required` is the measured content width
