@@ -10,7 +10,7 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "gltfjsx": "gltfjsx src/nav/assets/*.glb --types --keepnames --transform --output src/nav/Nav3D/generated",
+    "gltfjsx": "for f in left right petal navbar logo; do N=$(echo $f | awk '{print toupper(substr($0,1,1)) substr($0,2)}'); gltfjsx src/nav/assets/$f.glb --types --keepnames --transform --resolution 64 -o \"$PWD/src/nav/Nav3D/generated/$N.tsx\"; done",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -55,7 +55,9 @@
   },
   "pnpm": {
     "overrides": {
-      "three": "~0.182.0"
+      "three": "~0.182.0",
+      "gltfjsx>three": "0.159.0",
+      "gltfjsx>@types/three": "0.159.0"
     }
   }
 }

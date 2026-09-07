@@ -5,19 +5,21 @@
  */
 export const tokens = {
   /** Height of the pill body. */
-  pillHeight: 56,
-  /** Corner radius of the pill caps. Caps never change size; only the middle segment stretches. */
-  pillRadius: 18,
-  /** Horizontal padding inside the pill, from the cap edge to the first / last item. */
-  pillPadX: { full: 28, compact: 18, collapsed: 12 },
+  pillHeight: 52,
+  /** Corner radius of the pill caps (= height/2: the exported navbar.glb is a true stadium). */
+  pillRadius: 26,
+  /** Padding from the left cap edge to the logo (the reference leaves more room here). */
+  pillPadStart: { full: 44, compact: 24, collapsed: 14 },
+  /** Padding from the Cmd item to the right cap edge. */
+  pillPadEnd: { full: 28, compact: 18, collapsed: 14 },
   /** Gap between items. */
-  gap: { full: 40, compact: 20, collapsed: 12 },
+  gap: { full: 32, compact: 20, collapsed: 12 },
   /** Item font size. */
   fontSize: { full: 18, compact: 15, collapsed: 15 },
   /** Logo glyph size (square). */
   logoSize: 28,
   /** Depth of the pill in 3D. */
-  pillDepth: 8,
+  pillDepth: 6,
   /** Extra space reserved outside the pill for the clusters, so they never get clipped. */
   clusterBleedX: 56,
   clusterBleedY: 52,

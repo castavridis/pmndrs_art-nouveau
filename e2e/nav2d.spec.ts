@@ -100,11 +100,15 @@ test.describe('Nav2D', () => {
   })
 
   test('Cmd opens the palette, ⌘K toggles it, Enter navigates', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(e.message))
+    page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && errors.push(m.text()))
     await page.setViewportSize({ width: 1440, height: 600 })
     await page.goto('/')
     await page.getByRole('button', { name: /^Cmd/ }).click()
     const dialog = page.getByRole('dialog', { name: 'Command palette' })
-    await expect(dialog).toBeVisible()
+    const state = await page.evaluate(() => ({ open: document.querySelector('dialog')?.open, html: document.querySelector('dialog')?.outerHTML.slice(0, 200) }))
+    await expect(dialog, JSON.stringify({ errors, state })).toBeVisible()
     await expect(page.getByRole('combobox')).toBeFocused()
     await axeCheck(page)
     await page.keyboard.press('Escape')

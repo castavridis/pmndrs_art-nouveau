@@ -16,12 +16,13 @@ export function CmdPalette() {
   const [index, setIndex] = useState(0)
   const listId = useId()
 
-  // Global shortcut.
+  // Global shortcut. Toggle from the dialog's real state: after Escape the <dialog> is
+  // already closed while its `close` event (which syncs the store) is still queued.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
-        setOpen(!useNavStore.getState().paletteOpen)
+        setOpen(!dialogRef.current?.open)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -59,6 +60,9 @@ export function CmdPalette() {
       className={styles.dialog}
       aria-label="Command palette"
       onClose={() => setOpen(false)}
+      // `cancel` fires synchronously on Escape; `close` is queued, which would leave the
+      // store saying "open" for a tick after the dialog has already gone.
+      onCancel={() => setOpen(false)}
       onClick={(e) => {
         if (e.target === e.currentTarget) setOpen(false)
       }}

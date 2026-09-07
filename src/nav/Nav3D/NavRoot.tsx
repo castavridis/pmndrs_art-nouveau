@@ -1,13 +1,14 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { Container, Svg, Text, type VanillaContainer } from '@react-three/uikit'
+import { Container, Content, Text, type VanillaContainer } from '@react-three/uikit'
 import { useSpring } from '@react-spring/three'
 import type { Group } from 'three'
 import { useNavStore } from '../store'
 import { px, tokens } from '../tokens'
-import logoUrl from '../assets/logo.svg'
 import { Pill } from './Pill'
 import { Clusters } from './Clusters'
+import { Petals } from './Petals'
 import { transmissionExcluded } from './materials'
+import { useNavAssets } from './assets'
 
 const INK = '#111111'
 
@@ -21,6 +22,7 @@ export function NavRoot() {
   const mode = useNavStore((s) => s.mode)
   const rootRef = useRef<VanillaContainer>(null)
   const uiRef = useRef<Group>(null)
+  const { logo } = useNavAssets()
   const [measured, setMeasured] = useState<number | null>(null)
 
   // The text layer sits on the glass; it must not be refracted by it.
@@ -54,6 +56,9 @@ export function NavRoot() {
     <>
       <Pill width={spring.width} />
       <Clusters width={spring.width} />
+      {mode === 'full' && (
+        <Petals width={spring.width} layoutWidth={width} count={Math.min(Math.max(links.length, 1), 3)} />
+      )}
       <group ref={uiRef} position-z={z}>
         <Suspense fallback={null}>
           <Container
@@ -64,13 +69,18 @@ export function NavRoot() {
             flexDirection="row"
             alignItems="center"
             height={tokens.pillHeight}
-            paddingX={tokens.pillPadX[mode]}
+            paddingLeft={tokens.pillPadStart[mode]}
+            paddingRight={tokens.pillPadEnd[mode]}
             gap={tokens.gap[mode]}
             fontSize={tokens.fontSize[mode]}
             color={INK}
             depthTest={false}
           >
-            <Svg src={logoUrl} width={tokens.logoSize} height={tokens.logoSize} color={INK} />
+            <Content width={tokens.logoSize} height={tokens.logoSize} depthAlign="back" keepAspectRatio>
+              <mesh geometry={logo}>
+                <meshStandardMaterial color={INK} roughness={0.6} />
+              </mesh>
+            </Content>
             {links.map((l) => (
               <Text key={l.id}>{l.label}</Text>
             ))}
