@@ -1,5 +1,6 @@
 export { Nav } from './Nav'
-export type { NavProps } from './Nav'
-export { useNavStore, resolveMode } from './store'
+export type { NavProps, EnhancementLevel } from './Nav'
+export { useNavStore, useNavStoreApi, resolveMode } from './store'
+export type { NavState, NavStoreApi } from './store'
 export { tokens } from './tokens'
 export type { NavLink, NavMode } from './types'

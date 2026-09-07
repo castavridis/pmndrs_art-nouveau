@@ -1,7 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { animated, useSpring } from '@react-spring/web'
 import type { NavLink } from './types'
-import { useNavStore, watchReducedMotion } from './store'
+import { createNavStore, NavStoreContext, useNavStore, useNavStoreApi, watchReducedMotion } from './store'
 import { Nav2D } from './Nav2D'
 import { decideEnhancement, enhancementOverride, type Enhancement } from './gate'
 import { tokens } from './tokens'
@@ -9,9 +9,16 @@ import styles from './Nav.module.css'
 
 const Nav3D = lazy(() => import('./Nav3D'))
 
+export type EnhancementLevel = 'auto' | '2d' | '3d' | '3d-lite'
+
 export interface NavProps {
   /** Middle links. Logo and Cmd are always present and are not part of this list. */
   links: NavLink[]
+  /**
+   * `auto` (default) runs the GPU / WebGL / reduced-motion gate; the others force a level.
+   * In dev, `?nav=2d|3d|3d-lite` overrides `auto`.
+   */
+  enhancement?: EnhancementLevel
 }
 
 /**
@@ -20,7 +27,16 @@ export interface NavProps {
  * of truth and its anchors are what the 3D items focus and trigger. When 3D is up, Nav2D's
  * visuals fade out (CSS via data-3d) while its anchors stay in the tab order.
  */
-export function Nav({ links }: NavProps) {
+export function Nav({ links, enhancement = 'auto' }: NavProps) {
+  const [store] = useState(() => createNavStore({ links }))
+  return (
+    <NavStoreContext.Provider value={store}>
+      <NavInner links={links} enhancement={enhancement} />
+    </NavStoreContext.Provider>
+  )
+}
+
+function NavInner({ links, enhancement: requested }: Required<NavProps>) {
   const setLinks = useNavStore((s) => s.setLinks)
   const is3D = useNavStore((s) => s.is3D)
   const setIs3D = useNavStore((s) => s.setIs3D)
@@ -32,20 +48,26 @@ export function Nav({ links }: NavProps) {
     [reducedMotion, decided],
   )
 
+  const api = useNavStoreApi()
   useEffect(() => setLinks(links), [links, setLinks])
-  useEffect(watchReducedMotion, [])
+  useEffect(() => watchReducedMotion(api), [api])
 
   // Gate runs on the client only, so the server markup (Nav2D) hydrates without mismatch.
   useEffect(() => {
     let cancelled = false
-    const override = enhancementOverride()
-    ;(override ? Promise.resolve(override) : decideEnhancement()).then((e) => {
+    const forced: Enhancement | null =
+      requested === '2d'
+        ? { level: '2d', reason: 'prop' }
+        : requested === '3d' || requested === '3d-lite'
+          ? { level: requested, tier: { tier: 3, type: 'FALLBACK' } }
+          : enhancementOverride()
+    ;(forced ? Promise.resolve(forced) : decideEnhancement()).then((e) => {
       if (!cancelled) setDecided(e)
     })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [requested])
 
   useEffect(() => {
     if (enhancement?.level === '2d') setIs3D(false)

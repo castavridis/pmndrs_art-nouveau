@@ -1,4 +1,5 @@
-import { create } from 'zustand'
+import { createContext, useContext } from 'react'
+import { createStore, useStore, type StoreApi } from 'zustand'
 import type { NavLink, NavMode } from './types'
 import { tokens } from './tokens'
 
@@ -6,10 +7,10 @@ export interface NavState {
   links: NavLink[]
   mode: NavMode
   hovered: string | null
-  /** Keyboard focus among the 3D items (mirrors the a11y proxy focus). */
+  /** Keyboard focus among the items (mirrors the DOM anchors' focus). */
   focused: string | null
   active: string | null
-  /** True once the 3D layer has mounted and should be treated as the interactive surface. */
+  /** True once the 3D layer has rendered and should be treated as the interactive surface. */
   is3D: boolean
   /** Collapsed-mode disclosure. */
   menuOpen: boolean
@@ -29,33 +30,52 @@ export interface NavState {
   setReducedMotion: (reduced: boolean) => void
 }
 
-export const useNavStore = create<NavState>()((set) => ({
-  links: [],
-  mode: 'full',
-  hovered: null,
-  focused: null,
-  active: null,
-  is3D: false,
-  menuOpen: false,
-  paletteOpen: false,
-  reducedMotion: false,
+export type NavStoreApi = StoreApi<NavState>
 
-  setLinks: (links) => set({ links }),
-  setMode: (mode) => set((s) => (s.mode === mode ? s : { mode, menuOpen: false })),
-  setHovered: (hovered) => set({ hovered }),
-  setFocused: (focused) => set({ focused }),
-  setActive: (active) => set({ active }),
-  setIs3D: (is3D) => set({ is3D }),
-  setMenuOpen: (menuOpen) => set({ menuOpen }),
-  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
-  setReducedMotion: (reducedMotion) => set({ reducedMotion }),
-}))
+/** One store per <Nav>, so several navs can live on one page (e.g. the dev gallery). */
+export function createNavStore(initial?: Partial<Pick<NavState, 'links'>>): NavStoreApi {
+  return createStore<NavState>()((set) => ({
+    links: initial?.links ?? [],
+    mode: 'full',
+    hovered: null,
+    focused: null,
+    active: null,
+    is3D: false,
+    menuOpen: false,
+    paletteOpen: false,
+    reducedMotion: false,
 
-/** Keep `reducedMotion` in sync with the OS setting. Call once on the client. */
-export function watchReducedMotion(): () => void {
+    setLinks: (links) => set({ links }),
+    setMode: (mode) => set((s) => (s.mode === mode ? s : { mode, menuOpen: false })),
+    setHovered: (hovered) => set({ hovered }),
+    setFocused: (focused) => set({ focused }),
+    setActive: (active) => set({ active }),
+    setIs3D: (is3D) => set({ is3D }),
+    setMenuOpen: (menuOpen) => set({ menuOpen }),
+    setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+    setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+  }))
+}
+
+export const NavStoreContext = createContext<NavStoreApi | null>(null)
+
+/** The store instance of the enclosing <Nav>. */
+export function useNavStoreApi(): NavStoreApi {
+  const api = useContext(NavStoreContext)
+  if (!api) throw new Error('useNavStore must be used inside <Nav>')
+  return api
+}
+
+/** Selector hook, same shape as a zustand bound store. Works inside the R3F Canvas (context is bridged). */
+export function useNavStore<T>(selector: (s: NavState) => T): T {
+  return useStore(useNavStoreApi(), selector)
+}
+
+/** Keep `reducedMotion` in sync with the OS setting. Call once per store on the client. */
+export function watchReducedMotion(api: NavStoreApi): () => void {
   if (typeof window === 'undefined' || !window.matchMedia) return () => {}
   const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-  const apply = () => useNavStore.getState().setReducedMotion(mq.matches)
+  const apply = () => api.getState().setReducedMotion(mq.matches)
   apply()
   mq.addEventListener('change', apply)
   return () => mq.removeEventListener('change', apply)

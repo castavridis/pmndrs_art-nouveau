@@ -2,6 +2,10 @@ import { lazy, Suspense, useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { NavCanvas } from './Canvas'
 import { NavRoot } from './NavRoot'
+import { preloadNavAssets } from './assets'
+
+// Kick off the GLB fetches the moment this chunk is evaluated (before React mounts the scene).
+preloadNavAssets()
 
 // Dev-only tuning panel + inspection handle. The dynamic imports sit behind a constant
 // condition, so neither chunk is emitted in production builds.

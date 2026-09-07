@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { useNavStore, resolveMode } from './store'
+import { useNavStore, useNavStoreApi, resolveMode } from './store'
 import { tokens, tokensToCssVars } from './tokens'
 import { NAV_MODES, type NavLink, type NavMode } from './types'
 import { Logo } from './Logo'
@@ -28,6 +28,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
   const setMenuOpen = useNavStore((s) => s.setMenuOpen)
   const setPaletteOpen = useNavStore((s) => s.setPaletteOpen)
   const setFocused = useNavStore((s) => s.setFocused)
+  const api = useNavStoreApi()
 
   const rootRef = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLDivElement>(null)
@@ -53,7 +54,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
     if (!root || !pill) return
 
     const measure = () => {
-      const current = useNavStore.getState().mode
+      const current = api.getState().mode
       // Probe the natural pill width in every mode by swapping data-mode synchronously.
       // The pill is `width: max-content`, so scrollWidth is its natural width. The attribute
       // is restored before we return, so observers never see an intermediate size.
@@ -82,7 +83,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
     ro.observe(root)
     ro.observe(pill)
     // Attribute must exist before probing so the CSS mode rules apply during the probe.
-    root.dataset.mode = useNavStore.getState().mode
+    root.dataset.mode = api.getState().mode
     measure()
     // Re-measure once web fonts are in.
     document.fonts?.ready.then(schedule).catch(() => {})
@@ -90,7 +91,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
       cancelAnimationFrame(raf)
       ro.disconnect()
     }
-  }, [links, setMode])
+  }, [links, setMode, api])
 
   // Collapsed disclosure: close on Escape / outside click.
   useEffect(() => {
