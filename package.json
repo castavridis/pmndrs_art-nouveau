@@ -14,9 +14,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@preact/signals-core": "^1.14.4",
     "@react-spring/three": "^10.1.2",
     "@react-spring/web": "^10.1.2",
-    "@react-three/a11y": "^3.0.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@react-three/offscreen": "^0.0.8",

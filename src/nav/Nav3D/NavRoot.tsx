@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { Container, Content, Text, type VanillaContainer } from '@react-three/uikit'
+import { Container, Content, type VanillaContainer } from '@react-three/uikit'
 import { useSpring } from '@react-spring/three'
 import type { Group } from 'three'
 import { useNavStore } from '../store'
@@ -9,8 +9,8 @@ import { Clusters } from './Clusters'
 import { Petals } from './Petals'
 import { transmissionExcluded } from './materials'
 import { useNavAssets } from './assets'
-
-const INK = '#111111'
+import { NavItem } from './NavItem'
+import { INK, triggerDom } from './dom'
 
 /**
  * The 3D nav. A uikit row lays out Logo → links → Cmd in px (pixelSize = 1/pxPerUnit);
@@ -76,15 +76,23 @@ export function NavRoot() {
             color={INK}
             depthTest={false}
           >
-            <Content width={tokens.logoSize} height={tokens.logoSize} depthAlign="back" keepAspectRatio>
-              <mesh geometry={logo}>
-                <meshStandardMaterial color={INK} roughness={0.6} />
-              </mesh>
-            </Content>
+            <Container
+              cursor="pointer"
+              onClick={(e) => {
+                e.stopPropagation()
+                triggerDom('logo')
+              }}
+            >
+              <Content width={tokens.logoSize} height={tokens.logoSize} depthAlign="back" keepAspectRatio>
+                <mesh geometry={logo}>
+                  <meshStandardMaterial color={INK} roughness={0.6} />
+                </mesh>
+              </Content>
+            </Container>
             {links.map((l) => (
-              <Text key={l.id}>{l.label}</Text>
+              <NavItem key={l.id} id={l.id} label={l.label} />
             ))}
-            <Text>Cmd</Text>
+            <NavItem id="cmd" label="Cmd" />
           </Container>
         </Suspense>
       </group>

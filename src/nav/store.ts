@@ -6,6 +6,8 @@ export interface NavState {
   links: NavLink[]
   mode: NavMode
   hovered: string | null
+  /** Keyboard focus among the 3D items (mirrors the a11y proxy focus). */
+  focused: string | null
   active: string | null
   /** True once the 3D layer has mounted and should be treated as the interactive surface. */
   is3D: boolean
@@ -17,6 +19,7 @@ export interface NavState {
   setLinks: (links: NavLink[]) => void
   setMode: (mode: NavMode) => void
   setHovered: (id: string | null) => void
+  setFocused: (id: string | null) => void
   setActive: (id: string | null) => void
   setIs3D: (is3D: boolean) => void
   setMenuOpen: (open: boolean) => void
@@ -27,6 +30,7 @@ export const useNavStore = create<NavState>()((set) => ({
   links: [],
   mode: 'full',
   hovered: null,
+  focused: null,
   active: null,
   is3D: false,
   menuOpen: false,
@@ -35,6 +39,7 @@ export const useNavStore = create<NavState>()((set) => ({
   setLinks: (links) => set({ links }),
   setMode: (mode) => set((s) => (s.mode === mode ? s : { mode, menuOpen: false })),
   setHovered: (hovered) => set({ hovered }),
+  setFocused: (focused) => set({ focused }),
   setActive: (active) => set({ active }),
   setIs3D: (is3D) => set({ is3D }),
   setMenuOpen: (menuOpen) => set({ menuOpen }),

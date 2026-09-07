@@ -24,6 +24,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
   const menuOpen = useNavStore((s) => s.menuOpen)
   const setMenuOpen = useNavStore((s) => s.setMenuOpen)
   const setPaletteOpen = useNavStore((s) => s.setPaletteOpen)
+  const setFocused = useNavStore((s) => s.setFocused)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLDivElement>(null)
@@ -124,7 +125,14 @@ export function Nav2D({ links }: { links: NavLink[] }) {
         ))}
 
         <div ref={pillRef} className={styles.pill}>
-          <a className={styles.logo} href="/" aria-label="pmndrs home" data-id="logo">
+          <a
+            className={styles.logo}
+            href="/"
+            aria-label="pmndrs home"
+            data-id="logo"
+            onFocus={() => setFocused('logo')}
+            onBlur={() => setFocused(null)}
+          >
             <Logo />
           </a>
 
@@ -151,6 +159,8 @@ export function Nav2D({ links }: { links: NavLink[] }) {
             aria-haspopup="dialog"
             aria-keyshortcuts="Meta+K Control+K"
             onClick={() => setPaletteOpen(true)}
+            onFocus={() => setFocused('cmd')}
+            onBlur={() => setFocused(null)}
           >
             Cmd
             <kbd aria-hidden="true" className={styles.kbd}>
@@ -170,6 +180,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
 
 function LinkList({ links, active }: { links: NavLink[]; active: string | null }) {
   const setHovered = useNavStore((s) => s.setHovered)
+  const setFocused = useNavStore((s) => s.setFocused)
   return (
     <ul className={styles.links}>
       {links.map((l) => (
@@ -181,6 +192,8 @@ function LinkList({ links, active }: { links: NavLink[]; active: string | null }
             aria-current={active === l.id ? 'page' : undefined}
             onPointerEnter={() => setHovered(l.id)}
             onPointerLeave={() => setHovered(null)}
+            onFocus={() => setFocused(l.id)}
+            onBlur={() => setFocused(null)}
           >
             {l.label}
           </a>
