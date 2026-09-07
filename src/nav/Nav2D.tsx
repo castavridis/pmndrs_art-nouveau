@@ -7,6 +7,9 @@ import { CmdPalette } from './CmdPalette'
 import leftCluster from './assets/left.svg'
 import rightCluster from './assets/right.svg'
 import styles from './Nav2D.module.css'
+// Same face as the 3D labels (uikit ships Inter as MSDF), so the DOM anchors sit exactly
+// under their 3D twins: focus rings and hover land on the right item.
+import '@fontsource-variable/inter'
 
 /**
  * The DOM nav. Always mounted; it is the SSR / a11y / SEO source of truth.

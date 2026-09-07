@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { NavCanvas } from './Canvas'
 import { NavRoot } from './NavRoot'
 
@@ -7,16 +8,35 @@ import { NavRoot } from './NavRoot'
 const DevControls = import.meta.env.DEV ? lazy(() => import('./DevControls')) : null
 const DevHandles = import.meta.env.DEV ? lazy(() => import('./DevHandles')) : null
 
+/** Sits inside the same Suspense as the scene, so it only renders once assets resolved. */
+function Ready({ onReady }: { onReady?: () => void }) {
+  const frames = useRef(0)
+  const done = useRef(false)
+  const cb = useRef(onReady)
+  useEffect(() => void (cb.current = onReady), [onReady])
+  useFrame(() => {
+    // Two frames: the first lays out uikit, the second renders the measured pill.
+    if (!done.current && ++frames.current >= 2) {
+      done.current = true
+      cb.current?.()
+    }
+  })
+  return null
+}
+
 export interface Nav3DProps {
   /** Disable postprocessing for low-tier GPUs. */
   postprocessing?: boolean
+  /** Called once, after the first frame that has the assets and layout in place. */
+  onReady?: () => void
 }
 
-export default function Nav3D({ postprocessing = true }: Nav3DProps) {
+export default function Nav3D({ postprocessing = true, onReady }: Nav3DProps) {
   return (
     <>
       <NavCanvas postprocessing={postprocessing}>
         <NavRoot />
+        <Ready onReady={onReady} />
         {DevHandles && (
           <Suspense fallback={null}>
             <DevHandles />

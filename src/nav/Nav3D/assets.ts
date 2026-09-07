@@ -30,14 +30,16 @@ export interface NavAssets {
 }
 
 const URLS = [navbarUrl, leftUrl, rightUrl, petalUrl, logoUrl] as const
+/** Self-hosted draco decoder (see scripts/copy-benchmarks.mjs); drei@10 defaults to a Google CDN. */
+const DRACO = `${import.meta.env.BASE_URL}draco/`
 
 export function useNavAssets(): NavAssets {
-  const gltfs = useGLTF([...URLS])
+  const gltfs = useGLTF([...URLS], DRACO)
   return useMemo(() => normalise(gltfs.map(firstMesh)), [gltfs])
 }
 
 export function preloadNavAssets() {
-  useGLTF.preload([...URLS])
+  useGLTF.preload([...URLS], DRACO)
 }
 
 type GLTFLike = { scene: THREE.Object3D }

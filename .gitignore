@@ -4,3 +4,5 @@ dist
 *.local
 playwright-report
 test-results
+public/benchmarks
+public/draco

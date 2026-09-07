@@ -5,7 +5,7 @@ const p = await b.newPage({ viewport: { width: 1440, height: 500 }, deviceScaleF
 const logs = []
 p.on('console', (m) => (m.type() === 'warning' || m.type() === 'error') && logs.push(`[${m.type()}] ${m.text()}`))
 p.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`))
-await p.goto('http://localhost:5173/?3d')
+await p.goto('http://localhost:5173/?nav=3d')
 await p.waitForSelector('canvas')
 await p.waitForTimeout(3000)
 const info = await p.evaluate(async () => {
@@ -18,6 +18,6 @@ const info = await p.evaluate(async () => {
   await new Promise((r) => { const tick = () => { frames++; if (performance.now() - t0 < 2000) requestAnimationFrame(tick); else r() }; requestAnimationFrame(tick) })
   return { renderer, fps: Math.round(frames / ((performance.now() - t0) / 1000)), size: [c.width, c.height] }
 })
-await p.locator('section[aria-label="3D preview"]').screenshot({ path: out })
+await p.locator('header').screenshot({ path: out })
 console.log(JSON.stringify(info), '\nlogs:', logs.length ? '\n' + logs.join('\n') : 'none')
 await b.close()

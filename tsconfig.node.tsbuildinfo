@@ -1,1 +1,1 @@
-{"root":["./vite.config.ts","./playwright.config.ts","./e2e/nav2d.spec.ts"],"version":"5.9.3"}
+{"root":["./vite.config.ts","./playwright.config.ts","./e2e/global.d.ts","./e2e/nav2d.spec.ts","./e2e/nav3d.spec.ts"],"version":"5.9.3"}

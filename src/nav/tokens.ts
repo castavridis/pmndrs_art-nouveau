@@ -42,7 +42,7 @@ export function tokensToCssVars(t: Tokens = tokens): Record<`--nav-${string}`, s
   const walk = (obj: Record<string, unknown>, prefix: string) => {
     for (const [k, v] of Object.entries(obj)) {
       const name = prefix ? `${prefix}-${kebab(k)}` : kebab(k)
-      if (typeof v === 'number') vars[`--nav-${name}`] = `${v}px`
+      if (typeof v === 'number') vars[`--nav-${name}`] = name.endsWith('-ms') ? `${v}ms` : `${v}px`
       else if (v && typeof v === 'object') walk(v as Record<string, unknown>, name)
     }
   }

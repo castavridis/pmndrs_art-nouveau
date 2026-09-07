@@ -14,7 +14,7 @@
   justify-content: center;
   width: 100%;
   min-width: 0;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--ink);
   container-type: inline-size;
 }
@@ -196,7 +196,7 @@
   left: var(--nav-cluster-bleed-x);
   right: var(--nav-cluster-bleed-x);
   top: calc(var(--nav-cluster-bleed-y) + var(--nav-pill-height) + 8px);
-  z-index: 2;
+  z-index: 3;
 }
 .root[data-mode='collapsed'] .menu .links {
   flex-direction: column;
@@ -258,6 +258,48 @@
 @media (prefers-reduced-motion: reduce) {
   .pill,
   .link {
+    transition: none;
+  }
+}
+
+/* --- 3D active: visuals fade out, anchors stay in the tab order ------------ */
+.pill,
+.cluster,
+.petal,
+.pill > * {
+  transition: opacity var(--nav-swap-duration-ms, 600ms) ease;
+}
+:global([data-3d]) .pill {
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:global([data-3d]) .pill > *,
+:global([data-3d]) .cluster,
+:global([data-3d]) .petal {
+  opacity: 0;
+}
+/* Keyboard users still get a ring; it lands where the 3D item is (shared tokens). */
+:global([data-3d]) .logo:focus-visible,
+:global([data-3d]) .link:focus-visible,
+:global([data-3d]) .cmd:focus-visible,
+:global([data-3d]) .menuBtn:focus-visible {
+  opacity: 1;
+  color: transparent;
+}
+/* The disclosure is DOM UI in both modes: above the canvas, full opacity. */
+.menu {
+  z-index: 3;
+}
+:global([data-3d]) .menu {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill,
+  .cluster,
+  .petal,
+  .pill > * {
     transition: none;
   }
 }

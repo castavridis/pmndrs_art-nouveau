@@ -3,10 +3,10 @@ const OUT = '/private/tmp/claude-501/-Users-cstavridis-Git--pmndrs-3d-2d-nav/4b2
 const presets = JSON.parse(process.argv[2])
 const b = await chromium.launch({ channel: 'chrome', args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=metal'] })
 const p = await b.newPage({ viewport: { width: 900, height: 400 }, deviceScaleFactor: 2 })
-await p.goto('http://localhost:5173/?3d'); await p.waitForSelector('canvas'); await p.waitForTimeout(1500)
+await p.goto('http://localhost:5173/?nav=3d'); await p.waitForSelector('canvas'); await p.waitForTimeout(1500)
 for (const [name, patch] of Object.entries(presets)) {
   await p.evaluate((patch) => { for (const [g, v] of Object.entries(patch)) window.__navTuning.getState().set(g, v) }, patch)
   await p.waitForTimeout(700)
-  await p.locator('section[aria-label="3D preview"]').screenshot({ path: `${OUT}/sweep-${name}.png` })
+  await p.locator('header').screenshot({ path: `${OUT}/sweep-${name}.png` })
 }
 await b.close(); console.log('done', Object.keys(presets).join(','))

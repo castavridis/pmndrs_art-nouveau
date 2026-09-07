@@ -11,9 +11,11 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "gltfjsx": "for f in left right petal navbar logo; do N=$(echo $f | awk '{print toupper(substr($0,1,1)) substr($0,2)}'); gltfjsx src/nav/assets/$f.glb --types --keepnames --transform --resolution 64 -o \"$PWD/src/nav/Nav3D/generated/$N.tsx\"; done",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "postinstall": "node scripts/copy-benchmarks.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
     "@preact/signals-core": "^1.14.4",
     "@react-spring/three": "^10.1.2",
     "@react-spring/web": "^10.1.2",
@@ -49,6 +51,7 @@
     "globals": "^17.12.0",
     "gltfjsx": "^6.5.3",
     "prettier": "^3.9.6",
+    "terser": "^5.51.2",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.70.0",
     "vite": "^8.2.2"

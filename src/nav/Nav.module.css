@@ -1,0 +1,15 @@
+.root {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+/* The 3D layer sits exactly over the DOM nav's box; it never affects layout (no CLS). */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.root[data-3d] .overlay {
+  pointer-events: auto;
+}
