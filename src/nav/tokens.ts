@@ -25,7 +25,12 @@ export const tokens = {
   modeHysteresis: 24,
   /** Cross-fade duration between 2D and 3D, in ms. */
   swapDurationMs: 600,
+  /** CSS px per world unit in the 3D scene (orthographic zoom). */
+  pxPerUnit: 100,
 } as const
+
+/** CSS px → world units. */
+export const px = (n: number) => n / tokens.pxPerUnit
 
 export type Tokens = typeof tokens
 
