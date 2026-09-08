@@ -61,8 +61,9 @@ export function LogoCubeVector({ visible }: { visible: boolean }) {
     return [bounds.clone().expandByVector(new THREE.Vector3(s.x * 0.9, s.y * 0.35, 0))]
   }, [bounds])
 
-  // World → screen: the visible height at z=0 for this camera, in units.
-  const visibleUnits = 2 * CAMERA_Z * Math.tan((FOV * Math.PI) / 360)
+  // World → screen: the visible height at the blocks' front face (nearer than z=0, so a
+  // little larger on screen than the origin plane), in units.
+  const visibleUnits = 2 * (CAMERA_Z - bounds.max.z) * Math.tan((FOV * Math.PI) / 360)
   const k = size.height / visibleUnits // px per world unit on screen
   const toX = (x: number) => size.width / 2 + x * k
   const toY = (y: number) => size.height / 2 - y * k
