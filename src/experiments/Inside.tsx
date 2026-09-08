@@ -7,10 +7,18 @@ import { useNavAssets } from '../nav/Nav3D/assets'
 import { Glass } from '../nav/Nav3D/Glass'
 import { palette, type GlassPreset, type PaletteName } from '../nav/Nav3D/tuning'
 
-/** Petals: pale and pink like the reference render. */
-const PETAL_PRESETS: PaletteName[] = ['light', 'light', 'red', 'purple', 'light']
-/** Shapes: saturated palette colours. */
-const SHAPE_COLOURS: PaletteName[] = ['purple', 'red', 'yellow', 'teal', 'blue', 'orange', 'green', 'light']
+const PALETTE = Object.keys(palette) as PaletteName[]
+
+/** Split `count` petals over the palette at random (seeded), one instanced group per colour. */
+function randomSplit(count: number, seed: number): { preset: PaletteName; count: number }[] {
+  const rng = new Generator(seed)
+  const tally = new Map<PaletteName, number>()
+  for (let i = 0; i < count; i++) {
+    const preset = PALETTE[Math.floor(rng.value() * PALETTE.length)]!
+    tally.set(preset, (tally.get(preset) ?? 0) + 1)
+  }
+  return [...tally].map(([preset, n]) => ({ preset, count: n }))
+}
 
 interface Body {
   box: THREE.Box3
@@ -95,9 +103,8 @@ class Swarm {
 interface GroupProps {
   boxes: THREE.Box3[]
   geometry: THREE.BufferGeometry
-  /** Glass preset (solid variant, so the interior stays bright) or a flat palette colour. */
-  preset?: GlassPreset
-  colour?: string
+  /** Glass preset (solid variant, so the interior stays bright). */
+  preset: GlassPreset
   /** Restrict to one box (index) instead of spreading by volume. */
   boxIndex?: number
   count: number
@@ -107,7 +114,7 @@ interface GroupProps {
   margin: number
 }
 
-function InstancedSwarm({ boxes, geometry, preset, colour, boxIndex, count, seed, speed, scale, margin }: GroupProps) {
+function InstancedSwarm({ boxes, geometry, preset, boxIndex, count, seed, speed, scale, margin }: GroupProps) {
   const mesh = useRef<THREE.InstancedMesh>(null!)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const swarm = useMemo(
@@ -126,11 +133,7 @@ function InstancedSwarm({ boxes, geometry, preset, colour, boxIndex, count, seed
   if (swarm.bodies.length === 0) return null
   return (
     <instancedMesh ref={mesh} args={[geometry, undefined, swarm.bodies.length]}>
-      {colour ? (
-        <meshPhysicalMaterial color={colour} emissive={colour} emissiveIntensity={0.35} roughness={0.35} clearcoat={1} />
-      ) : (
-        <Glass solid preset={preset} />
-      )}
+      <Glass solid preset={preset} />
     </instancedMesh>
   )
 }
@@ -138,36 +141,40 @@ function InstancedSwarm({ boxes, geometry, preset, colour, boxIndex, count, seed
 export interface InsideProps {
   boxes: THREE.Box3[]
   petals?: number
-  shapes?: number
 }
 
-/**
- * Petals floating inside the model's blocks (spread across the palette materials), plus a
- * handful of small palette cubes and spheres like the reference render.
- */
-export function Inside({ boxes, petals = 40, shapes = 8 }: InsideProps) {
+/** Petals in random palette colours floating inside the model's blocks. */
+export function Inside({ boxes, petals = 40 }: InsideProps) {
   const { petalLo } = useNavAssets()
-  const cube = useMemo(() => new THREE.BoxGeometry(0.32, 0.32, 0.32), [])
-  const sphere = useMemo(() => new THREE.SphereGeometry(0.18, 24, 16), [])
-  const per = Math.ceil(petals / PETAL_PRESETS.length)
+  const groups = useMemo(() => randomSplit(petals, 11), [petals])
   return (
     <>
-      {PETAL_PRESETS.map((preset, i) => (
-        <InstancedSwarm key={`${preset}-${i}`} boxes={boxes} geometry={petalLo} preset={preset} count={Math.min(per, petals - i * per)} seed={100 + i} speed={0.12} scale={[1.2, 2.2]} margin={0.15} />
+      {groups.map((g, i) => (
+        <InstancedSwarm key={g.preset} boxes={boxes} geometry={petalLo} preset={g.preset} count={g.count} seed={100 + i} speed={0.12} scale={[1.2, 2.2]} margin={0.15} />
       ))}
-      {SHAPE_COLOURS.slice(0, shapes).map((name, i) => (
-        <InstancedSwarm
-          key={`shape-${name}`}
-          boxes={boxes}
-          boxIndex={i}
-          geometry={i % 2 ? sphere : cube}
-          colour={palette[name]}
-          count={1}
-          seed={900 + i * 7919}
-          speed={0.08}
-          scale={[0.8, 1.2]}
-          margin={0.3}
-        />
+    </>
+  )
+}
+
+export interface OutsideProps {
+  /** The model's overall bounds; petals roam a volume around it. */
+  bounds: THREE.Box3
+  petals?: number
+}
+
+/** Petals in random palette colours drifting in the space around the model. */
+export function Outside({ bounds, petals = 60 }: OutsideProps) {
+  const { petalLo } = useNavAssets()
+  const volume = useMemo(() => {
+    const size = bounds.getSize(new THREE.Vector3())
+    // Wider than tall so petals fill the viewport's sides; shallow so they stay near the model.
+    return [bounds.clone().expandByVector(new THREE.Vector3(size.x * 0.9, size.y * 0.35, 1.5))]
+  }, [bounds])
+  const groups = useMemo(() => randomSplit(petals, 23), [petals])
+  return (
+    <>
+      {groups.map((g, i) => (
+        <InstancedSwarm key={g.preset} boxes={volume} geometry={petalLo} preset={g.preset} count={g.count} seed={500 + i} speed={0.08} scale={[1, 2]} margin={0} />
       ))}
     </>
   )

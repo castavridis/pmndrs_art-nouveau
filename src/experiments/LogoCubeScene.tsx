@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo } from 'react'
+import * as THREE from 'three'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
 import { glassPresets, useTuning } from '../nav/Nav3D/tuning'
 import { preloadNavAssets } from '../nav/Nav3D/assets'
 import { preloadLogoCube, useLogoCube } from './logoCubeAssets'
 import { makeLogoGeometry } from './logoBlocks'
-import { Inside } from './Inside'
+import { Inside, Outside } from './Inside'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
@@ -52,24 +53,23 @@ export default function LogoCubeScene() {
 function PrismModel() {
   const { geometry, boxes } = useMemo(() => makeLogoGeometry(), [])
   useEffect(() => () => geometry.dispose(), [geometry])
-  return (
-    <>
-      <mesh geometry={geometry}>
-        <Glass />
-      </mesh>
-      <Inside boxes={boxes} />
-    </>
-  )
+  return <Logo geometry={geometry} boxes={boxes} />
 }
 
 function MeshModel() {
   const { geometry, boxes } = useLogoCube()
+  return <Logo geometry={geometry} boxes={boxes} />
+}
+
+function Logo({ geometry, boxes }: { geometry: THREE.BufferGeometry; boxes: THREE.Box3[] }) {
+  const bounds = useMemo(() => geometry.boundingBox ?? new THREE.Box3().setFromBufferAttribute(geometry.attributes.position as THREE.BufferAttribute), [geometry])
   return (
     <>
       <mesh geometry={geometry}>
         <Glass />
       </mesh>
       <Inside boxes={boxes} />
+      <Outside bounds={bounds} />
     </>
   )
 }
