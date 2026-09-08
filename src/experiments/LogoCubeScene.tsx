@@ -16,7 +16,8 @@ const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHand
 preloadNavAssets()
 preloadFlower()
 /** `?glb` shows the exported mesh instead of the procedural prisms. */
-const USE_GLB = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('glb')
+const USE_GLB =
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('glb')
 if (USE_GLB) preloadLogoCube()
 
 /** The model is ~8 units tall; with the 22° camera that needs ~21 units of distance to fit. */
@@ -70,7 +71,14 @@ function MeshModel() {
 }
 
 function Logo({ geometry, boxes }: { geometry: THREE.BufferGeometry; boxes: THREE.Box3[] }) {
-  const bounds = useMemo(() => geometry.boundingBox ?? new THREE.Box3().setFromBufferAttribute(geometry.attributes.position as THREE.BufferAttribute), [geometry])
+  const bounds = useMemo(
+    () =>
+      geometry.boundingBox ??
+      new THREE.Box3().setFromBufferAttribute(
+        geometry.attributes.position as THREE.BufferAttribute,
+      ),
+    [geometry],
+  )
   return (
     <>
       <mesh geometry={geometry}>

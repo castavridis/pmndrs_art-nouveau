@@ -158,7 +158,10 @@ export function makeLogoGeometry(): ProceduralLogo {
     // ExtrudeGeometry grows the outline by bevelSize; inset first so the finished silhouette
     // matches the measured bounds (same trick as the nav pill). With BEVEL 0 the outline is
     // used as-is and the corners stay sharp.
-    const shape = BEVEL > 0 ? roundedPolygon(inset(b.outline, BEVEL), Math.max(BEVEL * 0.5, 4)) : polygon(b.outline)
+    const shape =
+      BEVEL > 0
+        ? roundedPolygon(inset(b.outline, BEVEL), Math.max(BEVEL * 0.5, 4))
+        : polygon(b.outline)
     const g = new THREE.ExtrudeGeometry(shape, {
       depth: depth - BEVEL * 2,
       bevelEnabled: BEVEL > 0,

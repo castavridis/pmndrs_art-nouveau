@@ -35,7 +35,15 @@ const tmp = new THREE.Object3D()
 /** Bodies drifting inside boxes: slow constant velocity, tumble, bounce off the walls. */
 class Swarm {
   readonly bodies: Body[]
-  constructor(boxes: THREE.Box3[], count: number, seed: number, speed: number, scale: [number, number], margin: number, spin = 1.5) {
+  constructor(
+    boxes: THREE.Box3[],
+    count: number,
+    seed: number,
+    speed: number,
+    scale: [number, number],
+    margin: number,
+    spin = 1.5,
+  ) {
     const rng = new Generator(seed)
     const sizes = boxes.map((b) => b.getSize(new THREE.Vector3()))
     const volumes = sizes.map((s) => s.x * s.y * s.z)
@@ -66,7 +74,9 @@ class Swarm {
             THREE.MathUtils.lerp(inner.min.y, inner.max.y, r()),
             THREE.MathUtils.lerp(inner.min.z, inner.max.z, r()),
           ),
-          v: new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).normalize().multiplyScalar(speed * (0.5 + r())),
+          v: new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5)
+            .normalize()
+            .multiplyScalar(speed * (0.5 + r())),
           rot: new THREE.Euler(r() * Math.PI * 2, r() * Math.PI * 2, r() * Math.PI * 2),
           spin: new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).multiplyScalar(spin),
           scale: THREE.MathUtils.lerp(scale[0], scale[1], r()),
@@ -117,11 +127,31 @@ interface GroupProps {
   spin?: number
 }
 
-function InstancedSwarm({ boxes, geometry, preset, boxIndex, count, seed, speed, scale, margin, spin }: GroupProps) {
+function InstancedSwarm({
+  boxes,
+  geometry,
+  preset,
+  boxIndex,
+  count,
+  seed,
+  speed,
+  scale,
+  margin,
+  spin,
+}: GroupProps) {
   const mesh = useRef<THREE.InstancedMesh>(null!)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const swarm = useMemo(
-    () => new Swarm(boxIndex === undefined ? boxes : [boxes[boxIndex % boxes.length]!], count, seed, speed, scale, margin, spin),
+    () =>
+      new Swarm(
+        boxIndex === undefined ? boxes : [boxes[boxIndex % boxes.length]!],
+        count,
+        seed,
+        speed,
+        scale,
+        margin,
+        spin,
+      ),
     [boxes, boxIndex, count, seed, speed, scale, margin, spin],
   )
   useLayoutEffect(() => {
@@ -153,7 +183,17 @@ export function Inside({ boxes, petals = 40 }: InsideProps) {
   return (
     <>
       {groups.map((g, i) => (
-        <InstancedSwarm key={g.preset} boxes={boxes} geometry={petalLo} preset={g.preset} count={g.count} seed={100 + i} speed={0.12} scale={[1.2, 2.2]} margin={0.15} />
+        <InstancedSwarm
+          key={g.preset}
+          boxes={boxes}
+          geometry={petalLo}
+          preset={g.preset}
+          count={g.count}
+          seed={100 + i}
+          speed={0.12}
+          scale={[1.2, 2.2]}
+          margin={0.15}
+        />
       ))}
     </>
   )
@@ -177,7 +217,17 @@ export function Outside({ bounds, petals = 60 }: OutsideProps) {
   return (
     <>
       {groups.map((g, i) => (
-        <InstancedSwarm key={g.preset} boxes={volume} geometry={petalLo} preset={g.preset} count={g.count} seed={500 + i} speed={0.08} scale={[1, 2]} margin={0} />
+        <InstancedSwarm
+          key={g.preset}
+          boxes={volume}
+          geometry={petalLo}
+          preset={g.preset}
+          count={g.count}
+          seed={500 + i}
+          speed={0.08}
+          scale={[1, 2]}
+          margin={0}
+        />
       ))}
     </>
   )
@@ -205,10 +255,32 @@ export function Flowers({ boxes, bounds, inside = 6, outside = 10 }: FlowersProp
   return (
     <>
       {inGroups.map((g, i) => (
-        <InstancedSwarm key={`in-${g.preset}`} boxes={boxes} geometry={flower} preset={g.preset} count={g.count} seed={700 + i} speed={0.05} scale={[0.16, 0.26]} margin={0.5} spin={0.4} />
+        <InstancedSwarm
+          key={`in-${g.preset}`}
+          boxes={boxes}
+          geometry={flower}
+          preset={g.preset}
+          count={g.count}
+          seed={700 + i}
+          speed={0.05}
+          scale={[0.16, 0.26]}
+          margin={0.5}
+          spin={0.4}
+        />
       ))}
       {outGroups.map((g, i) => (
-        <InstancedSwarm key={`out-${g.preset}`} boxes={around} geometry={flower} preset={g.preset} count={g.count} seed={800 + i} speed={0.04} scale={[0.18, 0.34]} margin={0} spin={0.4} />
+        <InstancedSwarm
+          key={`out-${g.preset}`}
+          boxes={around}
+          geometry={flower}
+          preset={g.preset}
+          count={g.count}
+          seed={800 + i}
+          speed={0.04}
+          scale={[0.18, 0.34]}
+          margin={0}
+          spin={0.4}
+        />
       ))}
     </>
   )

@@ -40,7 +40,11 @@ export function useCalloutIcon(): CalloutIconAsset {
       g.computeBoundingBox()
       return g
     }
-    const [lens, leafTop, leafBottom] = gltfs.map(world) as [THREE.BufferGeometry, THREE.BufferGeometry, THREE.BufferGeometry]
+    const [lens, leafTop, leafBottom] = gltfs.map(world) as [
+      THREE.BufferGeometry,
+      THREE.BufferGeometry,
+      THREE.BufferGeometry,
+    ]
     const centre = lens.boundingBox!.getCenter(new THREE.Vector3())
     const size = lens.boundingBox!.getSize(new THREE.Vector3())
     for (const g of [lens, leafTop, leafBottom]) {

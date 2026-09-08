@@ -1,5 +1,12 @@
+.parallaxRoot {
+  position: relative;
+  perspective: 900px;
+}
 .root {
   position: relative;
+  /* Flat: a preserve-3d context let the tilted content plane intersect the canvas and get clipped. */
+  transform-style: flat;
+  will-change: transform;
   color: #111;
   font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
 }
@@ -25,6 +32,7 @@
 .content {
   position: relative;
   z-index: 1;
+  will-change: transform;
   box-sizing: border-box;
   height: 100%;
 }

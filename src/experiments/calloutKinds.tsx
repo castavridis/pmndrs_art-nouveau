@@ -5,7 +5,10 @@ import { AlertIcon, BulbIcon, InfoIcon, ReportIcon, StopIcon } from './calloutIc
 /** GitHub's callout kinds, mapped onto the brand palette. */
 export type CalloutKind = 'note' | 'tip' | 'important' | 'warning' | 'caution'
 
-export const calloutKinds: Record<CalloutKind, { label: string; colour: PaletteName; icon: ReactNode }> = {
+export const calloutKinds: Record<
+  CalloutKind,
+  { label: string; colour: PaletteName; icon: ReactNode }
+> = {
   note: { label: 'Note', colour: 'blue', icon: <InfoIcon /> },
   tip: { label: 'Tip', colour: 'green', icon: <BulbIcon /> },
   important: { label: 'Important', colour: 'purple', icon: <ReportIcon /> },

@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { useGLTF } from '@react-three/drei'
 import { px } from '../nav/tokens'
 import url from '../nav/Nav3D/generated/logo-cubed-transformed.glb'
+import { connectedBoxes } from '../nav/Nav3D/components'
 
 const DRACO = `${import.meta.env.BASE_URL}draco/`
 
@@ -40,49 +41,4 @@ export function useLogoCube(): LogoCubeAsset {
 
 export function preloadLogoCube() {
   useGLTF.preload(url, DRACO)
-}
-
-/** Bounding box of every connected component (union-find over indices + coincident vertices). */
-function connectedBoxes(g: THREE.BufferGeometry): THREE.Box3[] {
-  const pos = g.attributes.position as THREE.BufferAttribute
-  const n = pos.count
-  const parent = new Int32Array(n)
-  for (let i = 0; i < n; i++) parent[i] = i
-  const find = (i: number) => {
-    while (parent[i] !== i) {
-      parent[i] = parent[parent[i]!]!
-      i = parent[i]!
-    }
-    return i
-  }
-  const union = (a: number, b: number) => {
-    a = find(a)
-    b = find(b)
-    if (a !== b) parent[a] = b
-  }
-  // Coincident vertices (split for normals/uvs) belong together.
-  const seen = new Map<string, number>()
-  for (let i = 0; i < n; i++) {
-    const k = `${Math.round(pos.getX(i) * 1e3)},${Math.round(pos.getY(i) * 1e3)},${Math.round(pos.getZ(i) * 1e3)}`
-    const j = seen.get(k)
-    if (j === undefined) seen.set(k, i)
-    else union(i, j)
-  }
-  const index = g.index
-  if (index) {
-    for (let t = 0; t < index.count; t += 3) {
-      union(index.getX(t), index.getX(t + 1))
-      union(index.getX(t + 1), index.getX(t + 2))
-    }
-  }
-  const boxes = new Map<number, THREE.Box3>()
-  const v = new THREE.Vector3()
-  for (let i = 0; i < n; i++) {
-    const r = find(i)
-    let b = boxes.get(r)
-    if (!b) boxes.set(r, (b = new THREE.Box3()))
-    b.expandByPoint(v.fromBufferAttribute(pos, i))
-  }
-  // Ignore slivers (a stray triangle or two).
-  return [...boxes.values()].filter((b) => b.getSize(v).length() > 0.5)
 }
