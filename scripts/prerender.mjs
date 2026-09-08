@@ -7,7 +7,9 @@ import path from 'node:path'
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist')
 const { render } = await import(pathToFileURL(path.join(dist, 'server/entry-server.js')).href)
 const html = await readFile(path.join(dist, 'index.html'), 'utf8')
+// The un-prerendered shell for every other route (vercel.json rewrites them here).
+await writeFile(path.join(dist, 'app.html'), html)
 const out = html.replace('<div id="root"></div>', `<div id="root">${render()}</div>`)
 await writeFile(path.join(dist, 'index.html'), out)
 await rm(path.join(dist, 'server'), { recursive: true, force: true })
-console.log('prerendered dist/index.html')
+console.log('prerendered dist/index.html; wrote dist/app.html shell')

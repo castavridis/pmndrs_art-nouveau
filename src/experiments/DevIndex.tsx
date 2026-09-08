@@ -36,7 +36,7 @@ const pages = [
   },
 ]
 
-/** `/dev`: links to every experiment. Dev builds only. */
+/** `/dev`: links to every experiment. */
 export function DevIndex() {
   return (
     <main
@@ -49,7 +49,7 @@ export function DevIndex() {
     >
       <h1 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 500 }}>Experiments</h1>
       <p style={{ margin: '0 0 32px', opacity: 0.6 }}>
-        Dev-only pages. Each has the leva panel; ⌘K opens the palette where a nav is present.
+        Experiment pages. In dev each has the leva panel; ⌘K opens the palette where a nav is present.
       </p>
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 12 }}>
         {pages.map((p) => (

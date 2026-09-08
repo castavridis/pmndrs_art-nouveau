@@ -45,7 +45,8 @@ function navTuningWriter(): Plugin {
 export default defineConfig({
   plugins: [react(), navTuningWriter()],
   resolve: { dedupe: ['three'] },
-  base: './',
+  // Absolute asset URLs: nested routes (/dev/cube) are served the same shell (see vercel.json).
+  base: '/',
   assetsInclude: ['**/*.glb', '**/*.hdr'],
   build: {
     // @pmndrs/uikit@1.0.76 reads `constructor.name` (dist/components/component.js); with

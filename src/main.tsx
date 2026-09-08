@@ -12,14 +12,12 @@ import { DevIndex } from './experiments/DevIndex'
 import { TracePage } from './experiments/TracePage'
 import { FrankensteinPage } from './experiments/FrankensteinPage'
 import { PalettePage } from './experiments/PalettePage'
-import { ThemeApplier } from './theme'
-import { ThemeToggle } from './ThemeToggle'
+import { AppShell } from './AppShell'
 
 const root = document.getElementById('root')!
 const path = window.location.pathname
-const page = !import.meta.env.DEV ? (
-  <Home />
-) : path.startsWith('/dev/demo') ? (
+// Every route is available in every build; the leva panels and the tuning writer stay dev-only.
+const page = path.startsWith('/dev/demo') ? (
   <Demo />
 ) : path.startsWith('/dev/stage') ? (
   <DevStage />
@@ -44,13 +42,14 @@ const page = !import.meta.env.DEV ? (
 )
 const app = (
   <StrictMode>
-    <ThemeApplier />
-    {page}
-    {/* Light / dark / system, top-left on every page (the leva panel owns the top-right).
-        After the page in DOM order so the nav keeps the first Tab stop. */}
-    <ThemeToggle style={{ position: 'fixed', top: 16, left: 16, zIndex: 20 }} />
+    <AppShell>{page}</AppShell>
   </StrictMode>
 )
-// Production HTML is prerendered (see scripts/prerender.mjs); dev is client-only.
-if (root.hasChildNodes()) hydrateRoot(root, app)
-else createRoot(root).render(app)
+// Production `/` is prerendered (see scripts/prerender.mjs); other routes are served the
+// empty app shell (dist/app.html) and render on the client. Hydrate only when the markup
+// is the home page's, so a prerendered Home is never hydrated with another route's tree.
+if (root.hasChildNodes() && (path === '/' || path === '/index.html')) hydrateRoot(root, app)
+else {
+  root.replaceChildren()
+  createRoot(root).render(app)
+}
