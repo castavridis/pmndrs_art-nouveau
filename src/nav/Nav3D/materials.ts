@@ -2,10 +2,24 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import type { MeshTransmissionMaterialProps } from '@react-three/drei/core/MeshTransmissionMaterial'
 import { useTuning, type Tuning } from './tuning'
-import { makeSurfaceNormalMap } from './surfaceNormals'
+import { makeSheenNoiseMap, makeSurfaceNormalMap } from './surfaceNormals'
 
 let surfaceNormals: THREE.DataTexture | undefined
 const getSurfaceNormals = () => (surfaceNormals ??= makeSurfaceNormalMap())
+
+/**
+ * Noise textures by strength (quantised so tuning does not allocate per frame). RGB carries
+ * 1 - strength*noise (used for sheen colour and roughness), alpha carries sheen roughness.
+ */
+const sheenNoise = new Map<number, THREE.DataTexture>()
+export function getSheenNoise(strength: number, scale: number): THREE.DataTexture | null {
+  if (strength <= 0) return null
+  const key = Math.round(strength * 20) / 20
+  let tex = sheenNoise.get(key)
+  if (!tex) sheenNoise.set(key, (tex = makeSheenNoiseMap(key)))
+  tex.repeat.set(scale, scale)
+  return tex
+}
 
 /**
  * The single glass look shared by the pill, clusters and petals. Consumers spread
@@ -37,6 +51,10 @@ export function glassProps(
     sheen: g.sheen,
     sheenRoughness: g.sheenRoughness,
     sheenColor: g.sheenColor,
+    sheenColorMap: getSheenNoise(g.sheenNoise, g.sheenNoiseScale),
+    sheenRoughnessMap: getSheenNoise(g.sheenNoise, g.sheenNoiseScale),
+    // roughnessMap reads the green channel; the noise texture is grey so any channel works.
+    roughnessMap: getSheenNoise(g.roughnessNoise, g.sheenNoiseScale),
     opacity: g.opacity,
     transparent: g.opacity < 1,
     chromaticAberration: g.chromaticAberration,

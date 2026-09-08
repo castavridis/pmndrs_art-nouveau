@@ -24,6 +24,12 @@ export interface GlassTuning {
   sheen: number
   sheenRoughness: number
   sheenColor: string
+  /** Procedural noise in the sheen (0 = uniform). Modulates sheen colour and roughness. */
+  sheenNoise: number
+  /** Noise tiling across the surface. */
+  sheenNoiseScale: number
+  /** The same noise applied to roughness (0 = uniform): visible grain on flat faces. */
+  roughnessNoise: number
   iridescence: number
   iridescenceIOR: number
   iridescenceThicknessMin: number
@@ -164,6 +170,9 @@ const roughGlassBase = {
     sheen: 0.125,
     sheenRoughness: 0.0938,
     sheenColor: '#ffffff',
+    sheenNoise: 0.6,
+    sheenNoiseScale: 6,
+    roughnessNoise: 0,
     // Womp: Iridescence 0
     iridescence: 0,
     iridescenceIOR: 1.3,
@@ -255,6 +264,9 @@ export const glassPresets = {
     sheen: 0,
     sheenRoughness: 1,
     sheenColor: '#ffffff',
+    sheenNoise: 0,
+    sheenNoiseScale: 2,
+    roughnessNoise: 0,
     iridescence: 1,
     iridescenceIOR: 1.9,
     iridescenceThicknessMin: 150,

@@ -61,6 +61,9 @@ export default function DevControls() {
       sheen: { value: g.sheen, min: 0, max: 1 },
       sheenRoughness: { value: g.sheenRoughness, min: 0, max: 1 },
       sheenColor: g.sheenColor,
+      sheenNoise: { value: g.sheenNoise, min: 0, max: 1 },
+      sheenNoiseScale: { value: g.sheenNoiseScale, min: 0.25, max: 16 },
+      roughnessNoise: { value: g.roughnessNoise, min: 0, max: 1 },
     }),
     iridescence: folder({
       iridescence: { value: g.iridescence, min: 0, max: 1 },

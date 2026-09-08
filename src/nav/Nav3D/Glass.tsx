@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { MeshTransmissionMaterial } from '@react-three/drei'
-import { useGlassPropsFor } from './materials'
+import { getSheenNoise, useGlassPropsFor } from './materials'
 import { glassPresets, useTuning, type GlassPreset } from './tuning'
 
 export interface GlassProps {
@@ -50,6 +50,9 @@ export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
       sheen={Math.max(g.sheen, 0.4)}
       sheenColor={g.sheenColor}
       sheenRoughness={Math.max(g.sheenRoughness, 0.6)}
+      sheenColorMap={getSheenNoise(g.sheenNoise, g.sheenNoiseScale)}
+      sheenRoughnessMap={getSheenNoise(g.sheenNoise, g.sheenNoiseScale)}
+      roughnessMap={getSheenNoise(g.roughnessNoise, g.sheenNoiseScale)}
     />
   )
 }
