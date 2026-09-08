@@ -40,6 +40,8 @@ export interface CalloutProps {
   title: string
   children: ReactNode
   postprocessing?: boolean
+  /** Show the scene's light strips through the surface (off: they read as stray lines). */
+  strips?: boolean
   /** Maximum card width; the card fills its container up to this (default 560). */
   maxWidth?: number | string
 }
@@ -54,6 +56,7 @@ export function Callout({
   title,
   children,
   postprocessing = true,
+  strips = false,
   maxWidth = callout.width,
 }: CalloutProps) {
   // The card is sized by its DOM content (width from the container, height from the text) and
@@ -104,7 +107,7 @@ export function Callout({
             style={{ inset: -bleed, opacity: ready ? 1 : 0 }}
             aria-hidden="true"
           >
-            <NavCanvas postprocessing={postprocessing}>
+            <NavCanvas postprocessing={postprocessing} strips={strips}>
               <Suspense fallback={null}>
                 <ParallaxRig pointer={pointer} depth={0}>
                   <Surface preset={preset} width={size.width} height={size.height} />
@@ -134,7 +137,7 @@ export function Callout({
             }}
             aria-hidden="true"
           >
-            <NavCanvas postprocessing={false}>
+            <NavCanvas postprocessing={false} strips={strips}>
               <Suspense fallback={null}>
                 <ParallaxRig pointer={pointer} depth={1} tilt={0.15}>
                   <Icon preset={preset} />

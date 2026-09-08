@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
@@ -7,6 +7,7 @@ import { Lightformer, useHelper } from '@react-three/drei'
 import { px } from '../tokens'
 import { useTuning, type RectLightTuning, type Vec3 } from './tuning'
 import { transmissionOnly } from './materials'
+import { StripsContext } from './strips'
 
 // three@0.182: RectAreaLight needs its BRDF LUTs registered once before any material compiles.
 RectAreaLightUniformsLib.init()
@@ -48,7 +49,8 @@ export function Lights() {
 /** Render inside <Environment> so the strips are reflected by the glass. */
 export function RectLightformers() {
   const { rects, emitters, emitterScale } = useTuning((s) => s.lights)
-  if (!emitters) return null
+  const strips = useContext(StripsContext)
+  if (!emitters || !strips) return null
   return (
     <>
       {rects.map((r, i) => (
@@ -167,7 +169,9 @@ function Roam({ debug }: { debug: boolean }) {
 const SWEEP_DIR = new THREE.Vector3(1, 1, 0).normalize()
 
 function Rect({ light, debug }: { light: RectLightTuning; debug: boolean }) {
-  const { luminanceScale, emitters, emitterScale, sweep, sweepRange } = useTuning((s) => s.lights)
+  const { luminanceScale, emitterScale, sweep, sweepRange } = useTuning((s) => s.lights)
+  const strips = useContext(StripsContext)
+  const emitters = useTuning((s) => s.lights.emitters) && strips
   const ref = useRef<THREE.RectAreaLight>(null!)
   useHelper(debug && ref, RectAreaLightHelper, light.color)
   const position = useMemo(() => wompPosition(light.position), [light.position])

@@ -2,13 +2,19 @@ import { Suspense, useLayoutEffect, useMemo, useRef, type ReactNode } from 'reac
 import { Canvas as R3FCanvas, useFrame, useThree } from '@react-three/fiber'
 import { Vector2 } from 'three'
 import { Environment, Lightformer, OrbitControls, Preload } from '@react-three/drei'
-import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
+import {
+  EffectComposer,
+  Bloom,
+  ChromaticAberration,
+  ToneMapping,
+} from '@react-three/postprocessing'
 import { Effect, ToneMappingMode } from 'postprocessing'
 import type { PerspectiveCamera } from 'three'
 import { tokens } from '../tokens'
 import { useLightsKey, useTuning } from './tuning'
 import { useResolvedTheme } from '../../theme'
 import { Lights, RectLightformers } from './Lights'
+import { StripsContext } from './strips'
 import { Recenter } from './recenter'
 
 export interface NavCanvasProps {
@@ -20,6 +26,11 @@ export interface NavCanvasProps {
   orbit?: boolean
   /** Initial camera position for orbit mode (world units). */
   framePosition?: [number, number, number]
+  /**
+   * Draw the rect lights' emissive strips (seen refracted through the glass and reflected in
+   * the environment). Off for surfaces where the diagonal lines read as artefacts.
+   */
+  strips?: boolean
 }
 
 /**
@@ -35,7 +46,14 @@ const FOV = 22
  * done in px (uikit, tokens) map 1:1 onto the DOM nav underneath.
  * Transparent: the page background shows through, exactly like the DOM version.
  */
-export function NavCanvas({ children, postprocessing = true, className, orbit = false, framePosition }: NavCanvasProps) {
+export function NavCanvas({
+  children,
+  postprocessing = true,
+  className,
+  orbit = false,
+  framePosition,
+  strips = true,
+}: NavCanvasProps) {
   return (
     <R3FCanvas
       className={className}
@@ -45,22 +63,24 @@ export function NavCanvas({ children, postprocessing = true, className, orbit = 
       style={{ background: 'transparent' }}
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
-      <CameraRig orbit={orbit} framePosition={framePosition} />
-      <SizeGuard />
-      {orbit && (
-        <>
-          <OrbitControls makeDefault enableDamping />
-          <Recenter framePosition={framePosition ?? [0, 1.5, 8]} />
-        </>
-      )}
-      <Suspense fallback={null}>
-        <Studio />
-        <Fog />
-        <Lights />
-        {children}
-        {postprocessing && <Post />}
-        <Preload all />
-      </Suspense>
+      <StripsContext.Provider value={strips}>
+        <CameraRig orbit={orbit} framePosition={framePosition} />
+        <SizeGuard />
+        {orbit && (
+          <>
+            <OrbitControls makeDefault enableDamping />
+            <Recenter framePosition={framePosition ?? [0, 1.5, 8]} />
+          </>
+        )}
+        <Suspense fallback={null}>
+          <Studio />
+          <Fog />
+          <Lights />
+          {children}
+          {postprocessing && <Post />}
+          <Preload all />
+        </Suspense>
+      </StripsContext.Provider>
     </R3FCanvas>
   )
 }
@@ -91,7 +111,13 @@ function SizeGuard() {
  * With `lights.debug` on, pulls back and up so the light helpers (which sit well outside the
  * nav's own viewport) are in frame.
  */
-function CameraRig({ orbit, framePosition }: { orbit: boolean; framePosition?: [number, number, number] }) {
+function CameraRig({
+  orbit,
+  framePosition,
+}: {
+  orbit: boolean
+  framePosition?: [number, number, number]
+}) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const height = useThree((s) => s.size.height)
   const debug = useTuning((s) => s.lights.debug)
@@ -141,7 +167,13 @@ function Studio() {
   const lightsKey = useLightsKey() + background
   return (
     // Keyed on the lights so the one-shot cubemap re-renders whenever a strip is tweaked.
-    <Environment key={lightsKey} resolution={256} frames={1} environmentIntensity={intensity} environmentRotation={[0, rotation, 0]}>
+    <Environment
+      key={lightsKey}
+      resolution={256}
+      frames={1}
+      environmentIntensity={intensity}
+      environmentRotation={[0, rotation, 0]}
+    >
       <color attach="background" args={[background]} />
       <RectLightformers />
       {/*
@@ -149,16 +181,72 @@ function Studio() {
        * where the colour has to be. A cluster of overlapping pastel panels behind the camera gives
        * the soft gradient seen in the reference; side/top panels light the bevels and clusters.
        */}
-      <Lightformer form="rect" intensity={1.6} color="#ffffff" position={[0, 0, 9]} scale={[14, 9, 1]} target={[0, 0, 0]} />
-      <Lightformer form="rect" intensity={1.4} color="#ffd6ea" position={[-4, 2.5, 8]} scale={[5, 4, 1]} target={[0, 0, 0]} />
-      <Lightformer form="rect" intensity={1.4} color="#cde4ff" position={[4.5, -1.5, 8]} scale={[5, 4, 1]} target={[0, 0, 0]} />
-      <Lightformer form="rect" intensity={1.2} color="#d3fff1" position={[-1.5, -3, 8]} scale={[5, 3, 1]} target={[0, 0, 0]} />
-      <Lightformer form="rect" intensity={1.2} color="#fff0c8" position={[2.5, 3, 8]} scale={[4, 3, 1]} target={[0, 0, 0]} />
-      <Lightformer form="rect" intensity={1.5} color="#e6d9ff" position={[6, 1, 6]} scale={[3, 6, 1]} target={[0, 0, 0]} />
+      <Lightformer
+        form="rect"
+        intensity={1.6}
+        color="#ffffff"
+        position={[0, 0, 9]}
+        scale={[14, 9, 1]}
+        target={[0, 0, 0]}
+      />
+      <Lightformer
+        form="rect"
+        intensity={1.4}
+        color="#ffd6ea"
+        position={[-4, 2.5, 8]}
+        scale={[5, 4, 1]}
+        target={[0, 0, 0]}
+      />
+      <Lightformer
+        form="rect"
+        intensity={1.4}
+        color="#cde4ff"
+        position={[4.5, -1.5, 8]}
+        scale={[5, 4, 1]}
+        target={[0, 0, 0]}
+      />
+      <Lightformer
+        form="rect"
+        intensity={1.2}
+        color="#d3fff1"
+        position={[-1.5, -3, 8]}
+        scale={[5, 3, 1]}
+        target={[0, 0, 0]}
+      />
+      <Lightformer
+        form="rect"
+        intensity={1.2}
+        color="#fff0c8"
+        position={[2.5, 3, 8]}
+        scale={[4, 3, 1]}
+        target={[0, 0, 0]}
+      />
+      <Lightformer
+        form="rect"
+        intensity={1.5}
+        color="#e6d9ff"
+        position={[6, 1, 6]}
+        scale={[3, 6, 1]}
+        target={[0, 0, 0]}
+      />
       {/* key from top-left for bevel highlights */}
-      <Lightformer form="rect" intensity={3} color="#ffffff" position={[-5, 6, 4]} scale={[6, 2, 1]} target={[0, 0, 0]} />
+      <Lightformer
+        form="rect"
+        intensity={3}
+        color="#ffffff"
+        position={[-5, 6, 4]}
+        scale={[6, 2, 1]}
+        target={[0, 0, 0]}
+      />
       {/* rim from behind so the back bevel catches a highlight */}
-      <Lightformer form="ring" intensity={2} color="#ffffff" position={[0, 0, -6]} scale={4} target={[0, 0, 0]} />
+      <Lightformer
+        form="ring"
+        intensity={2}
+        color="#ffffff"
+        position={[0, 0, -6]}
+        scale={4}
+        target={[0, 0, 0]}
+      />
     </Environment>
   )
 }
@@ -188,12 +276,24 @@ function Sanitize() {
 }
 
 function Post() {
-  const { bloomIntensity, bloomThreshold, bloomSmoothing, bloomRadius, aberration } = useTuning((s) => s.post)
+  const { bloomIntensity, bloomThreshold, bloomSmoothing, bloomRadius, aberration } = useTuning(
+    (s) => s.post,
+  )
   return (
     <EffectComposer multisampling={0} mergeMode="none">
       <Sanitize />
-      <Bloom intensity={bloomIntensity} luminanceThreshold={bloomThreshold} luminanceSmoothing={bloomSmoothing} radius={bloomRadius} mipmapBlur />
-      <ChromaticAberration offset={[aberration, aberration]} radialModulation={false} modulationOffset={0} />
+      <Bloom
+        intensity={bloomIntensity}
+        luminanceThreshold={bloomThreshold}
+        luminanceSmoothing={bloomSmoothing}
+        radius={bloomRadius}
+        mipmapBlur
+      />
+      <ChromaticAberration
+        offset={[aberration, aberration]}
+        radialModulation={false}
+        modulationOffset={0}
+      />
       {/* postprocessing@6 turns off gl.toneMapping while a composer is active; re-add it here. */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
     </EffectComposer>
