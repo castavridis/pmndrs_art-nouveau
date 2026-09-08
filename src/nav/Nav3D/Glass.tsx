@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import * as THREE from 'three'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import { useGlassPropsFor } from './materials'
 import { glassPresets, useTuning, type GlassPreset } from './tuning'
@@ -24,10 +26,16 @@ export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
   const live = useTuning((s) => s.glass)
   const g = preset ? glassPresets[preset] : live
   const transmissive = useGlassPropsFor(g)
+  // Without transmission there is no volume for the subsurface tint to act in, so the solid
+  // form blends it into the base colour instead (this is what makes palette petals coloured).
+  const solidColor = useMemo(
+    () => '#' + new THREE.Color(g.color).lerp(new THREE.Color(g.attenuationColor), 0.65).getHexString(),
+    [g.color, g.attenuationColor],
+  )
   if (!solid) return <MeshTransmissionMaterial {...transmissive} transmissionSampler={sampler} />
   return (
     <meshPhysicalMaterial
-      color={g.color}
+      color={solidColor}
       roughness={Math.min(g.roughness * 2, 1)}
       metalness={g.metalness}
       ior={g.ior}
