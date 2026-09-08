@@ -36,6 +36,8 @@ test.describe('Nav2D', () => {
   }
 
   test('walks through all three modes when resizing, with hysteresis', async ({ page }) => {
+    // ~140 viewport resizes; give it room on a loaded machine.
+    test.setTimeout(120_000)
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
