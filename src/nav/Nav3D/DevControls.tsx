@@ -209,7 +209,7 @@ export default function DevControls() {
       'reset to code defaults': button(() => {
         replace(baseTuning)
         fillPanel.current(baseTuning)
-        setPresetPanel({ preset: 'roughGlass' })
+        setPresetPanel({ preset: 'silverGlass' })
       }),
     }),
     // Pinned to the top of the panel.

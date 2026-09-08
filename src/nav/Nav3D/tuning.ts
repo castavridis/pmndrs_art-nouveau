@@ -199,7 +199,35 @@ const roughGlassBase = {
     normalRepeat: 1.2,
 } satisfies GlassTuning
 
+/**
+ * Silver glass: the look of the latest Womp render (docs screenshot 2026-09-08): neutral
+ * pale body, no colour tint, iridescent rim and a soft rainbow refraction line.
+ */
+const silverGlass: GlassTuning = {
+  ...roughGlassBase,
+  color: '#ffffff',
+  specularColor: '#ffffff',
+  attenuationColor: '#f2f3f8',
+  attenuationDistance: 3,
+  roughness: 0.05,
+  ior: 1.45,
+  thickness: 0.5,
+  iridescence: 0.7,
+  iridescenceIOR: 1.6,
+  iridescenceThicknessMin: 150,
+  iridescenceThicknessMax: 600,
+  chromaticAberration: 0.3,
+  clearcoat: 1,
+  clearcoatRoughness: 0.05,
+  sheen: 0.15,
+  sheenColor: '#ffffff',
+  envMapIntensity: 1.3,
+  background: '#7b7e88',
+  normalScale: 0.2,
+}
+
 export const glassPresets = {
+  silverGlass,
   roughGlass: roughGlassBase,
   /** Palette tints of Rough Glass. */
   dark: tinted(palette.dark),
@@ -316,7 +344,7 @@ export const defaultLights: LightsTuning = {
 
 /** Code defaults, before anything saved from the leva panel. */
 export const baseTuning: Tuning = {
-  glass: glassPresets.roughGlass,
+  glass: glassPresets.silverGlass,
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0, background: '#2a2d36' },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
@@ -385,8 +413,8 @@ export const useTuning = import.meta.env.DEV
         name: TUNING_KEY,
         // Bump when saved state must be discarded (v1 predates per-page keys and could hold
         // the cube page's black-backdrop preset for the nav).
-        version: 2,
-        migrate: (persisted, version) => (version < 2 ? {} : (persisted as Partial<Tuning>)),
+        version: 3,
+        migrate: (persisted, version) => (version < 3 ? {} : (persisted as Partial<Tuning>)),
         partialize: (s) => pickTuning(s),
         merge: (persisted, current) => ({ ...current, ...mergeTuning(pickTuning(current), (persisted ?? {}) as DeepPartial<Tuning>) }),
       }),
