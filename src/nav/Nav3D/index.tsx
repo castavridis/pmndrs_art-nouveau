@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { lazy, Suspense } from 'react'
 import { NavCanvas } from './Canvas'
+import { Ready } from './Ready'
 import { NavRoot } from './NavRoot'
 import { preloadNavAssets } from './assets'
 
@@ -11,22 +11,6 @@ preloadNavAssets()
 // condition, so neither chunk is emitted in production builds.
 const DevControls = import.meta.env.DEV ? lazy(() => import('./DevControls')) : null
 const DevHandles = import.meta.env.DEV ? lazy(() => import('./DevHandles')) : null
-
-/** Sits inside the same Suspense as the scene, so it only renders once assets resolved. */
-function Ready({ onReady }: { onReady?: () => void }) {
-  const frames = useRef(0)
-  const done = useRef(false)
-  const cb = useRef(onReady)
-  useEffect(() => void (cb.current = onReady), [onReady])
-  useFrame(() => {
-    // Two frames: the first lays out uikit, the second renders the measured pill.
-    if (!done.current && ++frames.current >= 2) {
-      done.current = true
-      cb.current?.()
-    }
-  })
-  return null
-}
 
 export interface Nav3DProps {
   /** Disable postprocessing for low-tier GPUs. */

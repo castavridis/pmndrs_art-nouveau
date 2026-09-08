@@ -31,9 +31,11 @@ export function Pill({ width }: PillProps) {
     return installTransmissionExclusion(scene, m, m.material as THREE.Material)
   }, [scene, glass])
 
+  const mapKey = `${glass.sheenColorMap ? 's' : ''}${glass.roughnessMap ? 'r' : ''}`
   return (
     <mesh ref={mesh} geometry={morph.geometry}>
-      <MeshTransmissionMaterial {...glass} />
+      {/* Remount when a map appears/disappears so the shader recompiles (see Glass.tsx). */}
+      <MeshTransmissionMaterial key={mapKey} {...glass} />
     </mesh>
   )
 }

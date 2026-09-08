@@ -108,6 +108,13 @@ for (const asset of wanted) {
 </svg>
 `
   await writeFile(path.join(outDir, `${asset}.svg`), svg)
+  // Stroke-only twin for the vector/loading mode.
+  const outline = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
+  <path d="${d}" fill="none" stroke="#ffffff" stroke-opacity=".9" stroke-width="1.2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+</svg>
+`
+  await mkdir(path.join(outDir, 'outline'), { recursive: true })
+  await writeFile(path.join(outDir, 'outline', `${asset}.svg`), outline)
   manifest[asset] = { width: w, height: h, originX: +info.originX.toFixed(1), originY: +info.originY.toFixed(1), file: `${asset}.svg` }
   console.log(asset, `${w}×${h}px`, 'filled', result.filled, 'loops', result.loops, 'bytes', svg.length)
 }

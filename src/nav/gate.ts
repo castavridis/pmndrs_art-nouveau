@@ -3,6 +3,8 @@ import type { TierResult } from 'detect-gpu'
 export type Enhancement =
   /** DOM nav only. */
   | { level: '2d'; reason: string }
+  /** DOM nav drawn as vector outlines only (the traced SVGs), no 3D. */
+  | { level: 'svg'; reason: string }
   /** 3D without the EffectComposer. */
   | { level: '3d-lite'; tier: TierResult }
   /** Full 3D. */
@@ -48,6 +50,7 @@ export function enhancementOverride(): Enhancement | null {
   if (typeof window === 'undefined' || !import.meta.env.DEV) return null
   const v = new URLSearchParams(window.location.search).get('nav')
   if (v === '2d') return { level: '2d', reason: 'override' }
+  if (v === 'svg') return { level: 'svg', reason: 'override' }
   if (v === '3d' || v === '3d-lite') return { level: v, tier: { tier: 3, type: 'FALLBACK' } }
   return null
 }

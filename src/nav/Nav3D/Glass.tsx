@@ -29,12 +29,18 @@ export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
   // Without transmission there is no volume for the subsurface tint to act in, so the solid
   // form blends it into the base colour instead (this is what makes palette petals coloured).
   const solidColor = useMemo(
-    () => '#' + new THREE.Color(g.color).lerp(new THREE.Color(g.attenuationColor), 0.65).getHexString(),
+    () =>
+      '#' + new THREE.Color(g.color).lerp(new THREE.Color(g.attenuationColor), 0.65).getHexString(),
     [g.color, g.attenuationColor],
   )
-  if (!solid) return <MeshTransmissionMaterial {...transmissive} transmissionSampler={sampler} />
+  // Adding or removing a map changes the shader's defines; three only recompiles on
+  // needsUpdate, which a prop spread does not set. Remount the material when that flips.
+  const mapKey = `${g.sheenNoise > 0 ? 's' : ''}${g.roughnessNoise > 0 ? 'r' : ''}${g.normalScale > 0 ? 'n' : ''}`
+  if (!solid)
+    return <MeshTransmissionMaterial key={mapKey} {...transmissive} transmissionSampler={sampler} />
   return (
     <meshPhysicalMaterial
+      key={mapKey}
       color={solidColor}
       roughness={Math.min(g.roughness * 2, 1)}
       metalness={g.metalness}

@@ -7,6 +7,9 @@ import { CmdPalette } from './CmdPalette'
 import leftCluster from './assets/fallback/nav-left.svg'
 import rightCluster from './assets/fallback/nav-right.svg'
 import petalSvg from './assets/fallback/petal.svg'
+import leftOutline from './assets/fallback/outline/nav-left.svg'
+import rightOutline from './assets/fallback/outline/nav-right.svg'
+import petalOutline from './assets/fallback/outline/petal.svg'
 import fallback from './assets/fallback/manifest.json'
 import styles from './Nav2D.module.css'
 // Same face as the 3D labels (uikit ships Inter as MSDF), so the DOM anchors sit exactly
@@ -20,7 +23,7 @@ import '@fontsource-variable/inter'
  * Until the first client-side measurement, no `data-mode` is set: the server HTML and
  * the no-JS experience use the `full` layout with a horizontally scrollable pill.
  */
-export function Nav2D({ links }: { links: NavLink[] }) {
+export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: boolean }) {
   const mode = useNavStore((s) => s.mode)
   const [measured, setMeasured] = useState(false)
   const setMode = useNavStore((s) => s.setMode)
@@ -117,6 +120,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
       ref={rootRef}
       className={styles.root}
       data-mode={measured ? mode : undefined}
+      data-vector={vector || undefined}
       style={cssVars}
     >
       <nav aria-label="Main" className={styles.nav}>
@@ -124,7 +128,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
             centres exactly like the 3D ones: the manifest gives each SVG's size and origin. */}
         <img
           className={`${styles.cluster} ${styles.clusterLeft}`}
-          src={leftCluster}
+          src={vector ? leftOutline : leftCluster}
           alt=""
           aria-hidden="true"
           width={fallback['nav-left'].width}
@@ -136,7 +140,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
         />
         <img
           className={`${styles.cluster} ${styles.clusterRight}`}
-          src={rightCluster}
+          src={vector ? rightOutline : rightCluster}
           alt=""
           aria-hidden="true"
           width={fallback['nav-right'].width}
@@ -153,7 +157,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
           <img
             key={i}
             className={styles.petal}
-            src={petalSvg}
+            src={vector ? petalOutline : petalSvg}
             alt=""
             aria-hidden="true"
             width={fallback.petal.width}
