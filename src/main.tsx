@@ -5,6 +5,7 @@ import { App } from './App'
 import { DevGallery } from './DevGallery'
 import { DevStage } from './DevStage'
 import { LogoCube } from './experiments/LogoCube'
+import { CalloutPage } from './experiments/CalloutPage'
 
 const root = document.getElementById('root')!
 const path = window.location.pathname
@@ -14,6 +15,8 @@ const page = !import.meta.env.DEV
     ? <DevStage />
     : path.startsWith('/dev/cube')
       ? <LogoCube />
+      : path.startsWith('/dev/callout')
+        ? <CalloutPage />
       : path.startsWith('/dev/nav')
         ? <DevGallery />
         : <App />

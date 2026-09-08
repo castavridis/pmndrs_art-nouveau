@@ -1,5 +1,6 @@
 import { Suspense, useLayoutEffect, useRef, type ReactNode } from 'react'
-import { Canvas as R3FCanvas, useThree } from '@react-three/fiber'
+import { Canvas as R3FCanvas, useFrame, useThree } from '@react-three/fiber'
+import { Vector2 } from 'three'
 import { Environment, Lightformer, OrbitControls, Preload } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
@@ -44,6 +45,7 @@ export function NavCanvas({ children, postprocessing = true, className, orbit = 
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
       <CameraRig orbit={orbit} framePosition={framePosition} />
+      <SizeGuard />
       {orbit && (
         <>
           <OrbitControls makeDefault enableDamping />
@@ -59,6 +61,26 @@ export function NavCanvas({ children, postprocessing = true, className, orbit = 
       </Suspense>
     </R3FCanvas>
   )
+}
+
+const measured = new Vector2()
+
+/**
+ * @react-three/postprocessing@3.1 shares one module-level size vector between every
+ * EffectComposer, so with two canvases of different sizes on a page the second renderer can
+ * be resized to the first one's dimensions. This re-applies the root's own size whenever the
+ * renderer disagrees; runs before the composer's frame so it corrects itself the same frame.
+ */
+function SizeGuard() {
+  const gl = useThree((s) => s.gl)
+  const size = useThree((s) => s.size)
+  useFrame(() => {
+    gl.getSize(measured)
+    if (Math.abs(measured.x - size.width) > 0.5 || Math.abs(measured.y - size.height) > 0.5) {
+      gl.setSize(size.width, size.height, false)
+    }
+  }, -100)
+  return null
 }
 
 /**

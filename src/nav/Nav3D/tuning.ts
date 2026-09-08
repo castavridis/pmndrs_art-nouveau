@@ -370,7 +370,13 @@ const initStore = (set: (p: Partial<TuningStore> | ((s: TuningStore) => Partial<
  * looks, and sharing one key let a dark nav tune black out the cube.
  */
 export const TUNING_KEY =
-  typeof window !== 'undefined' && window.location.pathname.startsWith('/dev/cube') ? 'cube-tuning' : 'nav-tuning'
+  typeof window === 'undefined'
+    ? 'nav-tuning'
+    : window.location.pathname.startsWith('/dev/cube')
+      ? 'cube-tuning'
+      : window.location.pathname.startsWith('/dev/callout')
+        ? 'callout-tuning'
+        : 'nav-tuning'
 
 // Dev: keep unsaved edits across reloads (localStorage). Prod: the saved JSON only.
 export const useTuning = import.meta.env.DEV

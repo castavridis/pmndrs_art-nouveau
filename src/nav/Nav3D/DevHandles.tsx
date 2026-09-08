@@ -9,6 +9,8 @@ declare global {
     __nav3d?: RootState
     /** Dev-only: the store of the most recently mounted 3D nav. */
     __navStore?: NavStoreApi
+    /** Dev-only: every mounted R3F root, for pages with several canvases. */
+    __nav3dRoots?: RootState[]
   }
 }
 
@@ -17,11 +19,14 @@ export default function DevHandles() {
   const get = useThree((s) => s.get)
   const api = useNavStoreApi()
   useEffect(() => {
-    window.__nav3d = get()
+    const state = get()
+    window.__nav3d = state
     window.__navStore = api
+    ;(window.__nav3dRoots ??= []).push(state)
     return () => {
       delete window.__nav3d
       delete window.__navStore
+      window.__nav3dRoots = (window.__nav3dRoots ?? []).filter((s) => s !== state)
     }
   }, [get, api])
   return null
