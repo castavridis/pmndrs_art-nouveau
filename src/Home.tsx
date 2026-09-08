@@ -19,16 +19,16 @@ export function Home() {
   const client = useIsClient()
   return (
     <>
-      <header style={{ padding: '32px 16px 0' }}>
+      <header style={{ padding: '72px 8px 0' }}>
         <Nav links={LINKS} />
       </header>
       <main
         style={{
           maxWidth: 900,
           margin: '0 auto',
-          padding: '48px 24px 96px',
+          padding: 'clamp(32px, 6vw, 48px) clamp(16px, 4vw, 24px) 96px',
           display: 'grid',
-          gap: 56,
+          gap: 'clamp(40px, 7vw, 56px)',
         }}
       >
         <section aria-label="Announcement" style={{ display: 'grid', justifyItems: 'center' }}>
@@ -43,7 +43,7 @@ export function Home() {
           <h1
             style={{
               margin: 0,
-              fontSize: 40,
+              fontSize: 'clamp(28px, 8vw, 40px)',
               fontWeight: 500,
               letterSpacing: '-0.02em',
               lineHeight: 1.1,
@@ -51,7 +51,7 @@ export function Home() {
           >
             React, three and a garden of glass.
           </h1>
-          <p style={{ margin: 0, fontSize: 18, lineHeight: 1.5, opacity: 0.75, maxWidth: 640 }}>
+          <p style={{ margin: 0, fontSize: 'clamp(16px, 4.5vw, 18px)', lineHeight: 1.5, opacity: 0.75, maxWidth: 640 }}>
             The pmndrs collective builds the tools that make 3D on the web feel like the rest of
             your app: a renderer that speaks React, layout that flexes, springs that settle.
           </p>

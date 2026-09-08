@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
 import { Ready } from '../nav/Nav3D/Ready'
@@ -15,10 +15,11 @@ const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHand
 
 if (typeof window !== 'undefined') preloadAnnouncementAssets()
 import { useOutlines } from '../nav/outlines'
+import { useMeasure } from './useMeasure'
 
 export interface AnnouncementProps {
   children: ReactNode
-  /** Banner width in px; the flourishes stay pinned to the ends. */
+  /** Maximum banner width in px; it fills its container up to this. The flourishes stay pinned to the ends. */
   width?: number
   /** `3d` (default) cross-fades from the vector outlines once rendered; `svg` stays vector. */
   variant?: '3d' | 'svg'
@@ -38,6 +39,10 @@ export function Announcement({
 }: AnnouncementProps) {
   const bleedX = tokens.clusterBleedX
   const bleedY = tokens.clusterBleedY + 20
+  // The banner is sized by its container (up to `width`) and its content (at least
+  // announcement.height); the glass slab follows the measured box.
+  const rootRef = useRef<HTMLDivElement>(null)
+  const size = useMeasure(rootRef, { width, height: announcement.height })
   const [ready, setReady] = useState(false)
   const vector = variant === 'svg' || !ready
   // Dev: outlines over the live 3D as well.
@@ -48,8 +53,9 @@ export function Announcement({
   const end = announcement.height / 2
   return (
     <div
+      ref={rootRef}
       className={`${styles.root} ${vector ? styles.vector : ''} ${outlines ? styles.outlined : ''}`}
-      style={{ width, height: announcement.height }}
+      style={{ width: '100%', maxWidth: width, minHeight: announcement.height }}
     >
       {/* Vector layer: outlined banner (CSS) and the traced flourishes pinned to the ends. */}
       <img
@@ -84,7 +90,7 @@ export function Announcement({
         >
           <NavCanvas postprocessing={postprocessing}>
             <Suspense fallback={null}>
-              <Scene width={width} />
+              <Scene width={size.width} height={size.height} />
               <Ready onReady={() => setReady(true)} />
             </Suspense>
             {DevHandles && (
@@ -97,7 +103,11 @@ export function Announcement({
       )}
       <div
         className={styles.content}
-        style={{ padding: `0 ${announcement.paddingX}px`, paddingLeft: announcement.paddingX + 48 }}
+        style={{
+          minHeight: announcement.height,
+          padding: `16px ${announcement.paddingX}px`,
+          paddingLeft: announcement.paddingX + 48,
+        }}
       >
         {children}
       </div>
@@ -105,12 +115,11 @@ export function Announcement({
   )
 }
 
-function Scene({ width }: { width: number }) {
+function Scene({ width, height }: { width: number; height: number }) {
   const { left, right } = useAnnouncementAssets()
   const geometry = useMemo(
-    () =>
-      makeRoundedRectGeometry(width, announcement.height, announcement.radius, announcement.depth),
-    [width],
+    () => makeRoundedRectGeometry(width, height, announcement.radius, announcement.depth),
+    [width, height],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
   const end = px(width) / 2 - px(announcement.height / 2)

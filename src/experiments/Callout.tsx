@@ -73,6 +73,7 @@ export function Callout({
   const contentRef = useRef<HTMLDivElement>(null)
   const pointer = usePointerParallax(rootRef)
   const size = useMeasure(rootRef, { width: callout.width, height: callout.height })
+  const narrow = size.width < 440
   useDomTilt(contentRef, pointer, variant === 'plain' ? 0 : 1.5, 4)
   const cardRef = useRef<HTMLDivElement>(null)
   useDomTilt(cardRef, pointer, variant === 'plain' ? 4 : 0, 0)
@@ -172,12 +173,20 @@ export function Callout({
         <div
           ref={contentRef}
           className={styles.content}
-          style={{
-            padding: callout.padding,
-            paddingLeft: callout.iconX + callout.icon * 0.75,
-            // Never shorter than the icon needs, however little content there is.
-            minHeight: callout.iconY + callout.icon / 2 + callout.padding,
-          }}
+          style={
+            narrow
+              ? {
+                  // Phone widths: the text runs below the lens instead of beside it.
+                  padding: callout.padding * 0.7,
+                  paddingTop: callout.iconY + callout.icon / 2 + 12,
+                }
+              : {
+                  padding: callout.padding,
+                  paddingLeft: callout.iconX + callout.icon * 0.75,
+                  // Never shorter than the icon needs, however little content there is.
+                  minHeight: callout.iconY + callout.icon / 2 + callout.padding,
+                }
+          }
         >
           <div className={styles.kind} style={{ color: tint }}>
             {k.label}
