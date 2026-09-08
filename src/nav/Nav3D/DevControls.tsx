@@ -8,13 +8,13 @@ import {
   pickSchemes,
   matchesPreset,
   pickTuning,
-  type GlassPreset,
   type GlassTuning,
   type RectLightTuning,
   type Tuning,
   type Vec3,
 } from './tuning'
 import { useOutlines } from '../outlines'
+import { isBuiltInPreset, presetNames, useCustomPresets } from './customPresets'
 
 // leva vector controls use tuples; the store uses {x,y,z}.
 type V = [number, number, number]
@@ -58,13 +58,52 @@ export default function DevControls() {
   useEffect(() => setOverlay(outlines), [outlines, setOverlay])
   useEffect(() => setViewPanel({ outlines: overlay }), [overlay, setViewPanel])
 
-  const [{ preset }, setPresetPanel] = useControls(() => ({
-    preset: {
-      value: useTuning.getState().preset,
-      options: Object.keys(glassPresets) as GlassPreset[],
-    },
-    status: { value: '', editable: false },
-  }))
+  // Built-in presets plus the user's own (panel "presets" folder); the select rebuilds when
+  // the list changes.
+  const custom = useCustomPresets((s) => s.presets)
+  const names = presetNames(custom)
+  const [{ preset }, setPresetPanel] = useControls(
+    () => ({
+      preset: { value: useTuning.getState().preset, options: names },
+      status: { value: '', editable: false },
+    }),
+    [names.join('|')],
+  )
+  useControls(
+    'presets',
+    () => ({
+      'save current as new…': button(() => {
+        const name = window.prompt('Preset name')?.trim()
+        if (!name) return
+        if (isBuiltInPreset(name)) return window.alert(`"${name}" is a built-in preset; pick another name.`)
+        const st = useTuning.getState()
+        useCustomPresets.getState().add(name, st.glass)
+        st.applyPreset(name)
+      }),
+      'update current preset': button(() => {
+        const st = useTuning.getState()
+        if (isBuiltInPreset(st.preset)) return window.alert('Built-in presets are code; save the look as a new preset instead.')
+        useCustomPresets.getState().add(st.preset, st.glass)
+      }),
+      'delete current preset': button(() => {
+        const st = useTuning.getState()
+        if (isBuiltInPreset(st.preset)) return window.alert('Built-in presets cannot be deleted.')
+        if (!window.confirm(`Delete preset "${st.preset}"?`)) return
+        useCustomPresets.getState().remove(st.preset)
+        st.applyPreset(nearestBuiltIn(st.glass))
+      }),
+      'save presets to project': button(() => {
+        fetch('/__nav/presets', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(useCustomPresets.getState().presets),
+        })
+          .then((r) => (r.ok ? console.info('[nav] presets saved to src/nav/Nav3D/presets.saved.json') : console.warn('[nav] save failed', r.status)))
+          .catch((e) => console.warn('[nav] save failed', e))
+      }),
+    }),
+    { order: 0, collapsed: true },
+  )
 
   const [glass, setGlassPanel] = useControls('glass', () => ({
     look: folder({
@@ -193,15 +232,21 @@ export default function DevControls() {
 
   // Initialise the panel from the store (saved JSON + localStorage), and again whenever the
   // page theme swaps the active scheme (light / dark carry separate values).
+  // The store is the source of truth at mount: the panel's schema defaults must not be
+  // pushed back before the fill has landed, so the panel → store effects below stay off
+  // until after this commit (they run in the same pass; the microtask lands after it).
+  const live = useRef(false)
   useEffect(() => {
+    live.current = false
     fillPanel.current(pickTuning(useTuning.getState()))
+    queueMicrotask(() => void (live.current = true))
   }, [scheme])
 
   // Preset select → store and panel (only when the user picked a different one).
   useEffect(() => {
     if (preset === useTuning.getState().preset) return
     applyPreset(preset)
-    setGlassPanel(glassPresets[preset])
+    setGlassPanel(useTuning.getState().glass)
   }, [preset, applyPreset, setGlassPanel])
   // Store preset → select (page defaults, import, reset).
   const storePreset = useTuning((s) => s.preset)
@@ -262,11 +307,12 @@ export default function DevControls() {
     { order: -1 },
   )
 
-  // Panel → store.
-  useEffect(() => set('glass', glass as GlassTuning), [glass, set])
-  useEffect(() => set('env', env), [env, set])
-  useEffect(() => set('post', post), [post, set])
+  // Panel → store (skipped during the mount / scheme-swap commit, see `live`).
+  useEffect(() => void (live.current && set('glass', glass as GlassTuning)), [glass, set])
+  useEffect(() => void (live.current && set('env', env)), [env, set])
+  useEffect(() => void (live.current && set('post', post)), [post, set])
   useEffect(() => {
+    if (!live.current) return
     set('lights', {
       ...lights,
       roam,
@@ -304,4 +350,19 @@ function useRectControls(d: RectLightTuning): {
     value: { name: d.name, ...c, position: fromV(c.position), rotation: fromV(c.rotation) },
     setPanel,
   }
+}
+
+/** The built-in preset closest to `glass` (fallback after deleting a user preset). */
+function nearestBuiltIn(glass: GlassTuning): keyof typeof glassPresets {
+  let best: keyof typeof glassPresets = 'silverGlass'
+  let bestDiff = Infinity
+  for (const name of Object.keys(glassPresets) as (keyof typeof glassPresets)[]) {
+    const p = glassPresets[name] as GlassTuning
+    const diff = (Object.keys(p) as (keyof GlassTuning)[]).filter((k) => glass[k] !== p[k]).length
+    if (diff < bestDiff) {
+      best = name
+      bestDiff = diff
+    }
+  }
+  return best
 }

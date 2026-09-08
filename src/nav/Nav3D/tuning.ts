@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import savedJson from './tuning.saved.json'
+import { getPreset, presetNames, type PresetName } from './customPresets'
 
 /**
  * Live-tunable scene parameters. Defaults are the shipped values; in dev, `DevControls`
@@ -125,8 +126,8 @@ export interface LightsTuning {
 }
 
 export interface Tuning {
-  /** The preset the glass was last set from; edits on top of it keep the name. */
-  preset: GlassPreset
+  /** The preset the glass was last set from (built-in or user-defined); edits keep the name. */
+  preset: PresetName
   glass: GlassTuning
   lights: LightsTuning
   env: {
@@ -433,17 +434,18 @@ export const defaultSchemes: SchemeTunings = {
 export const defaultTuning: Tuning = defaultSchemes.dark
 
 /** True when `glass` has the exact values of `preset`. */
-export function matchesPreset(glass: GlassTuning, preset: GlassPreset): boolean {
-  const p = glassPresets[preset] as GlassTuning
+export function matchesPreset(glass: GlassTuning, preset: PresetName): boolean {
+  const p = getPreset(preset)
+  if (!p) return false
   return (Object.keys(p) as (keyof GlassTuning)[]).every((k) => glass[k] === p[k])
 }
 
 /** The preset with the fewest differing values: for tunings saved before the name was kept. */
-export function nearestPreset(glass: GlassTuning): GlassPreset {
-  let best: GlassPreset = 'silverGlass'
+export function nearestPreset(glass: GlassTuning): PresetName {
+  let best: PresetName = 'silverGlass'
   let bestDiff = Infinity
-  for (const name of Object.keys(glassPresets) as GlassPreset[]) {
-    const p = glassPresets[name] as GlassTuning
+  for (const name of presetNames()) {
+    const p = getPreset(name)!
     const diff = (Object.keys(p) as (keyof GlassTuning)[]).filter((k) => glass[k] !== p[k]).length
     if (diff < bestDiff) {
       best = name
@@ -454,8 +456,8 @@ export function nearestPreset(glass: GlassTuning): GlassPreset {
 }
 
 /** Keep an explicit preset name; otherwise infer it from the glass values. */
-function withPreset(t: Tuning, explicit: GlassPreset | undefined): Tuning {
-  return { ...t, preset: explicit && explicit in glassPresets ? explicit : nearestPreset(t.glass) }
+function withPreset(t: Tuning, explicit: PresetName | undefined): Tuning {
+  return { ...t, preset: explicit && getPreset(explicit) ? explicit : nearestPreset(t.glass) }
 }
 
 /** The object-valued groups of Tuning (everything but the preset name). */
@@ -467,7 +469,7 @@ type TuningStore = Tuning & {
   /** The other scheme's values, parked while inactive. */
   schemes: SchemeTunings
   set: <K extends TuningGroup>(group: K, patch: Partial<Tuning[K]>) => void
-  applyPreset: (name: GlassPreset) => void
+  applyPreset: (name: PresetName) => void
   /** Replace the active scheme's values (import / reset). */
   replace: (t: Tuning) => void
   /** Park the active values and load the other scheme's. */
@@ -487,7 +489,7 @@ const initStore = (set: (p: Partial<TuningStore> | ((s: TuningStore) => Partial<
   scheme: 'dark',
   schemes: defaultSchemes,
   set: (group, patch) => set((s) => ({ [group]: { ...(s[group] as object), ...patch } }) as Partial<Tuning>),
-  applyPreset: (name) => set({ glass: glassPresets[name], preset: name }),
+  applyPreset: (name) => set({ glass: getPreset(name) ?? glassPresets.silverGlass, preset: name }),
   // Merge so a JSON from before a field existed still yields a complete tuning.
   replace: (t) => set((s) => pickTuning(withPreset(mergeTuning(baseSchemes[s.scheme], t), t.preset))),
   setScheme: (scheme) =>

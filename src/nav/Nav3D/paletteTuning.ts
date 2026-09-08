@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import savedJson from './palette.saved.json'
-import { glassPresets, palette, type GlassPreset, type GlassTuning, type PaletteName } from './tuning'
+import { glassPresets, palette, type GlassTuning, type PaletteName } from './tuning'
+import { getPreset, useCustomPresets, type PresetName } from './customPresets'
 
 /** Per-colour edits on top of the code presets (see /dev/palette). */
 export type PaletteOverrides = Partial<Record<PaletteName, Partial<GlassTuning>>>
@@ -35,17 +36,18 @@ export const usePaletteTuning = import.meta.env.DEV
 export const isPaletteName = (name: string): name is PaletteName => name in palette
 
 /** A preset's glass with the palette page's edits applied (non-palette presets pass through). */
-export function resolvePreset(name: GlassPreset, overrides: PaletteOverrides = usePaletteTuning.getState().overrides): GlassTuning {
-  const base = glassPresets[name] as GlassTuning
+export function resolvePreset(name: PresetName, overrides: PaletteOverrides = usePaletteTuning.getState().overrides): GlassTuning {
+  const base = getPreset(name) ?? (glassPresets.silverGlass as GlassTuning)
   const o = isPaletteName(name) ? overrides[name] : undefined
   return o ? { ...base, ...o } : base
 }
 
 /** Reactive form of resolvePreset. */
-export function usePresetGlass(name: GlassPreset): GlassTuning {
+export function usePresetGlass(name: PresetName): GlassTuning {
   const o = usePaletteTuning((s) => (isPaletteName(name) ? s.overrides[name] : undefined))
+  const custom = useCustomPresets((s) => s.presets[name])
   return useMemo(() => {
-    const base = glassPresets[name] as GlassTuning
+    const base = getPreset(name) ?? custom ?? (glassPresets.silverGlass as GlassTuning)
     return o ? { ...base, ...o } : base
-  }, [name, o])
+  }, [name, o, custom])
 }

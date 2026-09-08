@@ -3,7 +3,8 @@ import * as THREE from 'three'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { getSheenNoise, registerTransmissionHost, useGlassPropsFor } from './materials'
-import { useTuning, type GlassPreset } from './tuning'
+import { useTuning } from './tuning'
+import type { PresetName } from './customPresets'
 import { usePresetGlass } from './paletteTuning'
 
 export interface GlassProps {
@@ -20,7 +21,7 @@ export interface GlassProps {
    */
   sampler?: boolean
   /** Use a fixed preset (palette tint, indicator) instead of the live-tuned look. */
-  preset?: GlassPreset
+  preset?: PresetName
 }
 
 /** The one shared glass look (see tuning.ts presets) in its three render forms. */

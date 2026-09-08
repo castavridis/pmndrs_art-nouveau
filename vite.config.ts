@@ -12,6 +12,7 @@ function navTuningWriter(): Plugin {
   const files: Record<string, string> = {
     '/__nav/tuning': path.resolve('src/nav/Nav3D/tuning.saved.json'),
     '/__nav/palette': path.resolve('src/nav/Nav3D/palette.saved.json'),
+    '/__nav/presets': path.resolve('src/nav/Nav3D/presets.saved.json'),
   }
   return {
     name: 'nav-tuning-writer',
