@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo } from 'react'
+import { RecenterButton } from '../nav/Nav3D/recenter'
 import * as THREE from 'three'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
@@ -46,6 +47,7 @@ export default function LogoCubeScene() {
           </Suspense>
         )}
       </NavCanvas>
+      <RecenterButton />
       {DevControls && (
         <Suspense fallback={null}>
           <DevControls />

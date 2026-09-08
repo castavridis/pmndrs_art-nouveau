@@ -7,6 +7,7 @@ import type { PerspectiveCamera } from 'three'
 import { tokens } from '../tokens'
 import { useLightsKey, useTuning } from './tuning'
 import { Lights, RectLightformers } from './Lights'
+import { Recenter } from './recenter'
 
 export interface NavCanvasProps {
   children?: ReactNode
@@ -43,7 +44,12 @@ export function NavCanvas({ children, postprocessing = true, className, orbit = 
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
       <CameraRig orbit={orbit} framePosition={framePosition} />
-      {orbit && <OrbitControls makeDefault enableDamping />}
+      {orbit && (
+        <>
+          <OrbitControls makeDefault enableDamping />
+          <Recenter framePosition={framePosition ?? [0, 1.5, 8]} />
+        </>
+      )}
       <Suspense fallback={null}>
         <Studio />
         <Lights />

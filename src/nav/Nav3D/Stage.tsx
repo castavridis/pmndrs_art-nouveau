@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { RecenterButton } from './recenter'
 import { NavCanvas } from './Canvas'
 import { NavRoot } from './NavRoot'
 
@@ -17,6 +18,7 @@ export default function Stage() {
           </Suspense>
         )}
       </NavCanvas>
+      <RecenterButton />
       {DevControls && (
         <Suspense fallback={null}>
           <DevControls />
