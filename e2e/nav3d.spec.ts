@@ -35,6 +35,8 @@ test.describe('Nav3D (progressive enhancement)', () => {
     await page.setViewportSize({ width: 1440, height: 600 })
     await page.goto('/?nav=3d')
     await expect(page.locator('[data-3d]')).toBeAttached({ timeout: 15000 })
+    // The store handle comes from a lazily loaded dev chunk; wait for it before reading.
+    await page.waitForFunction(() => !!window.__navStore)
     const seen: (string | null)[] = []
     for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab')
