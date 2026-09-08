@@ -89,6 +89,7 @@ export default function DevControls() {
   const [env, setEnvPanel] = useControls('environment', () => ({
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
+    background: defaultTuning.env.background,
   }))
   const [post, setPostPanel] = useControls('post', () => ({
     bloomIntensity: { value: defaultTuning.post.bloomIntensity, min: 0, max: 2 },

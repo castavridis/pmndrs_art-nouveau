@@ -91,12 +91,12 @@ function CameraRig({ orbit, framePosition }: { orbit: boolean; framePosition?: [
  * Pastel panels at different angles are what the iridescent glass picks up as gradients.
  */
 function Studio() {
-  const { intensity, rotation } = useTuning((s) => s.env)
-  const lightsKey = useLightsKey()
+  const { intensity, rotation, background } = useTuning((s) => s.env)
+  const lightsKey = useLightsKey() + background
   return (
     // Keyed on the lights so the one-shot cubemap re-renders whenever a strip is tweaked.
     <Environment key={lightsKey} resolution={256} frames={1} environmentIntensity={intensity} environmentRotation={[0, rotation, 0]}>
-      <color attach="background" args={['#2a2d36']} />
+      <color attach="background" args={[background]} />
       <RectLightformers />
       {/*
        * The pill's front face reflects the direction straight behind the camera (+z), so that is

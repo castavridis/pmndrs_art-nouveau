@@ -110,6 +110,8 @@ export interface Tuning {
   env: {
     intensity: number
     rotation: number
+    /** Backdrop of the environment cubemap: what glass reflects where no panel is. */
+    background: string
   }
   post: {
     bloomIntensity: number
@@ -210,18 +212,23 @@ export const glassPresets = {
     specularColor: '#ffffff',
     attenuationColor: '#ffffff',
     attenuationDistance: 100,
-    roughness: 0.02,
-    ior: 1.5,
-    thickness: 1.6,
-    chromaticAberration: 0.6,
+    roughness: 0,
+    // Low IOR + thin volume: the bevelled edges bend the view less, so the dark band at the
+    // rim stays narrow; the aberration supplies the rainbow fringe of the reference.
+    ior: 1.3,
+    thickness: 0.3,
+    chromaticAberration: 0.25,
     anisotropicBlur: 0,
     sheen: 0,
-    clearcoat: 1,
+    clearcoat: 0,
     clearcoatRoughness: 0,
-    envMapIntensity: 1.2,
-    background: '#121210',
+    // Faces would otherwise mirror the big panel behind the camera and go grey.
+    envMapIntensity: 0.3,
+    background: '#000000',
     normalScale: 0,
-    samples: 8,
+    // Sharp glass needs no blur samples; a 1024 buffer keeps the interior crisp at 60fps.
+    samples: 2,
+    resolution: 1024,
   },
   /** Current-page indicator petal: Rough Glass with a stronger green body. */
   indicator: {
@@ -299,7 +306,7 @@ export const defaultLights: LightsTuning = {
 export const baseTuning: Tuning = {
   glass: glassPresets.roughGlass,
   lights: defaultLights,
-  env: { intensity: 0.6, rotation: 0 },
+  env: { intensity: 0.6, rotation: 0, background: '#2a2d36' },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }
 

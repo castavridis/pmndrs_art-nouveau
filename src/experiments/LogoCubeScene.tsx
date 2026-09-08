@@ -20,7 +20,11 @@ export default function LogoCubeScene() {
   // the nav's default (the tuning store is shared and persisted per browser).
   useEffect(() => {
     const st = useTuning.getState()
-    if (JSON.stringify(st.glass) === JSON.stringify(glassPresets.roughGlass)) st.applyPreset('clearCube')
+    if (JSON.stringify(st.glass) === JSON.stringify(glassPresets.roughGlass)) {
+      st.applyPreset('clearCube')
+      // A lighter backdrop so the bevels catch something; the nav's default is much darker.
+      st.set('env', { intensity: 1, background: '#a0a3b0' })
+    }
   }, [])
   return (
     <>
