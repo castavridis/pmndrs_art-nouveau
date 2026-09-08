@@ -98,6 +98,8 @@ interface GroupProps {
   /** Glass preset (solid variant, so the interior stays bright) or a flat palette colour. */
   preset?: GlassPreset
   colour?: string
+  /** Restrict to one box (index) instead of spreading by volume. */
+  boxIndex?: number
   count: number
   seed: number
   speed: number
@@ -105,10 +107,13 @@ interface GroupProps {
   margin: number
 }
 
-function InstancedSwarm({ boxes, geometry, preset, colour, count, seed, speed, scale, margin }: GroupProps) {
+function InstancedSwarm({ boxes, geometry, preset, colour, boxIndex, count, seed, speed, scale, margin }: GroupProps) {
   const mesh = useRef<THREE.InstancedMesh>(null!)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
-  const swarm = useMemo(() => new Swarm(boxes, count, seed, speed, scale, margin), [boxes, count, seed, speed, scale, margin])
+  const swarm = useMemo(
+    () => new Swarm(boxIndex === undefined ? boxes : [boxes[boxIndex % boxes.length]!], count, seed, speed, scale, margin),
+    [boxes, boxIndex, count, seed, speed, scale, margin],
+  )
   useLayoutEffect(() => {
     const m = mesh.current
     if (!m) return
@@ -151,7 +156,18 @@ export function Inside({ boxes, petals = 40, shapes = 8 }: InsideProps) {
         <InstancedSwarm key={`${preset}-${i}`} boxes={boxes} geometry={petalLo} preset={preset} count={Math.min(per, petals - i * per)} seed={100 + i} speed={0.12} scale={[1.2, 2.2]} margin={0.15} />
       ))}
       {SHAPE_COLOURS.slice(0, shapes).map((name, i) => (
-        <InstancedSwarm key={`shape-${name}`} boxes={boxes} geometry={i % 2 ? sphere : cube} colour={palette[name]} count={1} seed={900 + i} speed={0.08} scale={[0.8, 1.2]} margin={0.3} />
+        <InstancedSwarm
+          key={`shape-${name}`}
+          boxes={boxes}
+          boxIndex={i}
+          geometry={i % 2 ? sphere : cube}
+          colour={palette[name]}
+          count={1}
+          seed={900 + i * 7919}
+          speed={0.08}
+          scale={[0.8, 1.2]}
+          margin={0.3}
+        />
       ))}
     </>
   )
