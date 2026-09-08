@@ -1,0 +1,65 @@
+{
+  "nav-left": {
+    "width": 113.2,
+    "height": 110.3,
+    "originX": 55.3,
+    "originY": 73.4,
+    "file": "nav-left.svg"
+  },
+  "nav-right": {
+    "width": 104.1,
+    "height": 108.9,
+    "originX": 79.6,
+    "originY": 38,
+    "file": "nav-right.svg"
+  },
+  "petal": {
+    "width": 19.2,
+    "height": 19.2,
+    "originX": 9.6,
+    "originY": 9.6,
+    "file": "petal.svg"
+  },
+  "flower": {
+    "width": 475.9,
+    "height": 447.5,
+    "originX": 238,
+    "originY": 223.8,
+    "file": "flower.svg"
+  },
+  "logo": {
+    "width": 28,
+    "height": 28,
+    "originX": 14,
+    "originY": 14,
+    "file": "logo.svg"
+  },
+  "logo-cube": {
+    "width": 802.8,
+    "height": 802.3,
+    "originX": 401.4,
+    "originY": 401.1,
+    "file": "logo-cube.svg"
+  },
+  "callout-icon": {
+    "width": 134.3,
+    "height": 153.1,
+    "originX": 83.5,
+    "originY": 102.3,
+    "file": "callout-icon.svg"
+  },
+  "announcement-left": {
+    "width": 147,
+    "height": 152.5,
+    "originX": 79.1,
+    "originY": 93.7,
+    "file": "announcement-left.svg"
+  },
+  "announcement-right": {
+    "width": 143.3,
+    "height": 130.1,
+    "originX": 49.1,
+    "originY": 57.2,
+    "file": "announcement-right.svg"
+  }
+}

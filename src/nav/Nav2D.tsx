@@ -4,8 +4,10 @@ import { tokens, tokensToCssVars } from './tokens'
 import { NAV_MODES, type NavLink, type NavMode } from './types'
 import { Logo } from './Logo'
 import { CmdPalette } from './CmdPalette'
-import leftCluster from './assets/left.svg'
-import rightCluster from './assets/right.svg'
+import leftCluster from './assets/fallback/nav-left.svg'
+import rightCluster from './assets/fallback/nav-right.svg'
+import petalSvg from './assets/fallback/petal.svg'
+import fallback from './assets/fallback/manifest.json'
 import styles from './Nav2D.module.css'
 // Same face as the 3D labels (uikit ships Inter as MSDF), so the DOM anchors sit exactly
 // under their 3D twins: focus rings and hover land on the right item.
@@ -111,18 +113,54 @@ export function Nav2D({ links }: { links: NavLink[] }) {
   const petalCount = Math.min(Math.max(links.length, 1), 3)
 
   return (
-    <div ref={rootRef} className={styles.root} data-mode={measured ? mode : undefined} style={cssVars}>
+    <div
+      ref={rootRef}
+      className={styles.root}
+      data-mode={measured ? mode : undefined}
+      style={cssVars}
+    >
       <nav aria-label="Main" className={styles.nav}>
-        <img className={`${styles.cluster} ${styles.clusterLeft}`} src={leftCluster} alt="" aria-hidden="true" width={160} height={160} />
-        <img className={`${styles.cluster} ${styles.clusterRight}`} src={rightCluster} alt="" aria-hidden="true" width={160} height={160} />
+        {/* Traced silhouettes of the 3D clusters (scripts/trace-svgs.mjs), pinned to the pill's cap
+            centres exactly like the 3D ones: the manifest gives each SVG's size and origin. */}
+        <img
+          className={`${styles.cluster} ${styles.clusterLeft}`}
+          src={leftCluster}
+          alt=""
+          aria-hidden="true"
+          width={fallback['nav-left'].width}
+          height={fallback['nav-left'].height}
+          style={{
+            left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX,
+            top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY,
+          }}
+        />
+        <img
+          className={`${styles.cluster} ${styles.clusterRight}`}
+          src={rightCluster}
+          alt=""
+          aria-hidden="true"
+          width={fallback['nav-right'].width}
+          height={fallback['nav-right'].height}
+          style={{
+            right:
+              tokens.clusterBleedX +
+              tokens.pillRadius -
+              (fallback['nav-right'].width - fallback['nav-right'].originX),
+            top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY,
+          }}
+        />
         {Array.from({ length: petalCount }, (_, i) => (
-          <span
+          <img
             key={i}
             className={styles.petal}
+            src={petalSvg}
+            alt=""
             aria-hidden="true"
+            width={fallback.petal.width}
+            height={fallback.petal.height}
             style={{
               left: `${30 + (i * 40) / petalCount}%`,
-              top: i % 2 ? '18%' : '78%',
+              top: i % 2 ? '10%' : '80%',
               transform: `rotate(${-30 + i * 35}deg)`,
             }}
           />
@@ -148,7 +186,14 @@ export function Nav2D({ links }: { links: NavLink[] }) {
             aria-controls="nav-menu"
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+            >
               {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
             </svg>
             <span className={styles.srOnly}>Menu</span>
@@ -174,7 +219,13 @@ export function Nav2D({ links }: { links: NavLink[] }) {
           </button>
         </div>
 
-        <div ref={menuRef} id="nav-menu" className={styles.menu} data-open={menuOpen} hidden={mode !== 'collapsed' || !menuOpen}>
+        <div
+          ref={menuRef}
+          id="nav-menu"
+          className={styles.menu}
+          data-open={menuOpen}
+          hidden={mode !== 'collapsed' || !menuOpen}
+        >
           {mode === 'collapsed' && <LinkList links={links} active={active} />}
         </div>
       </nav>

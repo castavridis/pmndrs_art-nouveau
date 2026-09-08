@@ -224,30 +224,14 @@
 /* --- clusters ------------------------------------------------------------ */
 .cluster {
   position: absolute;
-  top: 50%;
-  width: calc(var(--nav-pill-height) * 1.7);
-  height: auto;
   pointer-events: none;
   user-select: none;
   z-index: 1;
-}
-.clusterLeft {
-  left: 0;
-  transform: translate(-4%, -62%);
-}
-.clusterRight {
-  right: 0;
-  transform: translate(4%, -36%);
 }
 
 /* --- petals (2D: purely decorative dots; hidden in compact/collapsed) ------ */
 .petal {
   position: absolute;
-  width: 14px;
-  height: 9px;
-  border-radius: 50%;
-  background: linear-gradient(120deg, #e9d8ff, #d4fff1);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.8);
   pointer-events: none;
   z-index: 1;
 }

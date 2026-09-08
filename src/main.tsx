@@ -8,6 +8,7 @@ import { LogoCube } from './experiments/LogoCube'
 import { CalloutPage } from './experiments/CalloutPage'
 import { AnnouncementPage } from './experiments/AnnouncementPage'
 import { DevIndex } from './experiments/DevIndex'
+import { TracePage } from './experiments/TracePage'
 
 const root = document.getElementById('root')!
 const path = window.location.pathname
@@ -21,6 +22,8 @@ const page = !import.meta.env.DEV ? (
   <CalloutPage />
 ) : path.startsWith('/dev/announcement') ? (
   <AnnouncementPage />
+) : path.startsWith('/dev/trace') ? (
+  <TracePage />
 ) : /^\/dev\/?$/.test(path) ? (
   <DevIndex />
 ) : path.startsWith('/dev/nav') ? (
