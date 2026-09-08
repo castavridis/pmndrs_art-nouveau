@@ -106,6 +106,8 @@ export default function DevControls() {
     luminanceScale: { value: L.luminanceScale, min: 0, max: 2 },
     emitters: L.emitters,
     emitterScale: { value: L.emitterScale, min: 0, max: 1 },
+    sweep: { value: L.sweep, min: 0, max: 1 },
+    sweepRange: { value: L.sweepRange, min: 0, max: 200 },
   }))
   const [oh, setOhPanel] = useControls('lights.overhead', () => ({
     color: L.overhead.color,

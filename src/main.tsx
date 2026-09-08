@@ -1,7 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
-import { App } from './App'
+import { Home } from './Home'
+import { Demo } from './Demo'
 import { DevGallery } from './DevGallery'
 import { DevStage } from './DevStage'
 import { LogoCube } from './experiments/LogoCube'
@@ -9,11 +10,14 @@ import { CalloutPage } from './experiments/CalloutPage'
 import { AnnouncementPage } from './experiments/AnnouncementPage'
 import { DevIndex } from './experiments/DevIndex'
 import { TracePage } from './experiments/TracePage'
+import { FrankensteinPage } from './experiments/FrankensteinPage'
 
 const root = document.getElementById('root')!
 const path = window.location.pathname
 const page = !import.meta.env.DEV ? (
-  <App />
+  <Home />
+) : path.startsWith('/dev/demo') ? (
+  <Demo />
 ) : path.startsWith('/dev/stage') ? (
   <DevStage />
 ) : path.startsWith('/dev/cube') ? (
@@ -24,12 +28,14 @@ const page = !import.meta.env.DEV ? (
   <AnnouncementPage />
 ) : path.startsWith('/dev/trace') ? (
   <TracePage />
+) : path.startsWith('/dev/x/') ? (
+  <FrankensteinPage slug={path.split('/')[3] ?? ''} />
 ) : /^\/dev\/?$/.test(path) ? (
   <DevIndex />
 ) : path.startsWith('/dev/nav') ? (
   <DevGallery />
 ) : (
-  <App />
+  <Home />
 )
 const app = <StrictMode>{page}</StrictMode>
 // Production HTML is prerendered (see scripts/prerender.mjs); dev is client-only.

@@ -10,7 +10,7 @@ function collectErrors(page: Page) {
 test.describe('Nav3D (progressive enhancement)', () => {
   test('gate: ?nav=2d keeps the DOM nav only', async ({ page }) => {
     const errors = collectErrors(page)
-    await page.goto('/?nav=2d')
+    await page.goto('/dev/demo?nav=2d')
     await expect(page.locator('[data-enhancement]')).toHaveAttribute('data-enhancement', '2d')
     await page.waitForTimeout(500)
     expect(await page.locator('canvas').count()).toBe(0)
@@ -20,7 +20,7 @@ test.describe('Nav3D (progressive enhancement)', () => {
   test('3D layer fades in over the DOM nav without moving it', async ({ page }) => {
     const errors = collectErrors(page)
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/?nav=3d')
+    await page.goto('/dev/demo?nav=3d')
     const nav = page.locator('nav[aria-label=Main]')
     const before = await nav.boundingBox()
     await expect(page.locator('[data-3d]')).toBeAttached({ timeout: 15000 })
@@ -33,7 +33,7 @@ test.describe('Nav3D (progressive enhancement)', () => {
 
   test('keyboard: Tab walks logo → links → Cmd and lights the 3D item', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/?nav=3d')
+    await page.goto('/dev/demo?nav=3d')
     await expect(page.locator('[data-3d]')).toBeAttached({ timeout: 15000 })
     // The store handle comes from a lazily loaded dev chunk; wait for it before reading.
     await page.waitForFunction(() => !!window.__navStore)
@@ -49,7 +49,7 @@ test.describe('Nav3D (progressive enhancement)', () => {
 
   test('pointer: hovering and clicking the 3D item drives the DOM anchor', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/?nav=3d')
+    await page.goto('/dev/demo?nav=3d')
     await expect(page.locator('[data-3d]')).toBeAttached({ timeout: 15000 })
     await page.waitForTimeout(800)
     const box = (await page.locator('nav[aria-label=Main]').boundingBox())!
@@ -65,7 +65,7 @@ test.describe('Nav3D (progressive enhancement)', () => {
   test('modes: 3D walks full → compact → collapsed with the DOM nav', async ({ page }) => {
     const errors = collectErrors(page)
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/?nav=3d')
+    await page.goto('/dev/demo?nav=3d')
     await expect(page.locator('[data-3d]')).toBeAttached({ timeout: 15000 })
     const modes: string[] = []
     for (const w of [1440, 560, 320]) {

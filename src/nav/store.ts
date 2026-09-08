@@ -59,11 +59,13 @@ export function createNavStore(initial?: Partial<Pick<NavState, 'links'>>): NavS
 
 export const NavStoreContext = createContext<NavStoreApi | null>(null)
 
-/** The store instance of the enclosing <Nav>. */
+/** Shared store for components used outside a <Nav> (callouts, announcements, experiments). */
+let sharedStore: NavStoreApi | undefined
+const getSharedStore = () => (sharedStore ??= createNavStore())
+
+/** The store instance of the enclosing <Nav>, or a shared default when there is none. */
 export function useNavStoreApi(): NavStoreApi {
-  const api = useContext(NavStoreContext)
-  if (!api) throw new Error('useNavStore must be used inside <Nav>')
-  return api
+  return useContext(NavStoreContext) ?? getSharedStore()
 }
 
 /** Selector hook, same shape as a zustand bound store. Works inside the R3F Canvas (context is bridged). */

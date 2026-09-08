@@ -105,6 +105,10 @@ export interface LightsTuning {
   emitters: boolean
   /** Womp luminance → emitter brightness (colour multiplier). */
   emitterScale: number
+  /** Sweep the rect strips across their own perpendicular (bottom-left → top-right), cycles per second. 0 = static. */
+  sweep: number
+  /** Sweep travel in inches. */
+  sweepRange: number
   /** Optional overhead spot in addition to the Womp rect lights. */
   overhead: OverheadLightTuning
   rects: RectLightTuning[]
@@ -224,6 +228,8 @@ const silverGlass: GlassTuning = {
   envMapIntensity: 1.3,
   background: '#7b7e88',
   normalScale: 0.2,
+  // Sharp glass: 3 blur samples are plenty and the buffered material's cost scales with them.
+  samples: 3,
 }
 
 export const glassPresets = {
@@ -323,6 +329,8 @@ export const defaultLights: LightsTuning = {
   luminanceScale: 0.25,
   emitters: true,
   emitterScale: 0.12,
+  sweep: 0.08,
+  sweepRange: 40,
   overhead: {
     color: '#ffffff',
     intensity: 0,

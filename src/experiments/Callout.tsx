@@ -25,7 +25,7 @@ import { ParallaxRig } from './ParallaxRig'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
 
-preloadCalloutIcon()
+if (typeof window !== 'undefined') preloadCalloutIcon()
 
 export interface CalloutProps {
   /**

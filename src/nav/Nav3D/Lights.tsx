@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import { useFrame } from '@react-three/fiber'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper.js'
 import { Lightformer, useHelper } from '@react-three/drei'
@@ -16,9 +17,12 @@ const IN = 2.54
 /** The exported scene is viewed from behind; assets.ts rotates meshes 180° about Y. Same here. */
 const FLIP = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)
 
-const wompPosition = (v: Vec3) => new THREE.Vector3(px(v.x * IN), px(v.y * IN), px(v.z * IN)).applyQuaternion(FLIP)
+const wompPosition = (v: Vec3) =>
+  new THREE.Vector3(px(v.x * IN), px(v.y * IN), px(v.z * IN)).applyQuaternion(FLIP)
 const wompRotation = (r: Vec3) =>
-  new THREE.Quaternion().setFromEuler(new THREE.Euler(r.x * DEG, r.y * DEG, r.z * DEG, 'XYZ')).premultiply(FLIP)
+  new THREE.Quaternion()
+    .setFromEuler(new THREE.Euler(r.x * DEG, r.y * DEG, r.z * DEG, 'XYZ'))
+    .premultiply(FLIP)
 /** Strips thinner than this are invisible at nav scale; clamp for the emitter and the light. */
 const MIN_HEIGHT_IN = 0.5
 
@@ -89,18 +93,39 @@ function Overhead({ debug }: { debug: boolean }) {
   )
 }
 
+/** 45° in the plane: the strips lie along (1,1), so this is their perpendicular travel. */
+const SWEEP_DIR = new THREE.Vector3(1, 1, 0).normalize()
+
 function Rect({ light, debug }: { light: RectLightTuning; debug: boolean }) {
-  const { luminanceScale, emitters, emitterScale } = useTuning((s) => s.lights)
+  const { luminanceScale, emitters, emitterScale, sweep, sweepRange } = useTuning((s) => s.lights)
   const ref = useRef<THREE.RectAreaLight>(null!)
   useHelper(debug && ref, RectAreaLightHelper, light.color)
   const position = useMemo(() => wompPosition(light.position), [light.position])
   const quaternion = useMemo(() => wompRotation(light.rotation), [light.rotation])
+  const group = useRef<THREE.Group>(null!)
+  // Sweep: slide the strip (and its emitter) along the diagonal, bottom-left → top-right and back.
+  useFrame((state) => {
+    const g = group.current
+    if (!g) return
+    const amp = px(sweepRange * IN)
+    const s = sweep > 0 ? Math.sin(state.clock.elapsedTime * sweep * Math.PI * 2) * amp : 0
+    g.position.copy(position).addScaledVector(SWEEP_DIR, s)
+  })
   const w = px(light.width * IN)
   const h = px(Math.max(light.height, MIN_HEIGHT_IN) * IN)
-  const emissive = useMemo(() => new THREE.Color(light.color).multiplyScalar(light.luminance * emitterScale), [light.color, light.luminance, emitterScale])
+  const emissive = useMemo(
+    () => new THREE.Color(light.color).multiplyScalar(light.luminance * emitterScale),
+    [light.color, light.luminance, emitterScale],
+  )
   return (
-    <group position={position} quaternion={quaternion}>
-      <rectAreaLight ref={ref} color={light.color} intensity={light.luminance * luminanceScale} width={w} height={h} />
+    <group ref={group} position={position} quaternion={quaternion}>
+      <rectAreaLight
+        ref={ref}
+        color={light.color}
+        intensity={light.luminance * luminanceScale}
+        width={w}
+        height={h}
+      />
       {emitters && (
         <Emitter debug={debug}>
           <planeGeometry args={[w, h]} />

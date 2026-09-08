@@ -13,7 +13,7 @@ import styles from './Announcement.module.css'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
 
-preloadAnnouncementAssets()
+if (typeof window !== 'undefined') preloadAnnouncementAssets()
 
 export interface AnnouncementProps {
   children: ReactNode

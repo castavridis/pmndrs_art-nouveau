@@ -26,7 +26,7 @@ test.describe('Nav2D', () => {
   ] as const) {
     test(`renders ${expected} at ${w}px with no axe violations`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: 600 })
-      await page.goto('/')
+      await page.goto('/dev/demo')
       await expect(root(page)).toHaveAttribute('data-mode', expected)
       // Nothing may overflow the viewport horizontally.
       const sw = await page.evaluate(() => document.documentElement.scrollWidth)
@@ -42,7 +42,7 @@ test.describe('Nav2D', () => {
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/')
+    await page.goto('/dev/demo')
     await expect(root(page)).toHaveAttribute('data-mode', 'full')
 
     // Shrink until compact, then collapsed; record the thresholds.
@@ -76,7 +76,7 @@ test.describe('Nav2D', () => {
 
   test('keyboard order is logo → links → Cmd', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/')
+    await page.goto('/dev/demo')
     const ids: string[] = []
     for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab')
@@ -87,7 +87,7 @@ test.describe('Nav2D', () => {
 
   test('collapsed menu is a keyboard-operable disclosure', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 600 })
-    await page.goto('/')
+    await page.goto('/dev/demo')
     const btn = page.getByRole('button', { name: 'Menu' })
     await expect(btn).toHaveAttribute('aria-expanded', 'false')
     await btn.focus()
@@ -106,7 +106,7 @@ test.describe('Nav2D', () => {
     page.on('pageerror', (e) => errors.push(e.message))
     page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && errors.push(m.text()))
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/')
+    await page.goto('/dev/demo')
     await page.getByRole('button', { name: /^Cmd/ }).click()
     const dialog = page.getByRole('dialog', { name: 'Command palette' })
     const state = await page.evaluate(() => ({ open: document.querySelector('dialog')?.open, html: document.querySelector('dialog')?.outerHTML.slice(0, 200) }))
@@ -126,7 +126,7 @@ test.describe('Nav2D', () => {
 
   test('active link is marked with aria-current', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 600 })
-    await page.goto('/docs')
+    await page.goto('/dev/demo')
     await expect(page.getByRole('link', { name: 'Docs' })).toHaveAttribute('aria-current', 'page')
   })
 })

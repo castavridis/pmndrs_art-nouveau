@@ -15,27 +15,61 @@ const ALL: NavLink[] = [
   { id: 'contact', label: 'Contact', href: '/contact' },
 ]
 
-export function App() {
+/** `/dev/demo`: the nav with link count, container width and current page controls. */
+export function Demo() {
   const [count, setCount] = useState(3)
   const [width, setWidth] = useState(100)
   const links = useMemo(() => ALL.slice(0, count), [count])
   const [current, setCurrent] = useState<string>(
-    () => (typeof window !== 'undefined' && ALL.find((l) => l.href === window.location.pathname)?.id) || 'docs',
+    () =>
+      (typeof window !== 'undefined' && ALL.find((l) => l.href === window.location.pathname)?.id) ||
+      'docs',
   )
 
   return (
     <main style={{ padding: '48px 16px', display: 'grid', gap: 48 }}>
-      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+      <h1
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          overflow: 'hidden',
+          clip: 'rect(0 0 0 0)',
+        }}
+      >
         pmndrs nav demo
       </h1>
-      <header style={{ width: `${width}%`, margin: '0 auto', minWidth: 0, outline: '1px dashed #444', outlineOffset: 8 }}>
+      <header
+        style={{
+          width: `${width}%`,
+          margin: '0 auto',
+          minWidth: 0,
+          outline: '1px dashed #444',
+          outlineOffset: 8,
+        }}
+      >
         <Nav links={links} active={current} />
       </header>
 
-      <section aria-label="Dev controls" style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', fontSize: 14 }}>
+      <section
+        aria-label="Dev controls"
+        style={{
+          display: 'flex',
+          gap: 24,
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          fontSize: 14,
+        }}
+      >
         <label>
           Links: <output>{count}</output>{' '}
-          <input type="range" min={1} max={ALL.length} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+          <input
+            type="range"
+            min={1}
+            max={ALL.length}
+            value={count}
+            onChange={(e) => setCount(Number(e.target.value))}
+          />
         </label>
         <label>
           Current page:{' '}
@@ -49,10 +83,15 @@ export function App() {
         </label>
         <label>
           Container: <output>{width}%</output>{' '}
-          <input type="range" min={20} max={100} value={width} onChange={(e) => setWidth(Number(e.target.value))} />
+          <input
+            type="range"
+            min={20}
+            max={100}
+            value={width}
+            onChange={(e) => setWidth(Number(e.target.value))}
+          />
         </label>
       </section>
-
     </main>
   )
 }

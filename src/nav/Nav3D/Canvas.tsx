@@ -77,7 +77,8 @@ function SizeGuard() {
   useFrame(() => {
     gl.getSize(measured)
     if (Math.abs(measured.x - size.width) > 0.5 || Math.abs(measured.y - size.height) > 0.5) {
-      gl.setSize(size.width, size.height, false)
+      // updateStyle too: the foreign composer also rewrote the canvas's CSS box.
+      gl.setSize(size.width, size.height, true)
     }
   }, -100)
   return null
