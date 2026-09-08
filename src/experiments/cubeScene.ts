@@ -14,7 +14,7 @@ export interface CubeScene {
 }
 
 export const defaultCubeScene: CubeScene = {
-  svg: typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('svg'),
+  svg: false,
   insideOnly: false,
   petalsInside: 40,
   petalsOutside: 60,

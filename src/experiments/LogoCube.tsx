@@ -1,9 +1,12 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { createNavStore, NavStoreContext } from '../nav/store'
 import { useCubeScene } from './cubeScene'
 import { LogoCubeVector } from './LogoCubeVector'
 
 const Scene = lazy(() => import('./LogoCubeScene'))
+// The panel lives here, outside the scene, so it stays available while svg mode hides the 3D.
+const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
+const CubeControls = import.meta.env.DEV ? lazy(() => import('./CubeControls')) : null
 
 /**
  * `/dev/cube`: the "logo cubed" model front and centre in a full-viewport canvas with orbit
@@ -13,6 +16,10 @@ const Scene = lazy(() => import('./LogoCubeScene'))
 export function LogoCube() {
   const [store] = useState(() => createNavStore({ links: [] }))
   const svg = useCubeScene((s) => s.svg)
+  // `?svg` forces vector mode for this visit; the panel's "svg mode" is remembered otherwise.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('svg')) useCubeScene.getState().set({ svg: true })
+  }, [])
   // Vector outlines stand in until the 3D has rendered, and stay when svg mode is on
   // (leva "scene → svg mode", or `?svg`).
   const [ready, setReady] = useState(false)
@@ -27,6 +34,12 @@ export function LogoCube() {
           </div>
         )}
         <LogoCubeVector visible={svg || !ready} />
+        {DevControls && CubeControls && (
+          <Suspense fallback={null}>
+            <DevControls />
+            <CubeControls />
+          </Suspense>
+        )}
       </div>
     </NavStoreContext.Provider>
   )

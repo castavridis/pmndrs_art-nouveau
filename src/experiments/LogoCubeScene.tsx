@@ -12,9 +12,6 @@ import { Flowers, Inside, Outside } from './Inside'
 import { preloadFlower } from './flowerAssets'
 import { useCubeScene } from './cubeScene'
 
-const CubeControls = import.meta.env.DEV ? lazy(() => import('./CubeControls')) : null
-
-const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
 
 preloadNavAssets()
@@ -56,12 +53,6 @@ export default function LogoCubeScene({ onReady }: { onReady?: () => void }) {
         )}
       </NavCanvas>
       <RecenterButton />
-      {DevControls && CubeControls && (
-        <Suspense fallback={null}>
-          <DevControls />
-          <CubeControls />
-        </Suspense>
-      )}
     </>
   )
 }
