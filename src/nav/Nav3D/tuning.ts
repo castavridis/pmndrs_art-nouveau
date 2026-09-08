@@ -108,6 +108,11 @@ export interface LightsTuning {
    * contributes diffuse light, whereas in Womp the emitter is seen refracted and reflected.
    */
   emitters: boolean
+  /**
+   * Also draw the strips inside the glass (refracted as hard lines). Off keeps only their
+   * environment reflections, which read more naturally.
+   */
+  stripsInGlass: boolean
   /** Womp luminance → emitter brightness (colour multiplier). */
   emitterScale: number
   /** Sweep the rect strips across their own perpendicular (bottom-left → top-right), cycles per second. 0 = static. */
@@ -342,6 +347,7 @@ export const defaultLights: LightsTuning = {
   roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6, follow: true, body: false },
   luminanceScale: 0.25,
   emitters: true,
+  stripsInGlass: false,
   emitterScale: 0.12,
   sweep: 0.08,
   sweepRange: 40,

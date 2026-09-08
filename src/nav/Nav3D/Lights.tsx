@@ -171,7 +171,8 @@ const SWEEP_DIR = new THREE.Vector3(1, 1, 0).normalize()
 function Rect({ light, debug }: { light: RectLightTuning; debug: boolean }) {
   const { luminanceScale, emitterScale, sweep, sweepRange } = useTuning((s) => s.lights)
   const strips = useContext(StripsContext)
-  const emitters = useTuning((s) => s.lights.emitters) && strips
+  // The refracted strip is opt-in (tuning); the environment reflection follows `emitters`.
+  const emitters = useTuning((s) => s.lights.emitters && s.lights.stripsInGlass) && strips
   const ref = useRef<THREE.RectAreaLight>(null!)
   useHelper(debug && ref, RectAreaLightHelper, light.color)
   const position = useMemo(() => wompPosition(light.position), [light.position])

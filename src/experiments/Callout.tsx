@@ -40,7 +40,7 @@ export interface CalloutProps {
   title: string
   children: ReactNode
   postprocessing?: boolean
-  /** Show the scene's light strips through the surface (off: they read as stray lines). */
+  /** Show the scene's light strips in this surface's reflections (the refracted lines are a global tuning). */
   strips?: boolean
   /** Maximum card width; the card fills its container up to this (default 560). */
   maxWidth?: number | string
@@ -56,7 +56,7 @@ export function Callout({
   title,
   children,
   postprocessing = true,
-  strips = false,
+  strips = true,
   maxWidth = callout.width,
 }: CalloutProps) {
   // The card is sized by its DOM content (width from the container, height from the text) and
