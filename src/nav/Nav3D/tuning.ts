@@ -377,7 +377,10 @@ export const useTuning = import.meta.env.DEV
   ? create<TuningStore>()(
       persist(initStore, {
         name: TUNING_KEY,
-        version: 1,
+        // Bump when saved state must be discarded (v1 predates per-page keys and could hold
+        // the cube page's black-backdrop preset for the nav).
+        version: 2,
+        migrate: (persisted, version) => (version < 2 ? {} : (persisted as Partial<Tuning>)),
         partialize: (s) => pickTuning(s),
         merge: (persisted, current) => ({ ...current, ...mergeTuning(pickTuning(current), (persisted ?? {}) as DeepPartial<Tuning>) }),
       }),
