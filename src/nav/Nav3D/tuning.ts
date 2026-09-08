@@ -121,8 +121,25 @@ export interface Tuning {
  * Named looks. `referenceTune` is the hand-tuned match of docs/reference.png; `roughGlass`
  * is the Womp material "Rough Glass" translated parameter by parameter (see comments).
  */
-export const glassPresets = {
-  roughGlass: {
+/** Brand palette (from the design file). */
+export const palette = {
+  dark: '#36342f',
+  light: '#eae5da',
+  purple: '#d855f9',
+  red: '#ff4980',
+  orange: '#ffc043',
+  yellow: '#ebff0f',
+  green: '#caf543',
+  teal: '#00f7a3',
+  blue: '#2bdcf6',
+} as const
+
+export type PaletteName = keyof typeof palette
+
+/** Rough Glass with its specular and subsurface colour swapped for a palette entry. */
+const tinted = (hex: string): GlassTuning => ({ ...roughGlassBase, specularColor: hex, attenuationColor: hex })
+
+const roughGlassBase = {
     // Womp: Color #FFFFFF, Metalness 0, Roughness 7.5, Glass 100
     color: '#ffffff',
     metalness: 0,
@@ -167,6 +184,30 @@ export const glassPresets = {
     background: '#8d93a8',
     normalScale: 0.3,
     normalRepeat: 1.2,
+} satisfies GlassTuning
+
+export const glassPresets = {
+  roughGlass: roughGlassBase,
+  /** Palette tints of Rough Glass. */
+  dark: tinted(palette.dark),
+  light: tinted(palette.light),
+  purple: tinted(palette.purple),
+  red: tinted(palette.red),
+  orange: tinted(palette.orange),
+  yellow: tinted(palette.yellow),
+  green: tinted(palette.green),
+  teal: tinted(palette.teal),
+  blue: tinted(palette.blue),
+  /** Current-page indicator petal: Rough Glass with a stronger green body. */
+  indicator: {
+    ...roughGlassBase,
+    color: '#dcff9a',
+    specularColor: palette.green,
+    attenuationColor: palette.green,
+    // Tint acts at ~70% strength instead of 28%, so the petal reads green on its own.
+    attenuationDistance: roughGlassBase.thickness / 0.7,
+    sheenColor: palette.green,
+    sheen: 0.3,
   },
   referenceTune: {
     color: '#f4f6ff',

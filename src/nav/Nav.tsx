@@ -19,6 +19,11 @@ export interface NavProps {
    * In dev, `?nav=2d|3d|3d-lite` overrides `auto`.
    */
   enhancement?: EnhancementLevel
+  /**
+   * Id of the current page's link. When omitted, the link whose href equals
+   * `location.pathname` is used. Pass this from your router for client-side navigation.
+   */
+  active?: string | null
 }
 
 /**
@@ -27,17 +32,18 @@ export interface NavProps {
  * of truth and its anchors are what the 3D items focus and trigger. When 3D is up, Nav2D's
  * visuals fade out (CSS via data-3d) while its anchors stay in the tab order.
  */
-export function Nav({ links, enhancement = 'auto' }: NavProps) {
+export function Nav({ links, enhancement = 'auto', active }: NavProps) {
   const [store] = useState(() => createNavStore({ links }))
   return (
     <NavStoreContext.Provider value={store}>
-      <NavInner links={links} enhancement={enhancement} />
+      <NavInner links={links} enhancement={enhancement} active={active} />
     </NavStoreContext.Provider>
   )
 }
 
-function NavInner({ links, enhancement: requested }: Required<NavProps>) {
+function NavInner({ links, enhancement: requested, active }: Required<Omit<NavProps, 'active'>> & Pick<NavProps, 'active'>) {
   const setLinks = useNavStore((s) => s.setLinks)
+  const setActive = useNavStore((s) => s.setActive)
   const is3D = useNavStore((s) => s.is3D)
   const setIs3D = useNavStore((s) => s.setIs3D)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
@@ -50,6 +56,9 @@ function NavInner({ links, enhancement: requested }: Required<NavProps>) {
 
   const api = useNavStoreApi()
   useEffect(() => setLinks(links), [links, setLinks])
+  useEffect(() => {
+    if (active !== undefined) setActive(active)
+  }, [active, setActive])
   useEffect(() => watchReducedMotion(api), [api])
 
   // Gate runs on the client only, so the server markup (Nav2D) hydrates without mismatch.

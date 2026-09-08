@@ -38,7 +38,7 @@ export function Nav2D({ links }: { links: NavLink[] }) {
 
   const cssVars = useMemo(() => tokensToCssVars() as CSSProperties, [])
 
-  // Mark the current page as active on mount.
+  // Mark the current page as active on mount (unless <Nav active> controls it).
   useEffect(() => {
     if (active !== null) return
     const path = window.location.pathname

@@ -49,7 +49,7 @@ export function Petals({ width, layoutWidth, count, float = true }: PetalsProps)
       {placements.map((p, i) => (
         <animated.group key={i} position-x={width.to((w) => p.fx * px(Math.max(w - tokens.pillRadius * 2 - 40, 40)))} position-y={p.y} position-z={p.z}>
           <Float enabled={float} speed={p.speed} rotationIntensity={0.4} floatIntensity={0.3} floatingRange={[-0.02, 0.02]}>
-            <mesh geometry={petal} rotation={p.rotation}>
+            <mesh geometry={petal} rotation={p.rotation} raycast={() => null}>
               <Glass sampler />
             </mesh>
           </Float>

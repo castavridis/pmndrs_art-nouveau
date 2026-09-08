@@ -1,6 +1,6 @@
 import { MeshTransmissionMaterial } from '@react-three/drei'
-import { useGlassProps } from './materials'
-import { useTuning } from './tuning'
+import { useGlassPropsFor } from './materials'
+import { glassPresets, useTuning, type GlassPreset } from './tuning'
 
 export interface GlassProps {
   /**
@@ -15,12 +15,15 @@ export interface GlassProps {
    * (drei@10: `transmissionSampler`; the `background` colour trick only applies to the buffer path.)
    */
   sampler?: boolean
+  /** Use a fixed preset (palette tint, indicator) instead of the live-tuned look. */
+  preset?: GlassPreset
 }
 
 /** The one shared glass look (see tuning.ts presets) in its three render forms. */
-export function Glass({ solid = false, sampler = false }: GlassProps) {
-  const transmissive = useGlassProps()
-  const g = useTuning((s) => s.glass)
+export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
+  const live = useTuning((s) => s.glass)
+  const g = preset ? glassPresets[preset] : live
+  const transmissive = useGlassPropsFor(g)
   if (!solid) return <MeshTransmissionMaterial {...transmissive} transmissionSampler={sampler} />
   return (
     <meshPhysicalMaterial

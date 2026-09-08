@@ -1,11 +1,14 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { signal } from '@preact/signals-core'
 import { useFrame } from '@react-three/fiber'
-import { Container, Text } from '@react-three/uikit'
+import { Container, Svg, Text, type VanillaContainer } from '@react-three/uikit'
 import { useSpring } from '@react-spring/three'
 import * as THREE from 'three'
 import { useNavStore } from '../store'
+import { tokens } from '../tokens'
 import { INK, triggerDom } from './dom'
+import { useItemRegistry } from './items'
+import cmdIcon from '../assets/cmd.svg'
 
 const INK_HOVER = '#3b2a6e'
 const LIFT_PX = 2
@@ -14,6 +17,8 @@ export interface NavItemProps {
   /** Matches `data-id` on the DOM anchor/button in Nav2D. */
   id: string
   label: string
+  /** Keyboard hint rendered like Nav2D's <kbd> (keeps both rows the same width). */
+  kbd?: string
 }
 
 /**
@@ -23,10 +28,22 @@ export interface NavItemProps {
  * focus is mirrored into the store, which lights this item up. Pointer clicks are forwarded
  * to the same DOM element, so navigation happens in exactly one place.
  */
-export function NavItem({ id, label }: NavItemProps) {
+export function NavItem({ id, label, kbd }: NavItemProps) {
   const setHovered = useNavStore((s) => s.setHovered)
+  const mode = useNavStore((s) => s.mode)
+  // uikit lengths are px; derive the em-based kbd metrics from the current font size.
+  const em = tokens.fontSize[mode]
+  const registry = useItemRegistry()
+  const ref = useRef<VanillaContainer>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!registry || !el) return
+    registry.set(id, el)
+    return () => void registry.delete(id)
+  }, [id, registry])
   return (
     <Container
+      ref={ref}
       cursor="pointer"
       onHoverChange={(h) => setHovered(h ? id : null)}
       onClick={(e) => {
@@ -35,6 +52,26 @@ export function NavItem({ id, label }: NavItemProps) {
       }}
     >
       <Label id={id} label={label} />
+      {kbd && (
+        // Mirrors Nav2D.module.css `.kbd`: 0.7em, padding .15em .4em, margin-left .5em, radius 5.
+        // The bundled Inter MSDF has no "⌘" glyph, so the symbol is an SVG; the rest is text.
+        <Container
+          marginLeft={0.5 * em}
+          paddingX={0.4 * em}
+          paddingY={0.15 * em}
+          borderRadius={5}
+          // uikit@1.0 has no background opacity; this is 8% black over the pill's tint.
+          backgroundColor="#aab68a"
+          flexDirection="row"
+          alignItems="center"
+          gap={0.05 * em}
+        >
+          {kbd.startsWith('⌘') && <Svg src={cmdIcon} width={0.75 * em} height={0.75 * em} color={INK} />}
+          <Text fontSize={0.7 * em} color={INK}>
+            {kbd.replace('⌘', '')}
+          </Text>
+        </Container>
+      )}
     </Container>
   )
 }

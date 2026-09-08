@@ -109,7 +109,7 @@ test.describe('Nav2D', () => {
     const dialog = page.getByRole('dialog', { name: 'Command palette' })
     const state = await page.evaluate(() => ({ open: document.querySelector('dialog')?.open, html: document.querySelector('dialog')?.outerHTML.slice(0, 200) }))
     await expect(dialog, JSON.stringify({ errors, state })).toBeVisible()
-    await expect(page.getByRole('combobox')).toBeFocused()
+    await expect(page.getByRole('combobox', { name: 'Search pages' })).toBeFocused()
     await axeCheck(page)
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()

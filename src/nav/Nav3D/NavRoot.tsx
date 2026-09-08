@@ -7,6 +7,9 @@ import { px, tokens } from '../tokens'
 import { Pill } from './Pill'
 import { Clusters } from './Clusters'
 import { Petals } from './Petals'
+import { PetalField } from './PetalField'
+import { Indicator } from './Indicator'
+import { ItemRegistryContext, type ItemRegistry } from './items'
 import { transmissionExcluded } from './materials'
 import { useNavAssets } from './assets'
 import { NavItem } from './NavItem'
@@ -26,6 +29,7 @@ export function NavRoot() {
   const uiRef = useRef<Group>(null)
   const { logo } = useNavAssets()
   const [measured, setMeasured] = useState<number | null>(null)
+  const [registry] = useState<ItemRegistry>(() => new Map())
 
   // The text layer sits on the glass; it must not be refracted by it.
   useEffect(() => {
@@ -55,9 +59,11 @@ export function NavRoot() {
   const z = px(tokens.pillDepth) / 2 + 0.004
 
   return (
-    <>
+    <ItemRegistryContext.Provider value={registry}>
       <Pill width={spring.width} />
       <Clusters width={spring.width} />
+      <Indicator />
+      {mode === 'full' && <PetalField count={100} />}
       {mode === 'full' && (
         <Petals
           width={spring.width}
@@ -102,10 +108,10 @@ export function NavRoot() {
             ) : (
               links.map((l) => <NavItem key={l.id} id={l.id} label={l.label} />)
             )}
-            <NavItem id="cmd" label="Cmd" />
+            <NavItem id="cmd" label="Cmd" kbd={mode === 'full' ? '⌘K' : undefined} />
           </Container>
         </Suspense>
       </group>
-    </>
+    </ItemRegistryContext.Provider>
   )
 }

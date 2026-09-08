@@ -7,6 +7,7 @@ import leftUrl from './generated/left-transformed.glb'
 import rightUrl from './generated/right-transformed.glb'
 import petalUrl from './generated/petal-transformed.glb'
 import logoUrl from './generated/logo-transformed.glb'
+import petalLoUrl from './generated/petal-lo-transformed.glb'
 
 /**
  * Loads the exported GLBs and normalises them into the nav's coordinate system.
@@ -24,12 +25,14 @@ export interface NavAssets {
   left: THREE.BufferGeometry
   right: THREE.BufferGeometry
   petal: THREE.BufferGeometry
+  /** Simplified petal (~8% of the vertices) for the instanced petal field. */
+  petalLo: THREE.BufferGeometry
   logo: THREE.BufferGeometry
   /** Pill dimensions as exported, in CSS px, for reference / sanity checks. */
   exported: { width: number; height: number; depth: number }
 }
 
-const URLS = [navbarUrl, leftUrl, rightUrl, petalUrl, logoUrl] as const
+const URLS = [navbarUrl, leftUrl, rightUrl, petalUrl, logoUrl, petalLoUrl] as const
 /** Self-hosted draco decoder (see scripts/copy-benchmarks.mjs); drei@10 defaults to a Google CDN. */
 const DRACO = `${import.meta.env.BASE_URL}draco/`
 
@@ -55,7 +58,7 @@ function firstMesh(gltf: GLTFLike): THREE.Mesh {
 
 const FLIP = new THREE.Matrix4().makeRotationY(Math.PI)
 
-function normalise([navbar, left, right, petal, logo]: THREE.Mesh[]): NavAssets {
+function normalise([navbar, left, right, petal, logo, petalLo]: THREE.Mesh[]): NavAssets {
   // World-space geometry of each mesh (bake node transforms), flipped to face our camera.
   const world = (m: THREE.Mesh) => {
     m.updateWorldMatrix(true, false)
@@ -86,6 +89,7 @@ function normalise([navbar, left, right, petal, logo]: THREE.Mesh[]): NavAssets 
 
   const petalG = world(petal)
   const petalCentre = petalG.boundingBox!.getCenter(new THREE.Vector3())
+  const petalLoG = world(petalLo)
 
   // Logo: exported at its own origin facing ±x; rotate so it faces +z, then fit to logoSize.
   logo.updateWorldMatrix(true, false)
@@ -107,6 +111,7 @@ function normalise([navbar, left, right, petal, logo]: THREE.Mesh[]): NavAssets 
     left: rebase(world(left), leftCap),
     right: rebase(world(right), rightCap),
     petal: rebase(petalG, petalCentre),
+    petalLo: rebase(petalLoG, petalCentre),
     logo: logoG,
     exported: { width: size.x, height: size.y, depth: size.z },
   }

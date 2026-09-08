@@ -10,7 +10,7 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "gltfjsx": "for f in left right petal navbar logo; do N=$(echo $f | awk '{print toupper(substr($0,1,1)) substr($0,2)}'); gltfjsx src/nav/assets/$f.glb --types --keepnames --transform --resolution 64 -o \"$PWD/src/nav/Nav3D/generated/$N.tsx\"; done",
+    "gltfjsx": "for f in left right petal navbar logo; do N=$(echo $f | awk '{print toupper(substr($0,1,1)) substr($0,2)}'); gltfjsx src/nav/assets/$f.glb --types --keepnames --transform --resolution 64 -o \"$PWD/src/nav/Nav3D/generated/$N.tsx\"; done; cp src/nav/assets/petal.glb /tmp/petal-lo.glb && gltfjsx /tmp/petal-lo.glb --types --keepnames --transform --resolution 16 --simplify --ratio 0.08 --error 0.001 -o \"$PWD/src/nav/Nav3D/generated/PetalLo.tsx\"",
     "test:e2e": "playwright test",
     "postinstall": "node scripts/copy-benchmarks.mjs"
   },

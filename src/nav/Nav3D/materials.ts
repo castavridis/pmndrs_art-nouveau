@@ -60,6 +60,11 @@ export function glassProps(
 
 export function useGlassProps(): MeshTransmissionMaterialProps {
   const g = useTuning((s) => s.glass)
+  return useGlassPropsFor(g)
+}
+
+/** Same, for a specific look (e.g. a palette preset) instead of the live-tuned one. */
+export function useGlassPropsFor(g: Tuning['glass']): MeshTransmissionMaterialProps {
   const background = useMemo(() => new THREE.Color(g.background), [g.background])
   const normalScale = useMemo(() => new THREE.Vector2(g.normalScale, g.normalScale), [g.normalScale])
   return useMemo(() => glassProps(g, background, getSurfaceNormals(), normalScale), [g, background, normalScale])
