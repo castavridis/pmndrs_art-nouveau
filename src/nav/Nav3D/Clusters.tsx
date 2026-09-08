@@ -22,12 +22,12 @@ export function Clusters({ width }: ClustersProps) {
     <>
       <animated.group position-x={leftX}>
         <mesh geometry={left}>
-          <Glass solid />
+          <Glass sampler />
         </mesh>
       </animated.group>
       <animated.group position-x={rightX}>
         <mesh geometry={right}>
-          <Glass solid />
+          <Glass sampler />
         </mesh>
       </animated.group>
     </>

@@ -11,6 +11,7 @@ import { transmissionExcluded } from './materials'
 import { useNavAssets } from './assets'
 import { NavItem } from './NavItem'
 import { INK, triggerDom } from './dom'
+import { Glass } from './Glass'
 
 /**
  * The 3D nav. A uikit row lays out Logo → links → Cmd in px (pixelSize = 1/pxPerUnit);
@@ -91,7 +92,7 @@ export function NavRoot() {
             >
               <Content width={tokens.logoSize} height={tokens.logoSize} depthAlign="back" keepAspectRatio>
                 <mesh geometry={logo}>
-                  <meshStandardMaterial color={INK} roughness={0.6} />
+                  <Glass sampler />
                 </mesh>
               </Content>
             </Container>
