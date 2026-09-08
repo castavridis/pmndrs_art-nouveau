@@ -5,6 +5,10 @@
   transition: color 600ms ease;
   font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
 }
+/* Dark pages carry dark glass: light ink, like the nav's 3D labels. */
+:global([data-theme='dark']) .root {
+  color: var(--page-ink, #f2f2ef);
+}
 .canvas {
   position: absolute;
   pointer-events: none;
