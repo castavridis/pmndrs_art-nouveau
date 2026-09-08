@@ -21,6 +21,7 @@ import { callout } from './calloutMetrics'
 import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
 import type { GlassPreset } from '../nav/Nav3D/tuning'
 import { useDomTilt, usePointerParallax } from './parallax'
+import { useMeasure } from './useMeasure'
 import { ParallaxRig } from './ParallaxRig'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
@@ -39,6 +40,8 @@ export interface CalloutProps {
   title: string
   children: ReactNode
   postprocessing?: boolean
+  /** Maximum card width; the card fills its container up to this (default 560). */
+  maxWidth?: number | string
 }
 
 /**
@@ -51,8 +54,11 @@ export function Callout({
   title,
   children,
   postprocessing = true,
+  maxWidth = callout.width,
 }: CalloutProps) {
-  const size: CSSProperties = { width: callout.width, height: callout.height }
+  // The card is sized by its DOM content (width from the container, height from the text) and
+  // the 3D slab follows the measured box; until measured (and in SSR) it uses the metrics.
+  const outer: CSSProperties = { width: '100%', maxWidth }
   const bleed = tokens.clusterBleedX
   const k = calloutKinds[kind]
   const tint = kindHex(kind)
@@ -62,6 +68,7 @@ export function Callout({
   const rootRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const pointer = usePointerParallax(rootRef)
+  const size = useMeasure(rootRef, { width: callout.width, height: callout.height })
   useDomTilt(contentRef, pointer, variant === 'plain' ? 0 : 1.5, 4)
   const cardRef = useRef<HTMLDivElement>(null)
   useDomTilt(cardRef, pointer, variant === 'plain' ? 4 : 0, 0)
@@ -70,11 +77,10 @@ export function Callout({
   const vector = variant === 'svg' || !ready
   const m = fallback['callout-icon']
   return (
-    <div ref={rootRef} className={styles.parallaxRoot} style={size}>
+    <div ref={rootRef} className={styles.parallaxRoot} style={outer}>
       <div
         ref={cardRef}
         className={`${styles.root} ${variant === 'plain' && !vector ? styles.plain : ''} ${vector ? styles.vector : ''}`}
-        style={{ width: '100%', height: '100%' }}
       >
         {/* Vector layer: traced outline of the icon, in place until the 3D one is up. */}
         <img
@@ -100,10 +106,10 @@ export function Callout({
             <NavCanvas postprocessing={postprocessing}>
               <Suspense fallback={null}>
                 <ParallaxRig pointer={pointer} depth={0}>
-                  <Surface preset={preset} />
+                  <Surface preset={preset} width={size.width} height={size.height} />
                 </ParallaxRig>
                 <ParallaxRig pointer={pointer} depth={1}>
-                  <IconAtCorner preset={preset} />
+                  <IconAtCorner preset={preset} width={size.width} height={size.height} />
                 </ParallaxRig>
                 <Ready onReady={() => setReady(true)} />
               </Suspense>
@@ -158,7 +164,12 @@ export function Callout({
         <div
           ref={contentRef}
           className={styles.content}
-          style={{ padding: callout.padding, paddingLeft: callout.iconX + callout.icon * 0.75 }}
+          style={{
+            padding: callout.padding,
+            paddingLeft: callout.iconX + callout.icon * 0.75,
+            // Never shorter than the icon needs, however little content there is.
+            minHeight: callout.iconY + callout.icon / 2 + callout.padding,
+          }}
         >
           <div className={styles.kind} style={{ color: tint }}>
             {k.label}
@@ -171,11 +182,16 @@ export function Callout({
   )
 }
 
-/** The glass slab, centred in the canvas (which is the card plus bleed). */
-function Surface({ preset }: { preset: GlassPreset }) {
+interface Box {
+  width: number
+  height: number
+}
+
+/** The glass slab, centred in the canvas (which is the card plus bleed), rebuilt per card size. */
+function Surface({ preset, width, height }: { preset: GlassPreset } & Box) {
   const geometry = useMemo(
-    () => makeRoundedRectGeometry(callout.width, callout.height, callout.radius, callout.depth),
-    [],
+    () => makeRoundedRectGeometry(width, height, callout.radius, callout.depth),
+    [width, height],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
   return (
@@ -186,9 +202,9 @@ function Surface({ preset }: { preset: GlassPreset }) {
 }
 
 /** Icon placed at the card's top-left corner (canvas origin is the card centre). */
-function IconAtCorner({ preset }: { preset: GlassPreset }) {
-  const x = (-callout.width / 2 + callout.iconX) / tokens.pxPerUnit
-  const y = (callout.height / 2 - callout.iconY) / tokens.pxPerUnit
+function IconAtCorner({ preset, width, height }: { preset: GlassPreset } & Box) {
+  const x = (-width / 2 + callout.iconX) / tokens.pxPerUnit
+  const y = (height / 2 - callout.iconY) / tokens.pxPerUnit
   return (
     <group position={[x, y, callout.depth / 2 / tokens.pxPerUnit + 0.02]}>
       <Icon preset={preset} />

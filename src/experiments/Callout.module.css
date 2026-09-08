@@ -36,7 +36,9 @@
   z-index: 1;
   will-change: transform;
   box-sizing: border-box;
-  height: 100%;
+}
+.body > :last-child {
+  margin-bottom: 0;
 }
 .title {
   margin: 0 0 12px;
