@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import type { MeshTransmissionMaterialProps } from '@react-three/drei/core/MeshTransmissionMaterial'
-import { useResolvedTheme } from '../../theme'
 import { useTuning, type Tuning } from './tuning'
 import { makeSheenNoiseMap, makeSurfaceNormalMap } from './surfaceNormals'
 
@@ -101,12 +100,7 @@ export function useGlassProps(): MeshTransmissionMaterialProps {
 
 /** Same, for a specific look (e.g. a palette preset) instead of the live-tuned one. */
 export function useGlassPropsFor(g: Tuning['glass']): MeshTransmissionMaterialProps {
-  // The buffer's clear colour is what shows "behind" the glass; on a light page use the
-  // light backdrop so a dark-tuned look does not turn into a black slab.
-  const light = useResolvedTheme() === 'light'
-  const backgroundLight = useTuning((s) => s.env.backgroundLight)
-  const hex = light ? backgroundLight : g.background
-  const background = useMemo(() => new THREE.Color(hex), [hex])
+  const background = useMemo(() => new THREE.Color(g.background), [g.background])
   const normalScale = useMemo(() => new THREE.Vector2(g.normalScale, g.normalScale), [g.normalScale])
   return useMemo(() => glassProps(g, background, getSurfaceNormals(), normalScale), [g, background, normalScale])
 }

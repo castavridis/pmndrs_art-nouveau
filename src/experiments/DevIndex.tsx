@@ -36,8 +36,6 @@ const pages = [
   },
 ]
 
-import { ThemeToggle } from '../ThemeToggle'
-
 /** `/dev`: links to every experiment. Dev builds only. */
 export function DevIndex() {
   return (
@@ -45,14 +43,11 @@ export function DevIndex() {
       style={{
         maxWidth: 720,
         margin: '0 auto',
-        padding: '64px 24px',
+        padding: '72px 24px 64px',
         fontFamily: "'Inter Variable', system-ui, sans-serif",
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 8px' }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 500 }}>Experiments</h1>
-        <ThemeToggle />
-      </div>
+      <h1 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 500 }}>Experiments</h1>
       <p style={{ margin: '0 0 32px', opacity: 0.6 }}>
         Dev-only pages. Each has the leva panel; ⌘K opens the palette where a nav is present.
       </p>

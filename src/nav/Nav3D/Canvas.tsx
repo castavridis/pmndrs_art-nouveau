@@ -64,7 +64,8 @@ export function NavCanvas({
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
       <StripsContext.Provider value={strips}>
-        <CameraRig orbit={orbit} framePosition={framePosition} />
+        <SchemeSync />
+      <CameraRig orbit={orbit} framePosition={framePosition} />
         <SizeGuard />
         {orbit && (
           <>
@@ -149,21 +150,21 @@ function CameraRig({
  */
 /** Exponential depth fog in the backdrop colour, so far petals sink into the background. */
 function Fog() {
-  const fog = useTuning((s) => s.env.fog)
-  const background = useBackdrop()
+  const { fog, background } = useTuning((s) => s.env)
   if (fog <= 0) return null
   return <fogExp2 attach="fog" args={[background, fog]} />
 }
 
-/** The environment backdrop for the page's colour scheme. */
-function useBackdrop() {
-  const { background, backgroundLight } = useTuning((s) => s.env)
-  return useResolvedTheme() === 'light' ? backgroundLight : background
+/** Loads the tuning scheme that matches the page's colour scheme (light / dark). */
+function SchemeSync() {
+  const resolved = useResolvedTheme()
+  const setScheme = useTuning((s) => s.setScheme)
+  useLayoutEffect(() => setScheme(resolved), [resolved, setScheme])
+  return null
 }
 
 function Studio() {
-  const { intensity, rotation } = useTuning((s) => s.env)
-  const background = useBackdrop()
+  const { intensity, rotation, background } = useTuning((s) => s.env)
   const lightsKey = useLightsKey() + background
   return (
     // Keyed on the lights so the one-shot cubemap re-renders whenever a strip is tweaked.

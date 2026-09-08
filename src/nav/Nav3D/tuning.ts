@@ -136,8 +136,6 @@ export interface Tuning {
     background: string
     /** Exponential depth fog in the backdrop colour; 0 disables it. */
     fog: number
-    /** Backdrop used instead of `background` when the page is in light mode. */
-    backgroundLight: string
   }
   post: {
     bloomIntensity: number
@@ -375,7 +373,7 @@ export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
   lights: defaultLights,
-  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, backgroundLight: '#b9bcc8' },
+  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004 },
 }
 
@@ -387,6 +385,8 @@ export function mergeTuning(base: Tuning, saved: DeepPartial<Tuning>): Tuning {
     if (!s) return b
     const out = { ...b } as Record<string, unknown>
     for (const [k, v] of Object.entries(s)) {
+      // Fields that no longer exist in the defaults are dropped (the panel has no control for them).
+      if (!(k in b)) continue
       const bv = (b as Record<string, unknown>)[k]
       out[k] =
         v && typeof v === 'object' && !Array.isArray(v) && bv && typeof bv === 'object' && !Array.isArray(bv)
@@ -398,14 +398,39 @@ export function mergeTuning(base: Tuning, saved: DeepPartial<Tuning>): Tuning {
   return merge(base, saved)
 }
 
+export type Scheme = 'light' | 'dark'
+export type SchemeTunings = Record<Scheme, Tuning>
+
+/** Code defaults for a light page: the same look over a pale backdrop. */
+export const baseTuningLight: Tuning = {
+  ...baseTuning,
+  glass: { ...baseTuning.glass, background: '#b4b8c4' },
+  env: { ...baseTuning.env, background: '#c3c6d0' },
+}
+export const baseSchemes: SchemeTunings = { dark: baseTuning, light: baseTuningLight }
+
 /**
- * What the scene starts from: code defaults + `tuning.saved.json` (written by the leva
- * panel's "save to project" button). In dev, unsaved edits also persist in localStorage.
+ * tuning.saved.json: `{ dark, light }` (one Tuning each); a file from before schemes existed
+ * holds a single Tuning, which then applies to both.
  */
-export const defaultTuning: Tuning = withPreset(
-  mergeTuning(baseTuning, savedJson as DeepPartial<Tuning>),
-  (savedJson as DeepPartial<Tuning>).preset,
-)
+type SavedFile = Partial<Record<Scheme, DeepPartial<Tuning>>> | DeepPartial<Tuning>
+const savedFile = savedJson as SavedFile
+const savedFor = (scheme: Scheme): DeepPartial<Tuning> => {
+  const f = savedFile as Partial<Record<Scheme, DeepPartial<Tuning>>>
+  if ('dark' in f || 'light' in f) return f[scheme] ?? {}
+  return savedFile as DeepPartial<Tuning>
+}
+
+/**
+ * What each scheme starts from: code defaults + the saved file (written by the leva panel's
+ * "save to project"). In dev, unsaved edits also persist in localStorage.
+ */
+export const defaultSchemes: SchemeTunings = {
+  dark: withPreset(mergeTuning(baseTuning, savedFor('dark')), savedFor('dark').preset),
+  light: withPreset(mergeTuning(baseTuningLight, savedFor('light')), savedFor('light').preset),
+}
+/** The dark scheme's defaults (the panel's initial ranges; the live values come from the store). */
+export const defaultTuning: Tuning = defaultSchemes.dark
 
 /** True when `glass` has the exact values of `preset`. */
 export function matchesPreset(glass: GlassTuning, preset: GlassPreset): boolean {
@@ -437,21 +462,45 @@ function withPreset(t: Tuning, explicit: GlassPreset | undefined): Tuning {
 export type TuningGroup = 'glass' | 'lights' | 'env' | 'post'
 
 type TuningStore = Tuning & {
+  /** Which scheme the top-level values belong to; switched by the page theme. */
+  scheme: Scheme
+  /** The other scheme's values, parked while inactive. */
+  schemes: SchemeTunings
   set: <K extends TuningGroup>(group: K, patch: Partial<Tuning[K]>) => void
   applyPreset: (name: GlassPreset) => void
-  /** Replace everything (import / reset). */
+  /** Replace the active scheme's values (import / reset). */
   replace: (t: Tuning) => void
+  /** Park the active values and load the other scheme's. */
+  setScheme: (scheme: Scheme) => void
+  /** Copy the active scheme's values onto the other one. */
+  copyToOther: () => void
 }
 
 /** The plain data part of the store, for saving / exporting. */
 export const pickTuning = (s: Tuning): Tuning => ({ preset: s.preset, glass: s.glass, lights: s.lights, env: s.env, post: s.post })
 
+/** Both schemes, with the active one's live values: what "save to project" writes. */
+export const pickSchemes = (s: TuningStore): SchemeTunings => ({ ...s.schemes, [s.scheme]: pickTuning(s) })
+
 const initStore = (set: (p: Partial<TuningStore> | ((s: TuningStore) => Partial<TuningStore>)) => void): TuningStore => ({
-  ...defaultTuning,
+  ...defaultSchemes.dark,
+  scheme: 'dark',
+  schemes: defaultSchemes,
   set: (group, patch) => set((s) => ({ [group]: { ...(s[group] as object), ...patch } }) as Partial<Tuning>),
   applyPreset: (name) => set({ glass: glassPresets[name], preset: name }),
   // Merge so a JSON from before a field existed still yields a complete tuning.
-  replace: (t) => set(pickTuning(withPreset(mergeTuning(baseTuning, t), t.preset))),
+  replace: (t) => set((s) => pickTuning(withPreset(mergeTuning(baseSchemes[s.scheme], t), t.preset))),
+  setScheme: (scheme) =>
+    set((s) => {
+      if (s.scheme === scheme) return s
+      const schemes = pickSchemes(s)
+      return { scheme, schemes, ...schemes[scheme] }
+    }),
+  copyToOther: () =>
+    set((s) => {
+      const other: Scheme = s.scheme === 'dark' ? 'light' : 'dark'
+      return { schemes: { ...s.schemes, [other]: pickTuning(s) } }
+    }),
 })
 
 /**
@@ -474,12 +523,19 @@ export const useTuning = import.meta.env.DEV
         name: TUNING_KEY,
         // Bump when saved state must be discarded (v1 predates per-page keys and could hold
         // the cube page's black-backdrop preset for the nav).
-        version: 3,
-        migrate: (persisted, version) => (version < 3 ? {} : (persisted as Partial<Tuning>)),
-        partialize: (s) => pickTuning(s),
+        version: 4,
+        // v3 held one Tuning: it becomes the dark scheme; light starts from its defaults.
+        migrate: (persisted, version) =>
+          version < 3 ? {} : version < 4 ? { schemes: { dark: persisted as Partial<Tuning> } } : (persisted as object),
+        partialize: (s) => ({ schemes: pickSchemes(s) }),
         merge: (persisted, current) => {
-          const saved = (persisted ?? {}) as DeepPartial<Tuning>
-          return { ...(current as TuningStore), ...withPreset(mergeTuning(pickTuning(current as Tuning), saved), saved.preset) }
+          const cur = current as TuningStore
+          const saved = ((persisted ?? {}) as { schemes?: Partial<Record<Scheme, DeepPartial<Tuning>>> }).schemes ?? {}
+          const schemes: SchemeTunings = {
+            dark: withPreset(mergeTuning(defaultSchemes.dark, saved.dark ?? {}), saved.dark?.preset),
+            light: withPreset(mergeTuning(defaultSchemes.light, saved.light ?? {}), saved.light?.preset),
+          }
+          return { ...cur, schemes, ...schemes[cur.scheme] }
         },
       }),
     )

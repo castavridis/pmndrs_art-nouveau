@@ -13,6 +13,7 @@ import { TracePage } from './experiments/TracePage'
 import { FrankensteinPage } from './experiments/FrankensteinPage'
 import { PalettePage } from './experiments/PalettePage'
 import { ThemeApplier } from './theme'
+import { ThemeToggle } from './ThemeToggle'
 
 const root = document.getElementById('root')!
 const path = window.location.pathname
@@ -45,6 +46,9 @@ const app = (
   <StrictMode>
     <ThemeApplier />
     {page}
+    {/* Light / dark / system, top-left on every page (the leva panel owns the top-right).
+        After the page in DOM order so the nav keeps the first Tab stop. */}
+    <ThemeToggle style={{ position: 'fixed', top: 16, left: 16, zIndex: 20 }} />
   </StrictMode>
 )
 // Production HTML is prerendered (see scripts/prerender.mjs); dev is client-only.

@@ -10,7 +10,6 @@ import { px } from '../nav/tokens'
 import { palette, type PaletteName } from '../nav/Nav3D/tuning'
 import { usePresetGlass } from '../nav/Nav3D/paletteTuning'
 import { preloadFlower, useFlower } from './flowerAssets'
-import { ThemeToggle } from '../ThemeToggle'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const PaletteControls = import.meta.env.DEV ? lazy(() => import('./PaletteControls')) : null
@@ -32,11 +31,8 @@ export function PalettePage() {
   const [store] = useState(() => createNavStore({ links: [] }))
   return (
     <NavStoreContext.Provider value={store}>
-      <main style={{ maxWidth: 1040, margin: '0 auto', padding: '48px 24px 96px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 500 }}>Palette</h1>
-          <ThemeToggle />
-        </div>
+      <main style={{ maxWidth: 1040, margin: '0 auto', padding: '72px 24px 96px' }}>
+        <h1 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 500 }}>Palette</h1>
         <p style={{ margin: '0 0 28px', opacity: 0.6, maxWidth: 640 }}>
           Each colour is a glass preset. Open its folder in the panel to edit the material; the
           sample and every petal using that colour update live. "save to project" writes

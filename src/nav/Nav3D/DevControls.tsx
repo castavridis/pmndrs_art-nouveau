@@ -3,8 +3,9 @@ import { useControls, folder, button, Leva } from 'leva'
 import {
   useTuning,
   defaultTuning,
-  baseTuning,
+  baseSchemes,
   glassPresets,
+  pickSchemes,
   matchesPreset,
   pickTuning,
   type GlassPreset,
@@ -42,7 +43,18 @@ export default function DevControls() {
   // View: traced outlines over the live 3D (all components on the page).
   const overlay = useOutlines((s) => s.overlay)
   const setOverlay = useOutlines((s) => s.setOverlay)
-  const [{ outlines }, setViewPanel] = useControls('view', () => ({ outlines: { value: overlay, label: 'svg outlines' } }), { order: -1 })
+  const scheme = useTuning((s) => s.scheme)
+  const copyToOther = useTuning((s) => s.copyToOther)
+  const [{ outlines }, setViewPanel] = useControls(
+    'view',
+    () => ({
+      outlines: { value: overlay, label: 'svg outlines' },
+      scheme: { value: scheme, editable: false, label: 'tuning for' },
+      'copy to other scheme': button(() => copyToOther()),
+    }),
+    { order: -1 },
+  )
+  useEffect(() => setViewPanel({ scheme }), [scheme, setViewPanel])
   useEffect(() => setOverlay(outlines), [outlines, setOverlay])
   useEffect(() => setViewPanel({ outlines: overlay }), [overlay, setViewPanel])
 
@@ -105,7 +117,6 @@ export default function DevControls() {
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
     background: defaultTuning.env.background,
-    backgroundLight: defaultTuning.env.backgroundLight,
     fog: { value: defaultTuning.env.fog, min: 0, max: 0.3, step: 0.001 },
   }))
   const [post, setPostPanel] = useControls('post', () => ({
@@ -180,13 +191,11 @@ export default function DevControls() {
     })
   })
 
-  // Initialise the panel from the store (saved JSON + localStorage), once.
-  const initialised = useRef(false)
+  // Initialise the panel from the store (saved JSON + localStorage), and again whenever the
+  // page theme swaps the active scheme (light / dark carry separate values).
   useEffect(() => {
-    if (initialised.current) return
-    initialised.current = true
     fillPanel.current(pickTuning(useTuning.getState()))
-  }, [])
+  }, [scheme])
 
   // Preset select → store and panel (only when the user picked a different one).
   useEffect(() => {
@@ -211,7 +220,8 @@ export default function DevControls() {
     'file',
     () => ({
       'save to project': button(() => {
-        const t = pickTuning(useTuning.getState())
+        // Both schemes ship: { dark, light }.
+        const t = pickSchemes(useTuning.getState())
         fetch('/__nav/tuning', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -235,7 +245,7 @@ export default function DevControls() {
         const text = window.prompt('Paste tuning JSON')
         if (!text) return
         try {
-          const t = pickTuning({ ...baseTuning, ...JSON.parse(text) })
+          const t = pickTuning({ ...baseSchemes[useTuning.getState().scheme], ...JSON.parse(text) })
           replace(t)
           fillPanel.current(t)
         } catch (e) {
@@ -243,8 +253,9 @@ export default function DevControls() {
         }
       }),
       'reset to code defaults': button(() => {
-        replace(baseTuning)
-        fillPanel.current(baseTuning)
+        const base = baseSchemes[useTuning.getState().scheme]
+        replace(base)
+        fillPanel.current(base)
       }),
     }),
     // Pinned to the top of the panel.
