@@ -54,6 +54,7 @@ export function NavCanvas({ children, postprocessing = true, className, orbit = 
       )}
       <Suspense fallback={null}>
         <Studio />
+        <Fog />
         <Lights />
         {children}
         {postprocessing && <Post />}
@@ -119,6 +120,13 @@ function CameraRig({ orbit, framePosition }: { orbit: boolean; framePosition?: [
  * (`frames={1}`) and used as the scene environment only, never as background.
  * Pastel panels at different angles are what the iridescent glass picks up as gradients.
  */
+/** Exponential depth fog in the backdrop colour, so far petals sink into the background. */
+function Fog() {
+  const { fog, background } = useTuning((s) => s.env)
+  if (fog <= 0) return null
+  return <fogExp2 attach="fog" args={[background, fog]} />
+}
+
 function Studio() {
   const { intensity, rotation, background } = useTuning((s) => s.env)
   const lightsKey = useLightsKey() + background

@@ -5,6 +5,7 @@ import {
   defaultTuning,
   baseTuning,
   glassPresets,
+  matchesPreset,
   pickTuning,
   type GlassPreset,
   type GlassTuning,
@@ -35,11 +36,14 @@ export default function DevControls() {
   const g = defaultTuning.glass
   const L = defaultTuning.lights
 
+  // The select shows the preset the store's glass was last set from (kept across reloads),
+  // and `status` says whether the values still match it or carry edits.
   const [{ preset }, setPresetPanel] = useControls(() => ({
     preset: {
-      value: 'roughGlass' as GlassPreset,
+      value: useTuning.getState().preset,
       options: Object.keys(glassPresets) as GlassPreset[],
     },
+    status: { value: '', editable: false },
   }))
 
   const [glass, setGlassPanel] = useControls('glass', () => ({
@@ -85,7 +89,7 @@ export default function DevControls() {
     }),
     quality: folder({
       samples: { value: g.samples, min: 1, max: 8, step: 1 },
-      resolution: { value: g.resolution, options: [256, 512, 1024] },
+      resolution: { value: g.resolution, options: [256, 512, 768, 1024, 1536, 2048, 4096] },
     }),
   }))
 
@@ -93,6 +97,7 @@ export default function DevControls() {
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
     background: defaultTuning.env.background,
+    fog: { value: defaultTuning.env.fog, min: 0, max: 0.3, step: 0.001 },
   }))
   const [post, setPostPanel] = useControls('post', () => ({
     bloomIntensity: { value: defaultTuning.post.bloomIntensity, min: 0, max: 2 },
@@ -160,18 +165,24 @@ export default function DevControls() {
     fillPanel.current(pickTuning(useTuning.getState()))
   }, [])
 
-  // Preset select → store and panel.
-  const lastPreset = useRef<GlassPreset | null>(null)
+  // Preset select → store and panel (only when the user picked a different one).
   useEffect(() => {
-    if (lastPreset.current === null) {
-      lastPreset.current = preset
-      return
-    }
-    if (preset === lastPreset.current) return
-    lastPreset.current = preset
+    if (preset === useTuning.getState().preset) return
     applyPreset(preset)
     setGlassPanel(glassPresets[preset])
   }, [preset, applyPreset, setGlassPanel])
+  // Store preset → select (page defaults, import, reset).
+  const storePreset = useTuning((s) => s.preset)
+  useEffect(() => {
+    setPresetPanel({ preset: storePreset })
+  }, [storePreset, setPresetPanel])
+  // Edited or pristine?
+  const storeGlass = useTuning((s) => s.glass)
+  useEffect(() => {
+    setPresetPanel({
+      status: matchesPreset(storeGlass, storePreset) ? `${storePreset}, unchanged` : `${storePreset} + your edits`,
+    })
+  }, [storeGlass, storePreset, setPresetPanel])
 
   useControls(
     'file',
@@ -211,7 +222,6 @@ export default function DevControls() {
       'reset to code defaults': button(() => {
         replace(baseTuning)
         fillPanel.current(baseTuning)
-        setPresetPanel({ preset: 'silverGlass' })
       }),
     }),
     // Pinned to the top of the panel.

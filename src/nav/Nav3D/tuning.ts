@@ -115,6 +115,8 @@ export interface LightsTuning {
 }
 
 export interface Tuning {
+  /** The preset the glass was last set from; edits on top of it keep the name. */
+  preset: GlassPreset
   glass: GlassTuning
   lights: LightsTuning
   env: {
@@ -122,6 +124,8 @@ export interface Tuning {
     rotation: number
     /** Backdrop of the environment cubemap: what glass reflects where no panel is. */
     background: string
+    /** Exponential depth fog in the backdrop colour; 0 disables it. */
+    fog: number
   }
   post: {
     bloomIntensity: number
@@ -352,9 +356,10 @@ export const defaultLights: LightsTuning = {
 
 /** Code defaults, before anything saved from the leva panel. */
 export const baseTuning: Tuning = {
+  preset: 'silverGlass',
   glass: glassPresets.silverGlass,
   lights: defaultLights,
-  env: { intensity: 0.6, rotation: 0, background: '#2a2d36' },
+  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }
 
@@ -381,24 +386,56 @@ export function mergeTuning(base: Tuning, saved: DeepPartial<Tuning>): Tuning {
  * What the scene starts from: code defaults + `tuning.saved.json` (written by the leva
  * panel's "save to project" button). In dev, unsaved edits also persist in localStorage.
  */
-export const defaultTuning: Tuning = mergeTuning(baseTuning, savedJson as DeepPartial<Tuning>)
+export const defaultTuning: Tuning = withPreset(
+  mergeTuning(baseTuning, savedJson as DeepPartial<Tuning>),
+  (savedJson as DeepPartial<Tuning>).preset,
+)
+
+/** True when `glass` has the exact values of `preset`. */
+export function matchesPreset(glass: GlassTuning, preset: GlassPreset): boolean {
+  const p = glassPresets[preset] as GlassTuning
+  return (Object.keys(p) as (keyof GlassTuning)[]).every((k) => glass[k] === p[k])
+}
+
+/** The preset with the fewest differing values: for tunings saved before the name was kept. */
+export function nearestPreset(glass: GlassTuning): GlassPreset {
+  let best: GlassPreset = 'silverGlass'
+  let bestDiff = Infinity
+  for (const name of Object.keys(glassPresets) as GlassPreset[]) {
+    const p = glassPresets[name] as GlassTuning
+    const diff = (Object.keys(p) as (keyof GlassTuning)[]).filter((k) => glass[k] !== p[k]).length
+    if (diff < bestDiff) {
+      best = name
+      bestDiff = diff
+    }
+  }
+  return best
+}
+
+/** Keep an explicit preset name; otherwise infer it from the glass values. */
+function withPreset(t: Tuning, explicit: GlassPreset | undefined): Tuning {
+  return { ...t, preset: explicit && explicit in glassPresets ? explicit : nearestPreset(t.glass) }
+}
+
+/** The object-valued groups of Tuning (everything but the preset name). */
+export type TuningGroup = 'glass' | 'lights' | 'env' | 'post'
 
 type TuningStore = Tuning & {
-  set: <K extends keyof Tuning>(group: K, patch: Partial<Tuning[K]>) => void
+  set: <K extends TuningGroup>(group: K, patch: Partial<Tuning[K]>) => void
   applyPreset: (name: GlassPreset) => void
   /** Replace everything (import / reset). */
   replace: (t: Tuning) => void
 }
 
 /** The plain data part of the store, for saving / exporting. */
-export const pickTuning = (s: Tuning): Tuning => ({ glass: s.glass, lights: s.lights, env: s.env, post: s.post })
+export const pickTuning = (s: Tuning): Tuning => ({ preset: s.preset, glass: s.glass, lights: s.lights, env: s.env, post: s.post })
 
 const initStore = (set: (p: Partial<TuningStore> | ((s: TuningStore) => Partial<TuningStore>)) => void): TuningStore => ({
   ...defaultTuning,
-  set: (group, patch) => set((s) => ({ [group]: { ...s[group], ...patch } }) as Partial<Tuning>),
-  applyPreset: (name) => set({ glass: glassPresets[name] }),
+  set: (group, patch) => set((s) => ({ [group]: { ...(s[group] as object), ...patch } }) as Partial<Tuning>),
+  applyPreset: (name) => set({ glass: glassPresets[name], preset: name }),
   // Merge so a JSON from before a field existed still yields a complete tuning.
-  replace: (t) => set(pickTuning(mergeTuning(baseTuning, t))),
+  replace: (t) => set(pickTuning(withPreset(mergeTuning(baseTuning, t), t.preset))),
 })
 
 /**
@@ -424,7 +461,10 @@ export const useTuning = import.meta.env.DEV
         version: 3,
         migrate: (persisted, version) => (version < 3 ? {} : (persisted as Partial<Tuning>)),
         partialize: (s) => pickTuning(s),
-        merge: (persisted, current) => ({ ...current, ...mergeTuning(pickTuning(current), (persisted ?? {}) as DeepPartial<Tuning>) }),
+        merge: (persisted, current) => {
+          const saved = (persisted ?? {}) as DeepPartial<Tuning>
+          return { ...(current as TuningStore), ...withPreset(mergeTuning(pickTuning(current as Tuning), saved), saved.preset) }
+        },
       }),
     )
   : create<TuningStore>()(initStore)

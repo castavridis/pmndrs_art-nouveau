@@ -1,1 +1,143 @@
-{}
+{
+  "glass": {
+    "color": "#ffffff",
+    "metalness": 0,
+    "roughness": 0.15000000000000002,
+    "transmission": 1,
+    "thickness": 0.98,
+    "ior": 1.6,
+    "specularColor": "#ffffff",
+    "specularIntensity": 0.29999999999999993,
+    "attenuationColor": "#ffffff",
+    "attenuationDistance": 10,
+    "sheen": 0,
+    "sheenRoughness": 0.6537999999999999,
+    "sheenColor": "#ffffff",
+    "sheenNoise": 1,
+    "sheenNoiseScale": 12,
+    "roughnessNoise": 0.6,
+    "iridescence": 0.45999999999999996,
+    "iridescenceIOR": 1.37,
+    "iridescenceThicknessMin": 50,
+    "iridescenceThicknessMax": 220,
+    "clearcoat": 0.35,
+    "clearcoatRoughness": 0.55,
+    "chromaticAberration": 0,
+    "anisotropicBlur": 0,
+    "distortion": 0.1,
+    "distortionScale": 0,
+    "temporalDistortion": 0,
+    "envMapIntensity": 1.1,
+    "opacity": 1,
+    "samples": 8,
+    "resolution": 1024,
+    "background": "#000000",
+    "normalScale": 0,
+    "normalRepeat": 0.25
+  },
+  "lights": {
+    "debug": false,
+    "luminanceScale": 0.75,
+    "emitters": true,
+    "emitterScale": 0.21,
+    "sweep": 0.08,
+    "sweepRange": 40,
+    "overhead": {
+      "color": "#ffffff",
+      "intensity": 0,
+      "position": {
+        "x": 0,
+        "y": 120,
+        "z": 100
+      },
+      "target": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "angle": 40,
+      "penumbra": 0.6
+    },
+    "rects": [
+      {
+        "name": "overhead",
+        "color": "#ffffff",
+        "luminance": 10,
+        "width": 700,
+        "height": 822,
+        "position": {
+          "x": 0,
+          "y": 500,
+          "z": 0
+        },
+        "rotation": {
+          "x": -80,
+          "y": 0,
+          "z": 0
+        }
+      },
+      {
+        "name": "45° top",
+        "color": "#caf543",
+        "luminance": 100,
+        "width": 697.12,
+        "height": 1.01,
+        "position": {
+          "x": 18.31,
+          "y": 52,
+          "z": -300
+        },
+        "rotation": {
+          "x": -135,
+          "y": -180,
+          "z": -45
+        }
+      },
+      {
+        "name": "45° middle",
+        "color": "#caf543",
+        "luminance": 100,
+        "width": 624.54,
+        "height": 0.76,
+        "position": {
+          "x": -1.75,
+          "y": 14.65,
+          "z": -300
+        },
+        "rotation": {
+          "x": -135,
+          "y": -180,
+          "z": -45
+        }
+      },
+      {
+        "name": "45° bottom",
+        "color": "#caf543",
+        "luminance": 100,
+        "width": 707.62,
+        "height": 0.53,
+        "position": {
+          "x": -14.04,
+          "y": -7.33,
+          "z": -300
+        },
+        "rotation": {
+          "x": -135,
+          "y": -180,
+          "z": -45
+        }
+      }
+    ]
+  },
+  "env": {
+    "intensity": 0.36,
+    "rotation": 0,
+    "background": "#000000"
+  },
+  "post": {
+    "bloomIntensity": 0.34,
+    "bloomThreshold": 0.37,
+    "bloomSmoothing": 0.24000000000000002,
+    "aberration": 0.0006000000000000001
+  }
+}

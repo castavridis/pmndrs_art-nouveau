@@ -9,6 +9,9 @@ import { preloadLogoCube, useLogoCube } from './logoCubeAssets'
 import { makeLogoGeometry } from './logoBlocks'
 import { Flowers, Inside, Outside } from './Inside'
 import { preloadFlower } from './flowerAssets'
+import { useCubeScene } from './cubeScene'
+
+const CubeControls = import.meta.env.DEV ? lazy(() => import('./CubeControls')) : null
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
@@ -49,9 +52,10 @@ export default function LogoCubeScene() {
         )}
       </NavCanvas>
       <RecenterButton />
-      {DevControls && (
+      {DevControls && CubeControls && (
         <Suspense fallback={null}>
           <DevControls />
+          <CubeControls />
         </Suspense>
       )}
     </>
@@ -79,14 +83,20 @@ function Logo({ geometry, boxes }: { geometry: THREE.BufferGeometry; boxes: THRE
       ),
     [geometry],
   )
+  const scene = useCubeScene()
   return (
     <>
       <mesh geometry={geometry}>
         <Glass />
       </mesh>
-      <Inside boxes={boxes} />
-      <Outside bounds={bounds} />
-      <Flowers boxes={boxes} bounds={bounds} />
+      <Inside boxes={boxes} petals={scene.petalsInside} />
+      {!scene.insideOnly && <Outside bounds={bounds} petals={scene.petalsOutside} />}
+      <Flowers
+        boxes={boxes}
+        bounds={bounds}
+        inside={scene.flowersInside}
+        outside={scene.insideOnly ? 0 : scene.flowersOutside}
+      />
     </>
   )
 }
