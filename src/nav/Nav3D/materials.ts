@@ -72,6 +72,11 @@ export function useGlassProps(): MeshTransmissionMaterialProps {
  * rendering the buffer; `installTransmissionExclusion` uses that as the signal.
  */
 export const transmissionExcluded = new Set<THREE.Object3D>()
+/**
+ * Objects visible ONLY inside the pill's transmission buffer: light emitters that, as in the
+ * DCC, must not be seen by the camera directly but should show through the glass.
+ */
+export const transmissionOnly = new Set<THREE.Object3D>()
 
 export function installTransmissionExclusion(scene: THREE.Scene, host: THREE.Mesh, glass: THREE.Material) {
   const prevBefore = scene.onBeforeRender
@@ -79,15 +84,18 @@ export function installTransmissionExclusion(scene: THREE.Scene, host: THREE.Mes
   scene.onBeforeRender = function (...args) {
     const inBufferPass = host.material !== glass
     for (const o of transmissionExcluded) o.visible = !inBufferPass
+    for (const o of transmissionOnly) o.visible = inBufferPass
     prevBefore.apply(this, args)
   }
   scene.onAfterRender = function (...args) {
     for (const o of transmissionExcluded) o.visible = true
+    for (const o of transmissionOnly) o.visible = false
     prevAfter.apply(this, args)
   }
   return () => {
     scene.onBeforeRender = prevBefore
     scene.onAfterRender = prevAfter
     for (const o of transmissionExcluded) o.visible = true
+    for (const o of transmissionOnly) o.visible = false
   }
 }

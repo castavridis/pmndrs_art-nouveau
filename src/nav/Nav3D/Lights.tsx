@@ -1,10 +1,11 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper.js'
-import { useHelper } from '@react-three/drei'
+import { Lightformer, useHelper } from '@react-three/drei'
 import { px } from '../tokens'
 import { useTuning, type RectLightTuning, type Vec3 } from './tuning'
+import { transmissionOnly } from './materials'
 
 // three@0.182: RectAreaLight needs its BRDF LUTs registered once before any material compiles.
 RectAreaLightUniformsLib.init()
@@ -18,10 +19,14 @@ const FLIP = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0),
 const wompPosition = (v: Vec3) => new THREE.Vector3(px(v.x * IN), px(v.y * IN), px(v.z * IN)).applyQuaternion(FLIP)
 const wompRotation = (r: Vec3) =>
   new THREE.Quaternion().setFromEuler(new THREE.Euler(r.x * DEG, r.y * DEG, r.z * DEG, 'XYZ')).premultiply(FLIP)
+/** Strips thinner than this are invisible at nav scale; clamp for the emitter and the light. */
+const MIN_HEIGHT_IN = 0.5
 
 /**
  * Direct lighting: the Womp rect lights (see tuning.ts for the frame conversion) plus an
- * optional overhead spot. `lights.debug` draws helpers.
+ * optional overhead spot. Each rect light is also drawn as an emissive strip so the glass
+ * refracts it; `RectLightformers` puts the same strips into the environment map for reflections.
+ * `lights.debug` draws helpers.
  */
 export function Lights() {
   const { debug, rects } = useTuning((s) => s.lights)
@@ -30,6 +35,27 @@ export function Lights() {
       <Overhead debug={debug} />
       {rects.map((r, i) => (
         <Rect key={r.name ?? i} light={r} debug={debug} />
+      ))}
+    </>
+  )
+}
+
+/** Render inside <Environment> so the strips are reflected by the glass. */
+export function RectLightformers() {
+  const { rects, emitters, emitterScale } = useTuning((s) => s.lights)
+  if (!emitters) return null
+  return (
+    <>
+      {rects.map((r, i) => (
+        <Lightformer
+          key={r.name ?? i}
+          form="rect"
+          color={r.color}
+          intensity={r.luminance * emitterScale}
+          position={wompPosition(r.position)}
+          quaternion={wompRotation(r.rotation)}
+          scale={[px(r.width * IN), px(Math.max(r.height, MIN_HEIGHT_IN) * IN), 1]}
+        />
       ))}
     </>
   )
@@ -64,20 +90,46 @@ function Overhead({ debug }: { debug: boolean }) {
 }
 
 function Rect({ light, debug }: { light: RectLightTuning; debug: boolean }) {
-  const scale = useTuning((s) => s.lights.luminanceScale)
+  const { luminanceScale, emitters, emitterScale } = useTuning((s) => s.lights)
   const ref = useRef<THREE.RectAreaLight>(null!)
   useHelper(debug && ref, RectAreaLightHelper, light.color)
   const position = useMemo(() => wompPosition(light.position), [light.position])
   const quaternion = useMemo(() => wompRotation(light.rotation), [light.rotation])
+  const w = px(light.width * IN)
+  const h = px(Math.max(light.height, MIN_HEIGHT_IN) * IN)
+  const emissive = useMemo(() => new THREE.Color(light.color).multiplyScalar(light.luminance * emitterScale), [light.color, light.luminance, emitterScale])
   return (
-    <rectAreaLight
-      ref={ref}
-      color={light.color}
-      intensity={light.luminance * scale}
-      width={px(light.width * IN)}
-      height={px(Math.max(light.height, 0.5) * IN)}
-      position={position}
-      quaternion={quaternion}
-    />
+    <group position={position} quaternion={quaternion}>
+      <rectAreaLight ref={ref} color={light.color} intensity={light.luminance * luminanceScale} width={w} height={h} />
+      {emitters && (
+        <Emitter debug={debug}>
+          <planeGeometry args={[w, h]} />
+          <meshBasicMaterial color={emissive} toneMapped={false} side={THREE.DoubleSide} />
+        </Emitter>
+      )}
+    </group>
   )
+}
+
+/**
+ * The emissive strip. Like the DCC's light, it is hidden from the camera and only shows up
+ * refracted through the pill (transmission buffer) and reflected via the environment map.
+ * In debug mode it is simply visible.
+ */
+function Emitter({ debug, children }: { debug: boolean; children: React.ReactNode }) {
+  const ref = useRef<THREE.Mesh>(null!)
+  useEffect(() => {
+    const m = ref.current
+    if (debug) {
+      m.visible = true
+      return
+    }
+    m.visible = false
+    transmissionOnly.add(m)
+    return () => {
+      transmissionOnly.delete(m)
+      m.visible = true
+    }
+  }, [debug])
+  return <mesh ref={ref}>{children}</mesh>
 }

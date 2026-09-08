@@ -1,18 +1,20 @@
-import { Suspense, useLayoutEffect, type ReactNode } from 'react'
+import { Suspense, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { Canvas as R3FCanvas, useThree } from '@react-three/fiber'
-import { Environment, Lightformer, Preload } from '@react-three/drei'
+import { Environment, Lightformer, OrbitControls, Preload } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import type { PerspectiveCamera } from 'three'
 import { tokens } from '../tokens'
-import { useTuning } from './tuning'
-import { Lights } from './Lights'
+import { useLightsKey, useTuning } from './tuning'
+import { Lights, RectLightformers } from './Lights'
 
 export interface NavCanvasProps {
   children?: ReactNode
   /** Skip the EffectComposer entirely (low-tier GPUs). */
   postprocessing?: boolean
   className?: string
+  /** Dev stage: orbit/zoom/pan controls own the camera after the initial framing. */
+  orbit?: boolean
 }
 
 /**
@@ -28,7 +30,7 @@ const FOV = 22
  * done in px (uikit, tokens) map 1:1 onto the DOM nav underneath.
  * Transparent: the page background shows through, exactly like the DOM version.
  */
-export function NavCanvas({ children, postprocessing = true, className }: NavCanvasProps) {
+export function NavCanvas({ children, postprocessing = true, className, orbit = false }: NavCanvasProps) {
   return (
     <R3FCanvas
       className={className}
@@ -38,7 +40,8 @@ export function NavCanvas({ children, postprocessing = true, className }: NavCan
       style={{ background: 'transparent' }}
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
-      <CameraRig />
+      <CameraRig orbit={orbit} />
+      {orbit && <OrbitControls makeDefault enableDamping />}
       <Suspense fallback={null}>
         <Studio />
         <Lights />
@@ -55,21 +58,28 @@ export function NavCanvas({ children, postprocessing = true, className }: NavCan
  * With `lights.debug` on, pulls back and up so the light helpers (which sit well outside the
  * nav's own viewport) are in frame.
  */
-function CameraRig() {
+function CameraRig({ orbit }: { orbit: boolean }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const height = useThree((s) => s.size.height)
   const debug = useTuning((s) => s.lights.debug)
+  const framed = useRef(false)
   useLayoutEffect(() => {
+    // With orbit controls the user owns the camera; only frame it once.
+    if (orbit && framed.current) return
     const visible = height / tokens.pxPerUnit
     const dist = visible / 2 / Math.tan((camera.fov * Math.PI) / 360)
-    if (debug) {
+    if (debug && !orbit) {
       camera.position.set(0, dist * 2.2, dist * 5.5)
+    } else if (orbit) {
+      // Stage: the nav is ~1.3 units tall in a tall canvas; frame it at a comfortable distance.
+      camera.position.set(0, 1.5, 8)
     } else {
       camera.position.set(0, 0, dist)
     }
     camera.lookAt(0, 0, 0)
     camera.updateProjectionMatrix()
-  }, [camera, height, debug])
+    framed.current = true
+  }, [camera, height, debug, orbit])
   return null
 }
 
@@ -80,9 +90,12 @@ function CameraRig() {
  */
 function Studio() {
   const { intensity, rotation } = useTuning((s) => s.env)
+  const lightsKey = useLightsKey()
   return (
-    <Environment resolution={256} frames={1} environmentIntensity={intensity} environmentRotation={[0, rotation, 0]}>
+    // Keyed on the lights so the one-shot cubemap re-renders whenever a strip is tweaked.
+    <Environment key={lightsKey} resolution={256} frames={1} environmentIntensity={intensity} environmentRotation={[0, rotation, 0]}>
       <color attach="background" args={['#2a2d36']} />
+      <RectLightformers />
       {/*
        * The pill's front face reflects the direction straight behind the camera (+z), so that is
        * where the colour has to be. A cluster of overlapping pastel panels behind the camera gives

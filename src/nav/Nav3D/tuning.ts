@@ -89,6 +89,14 @@ export interface LightsTuning {
   debug: boolean
   /** Womp luminance → three RectAreaLight intensity (nits). */
   luminanceScale: number
+  /**
+   * Draw each rect light as a glowing strip in the scene and in the environment map. This is
+   * what makes them show up in the glass: three's RectAreaLight itself is invisible and only
+   * contributes diffuse light, whereas in Womp the emitter is seen refracted and reflected.
+   */
+  emitters: boolean
+  /** Womp luminance → emitter brightness (colour multiplier). */
+  emitterScale: number
   /** Optional overhead spot in addition to the Womp rect lights. */
   overhead: OverheadLightTuning
   rects: RectLightTuning[]
@@ -200,6 +208,8 @@ export type GlassPreset = keyof typeof glassPresets
 export const defaultLights: LightsTuning = {
   debug: false,
   luminanceScale: 0.25,
+  emitters: true,
+  emitterScale: 0.12,
   overhead: {
     color: '#ffffff',
     intensity: 0,
@@ -212,7 +222,7 @@ export const defaultLights: LightsTuning = {
   rects: [
     // "Overhead Light": the large panel above the scene. Womp did not show its numbers, so
     // these are estimated from the viewport: roughly four nav widths wide, white, tilted at the nav.
-    { name: 'overhead', color: '#ffffff', luminance: 6, width: 700, height: 160, position: { x: 0, y: 70, z: 25 }, rotation: { x: -60, y: 0, z: 0 } },
+    { name: 'overhead', color: '#ffffff', luminance: 6, width: 700, height: 200, position: { x: 0, y: 110, z: 30 }, rotation: { x: -80, y: 0, z: 0 } },
     { name: '45° top', color: '#caf543', luminance: 15, width: 98.62, height: 1.01, position: { x: 18.31, y: 38.7, z: 30.69 }, rotation: { x: -135, y: -180, z: -45 } },
     { name: '45° middle', color: '#caf543', luminance: 50, width: 144.04, height: 0.76, position: { x: -1.75, y: 14.65, z: 6.64 }, rotation: { x: -135, y: -180, z: -45 } },
     { name: '45° bottom', color: '#caf543', luminance: 15, width: 98.62, height: 0.53, position: { x: -14.04, y: -7.33, z: -9.99 }, rotation: { x: -135, y: -180, z: -45 } },
@@ -222,7 +232,7 @@ export const defaultLights: LightsTuning = {
 export const defaultTuning: Tuning = {
   glass: glassPresets.roughGlass,
   lights: defaultLights,
-  env: { intensity: 0.15, rotation: 0 },
+  env: { intensity: 0.6, rotation: 0 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }
 
@@ -244,3 +254,9 @@ declare global {
   }
 }
 if (import.meta.env.DEV && typeof window !== 'undefined') window.__navTuning = useTuning
+
+/** A stable string for keying the environment map so it re-renders when a light changes. */
+export function useLightsKey() {
+  const { rects, emitters, emitterScale } = useTuning((s) => s.lights)
+  return JSON.stringify([emitters, emitterScale, rects])
+}

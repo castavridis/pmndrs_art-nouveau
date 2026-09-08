@@ -68,9 +68,11 @@ export default function DevControls() {
   })
 
   const L = defaultTuning.lights
-  const { debug, luminanceScale } = useControls('lights', {
+  const { debug, luminanceScale, emitters, emitterScale } = useControls('lights', {
     debug: L.debug,
     luminanceScale: { value: L.luminanceScale, min: 0, max: 2 },
+    emitters: L.emitters,
+    emitterScale: { value: L.emitterScale, min: 0, max: 1 },
   })
   const oh = useControls('lights.overhead', {
     color: L.overhead.color,
@@ -88,6 +90,8 @@ export default function DevControls() {
     set('lights', {
       debug,
       luminanceScale,
+      emitters,
+      emitterScale,
       overhead: {
         color: oh.color,
         intensity: oh.intensity,
@@ -98,7 +102,7 @@ export default function DevControls() {
       },
       rects: [rect0, rect1, rect2, rect3],
     })
-  }, [debug, luminanceScale, oh, rect0, rect1, rect2, rect3, set])
+  }, [debug, luminanceScale, emitters, emitterScale, oh, rect0, rect1, rect2, rect3, set])
 
   useEffect(() => set('glass', glass), [glass, set])
   // Preset select overrides the sliders (leva keeps its own values; pick a preset to reset the look).
