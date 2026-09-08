@@ -200,6 +200,29 @@ export const glassPresets = {
   green: tinted(palette.green),
   teal: tinted(palette.teal),
   blue: tinted(palette.blue),
+  /**
+   * Clear, dark glass for the "logo cubed" experiment: no milky backdrop, no waviness, a
+   * thicker volume and strong chromatic aberration for the rainbow edges of the reference.
+   */
+  clearCube: {
+    ...roughGlassBase,
+    color: '#ffffff',
+    specularColor: '#ffffff',
+    attenuationColor: '#ffffff',
+    attenuationDistance: 100,
+    roughness: 0.02,
+    ior: 1.5,
+    thickness: 1.6,
+    chromaticAberration: 0.6,
+    anisotropicBlur: 0,
+    sheen: 0,
+    clearcoat: 1,
+    clearcoatRoughness: 0,
+    envMapIntensity: 1.2,
+    background: '#121210',
+    normalScale: 0,
+    samples: 8,
+  },
   /** Current-page indicator petal: Rough Glass with a stronger green body. */
   indicator: {
     ...roughGlassBase,

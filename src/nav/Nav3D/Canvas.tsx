@@ -15,6 +15,8 @@ export interface NavCanvasProps {
   className?: string
   /** Dev stage: orbit/zoom/pan controls own the camera after the initial framing. */
   orbit?: boolean
+  /** Initial camera position for orbit mode (world units). */
+  framePosition?: [number, number, number]
 }
 
 /**
@@ -30,7 +32,7 @@ const FOV = 22
  * done in px (uikit, tokens) map 1:1 onto the DOM nav underneath.
  * Transparent: the page background shows through, exactly like the DOM version.
  */
-export function NavCanvas({ children, postprocessing = true, className, orbit = false }: NavCanvasProps) {
+export function NavCanvas({ children, postprocessing = true, className, orbit = false, framePosition }: NavCanvasProps) {
   return (
     <R3FCanvas
       className={className}
@@ -40,7 +42,7 @@ export function NavCanvas({ children, postprocessing = true, className, orbit = 
       style={{ background: 'transparent' }}
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
-      <CameraRig orbit={orbit} />
+      <CameraRig orbit={orbit} framePosition={framePosition} />
       {orbit && <OrbitControls makeDefault enableDamping />}
       <Suspense fallback={null}>
         <Studio />
@@ -58,7 +60,7 @@ export function NavCanvas({ children, postprocessing = true, className, orbit = 
  * With `lights.debug` on, pulls back and up so the light helpers (which sit well outside the
  * nav's own viewport) are in frame.
  */
-function CameraRig({ orbit }: { orbit: boolean }) {
+function CameraRig({ orbit, framePosition }: { orbit: boolean; framePosition?: [number, number, number] }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const height = useThree((s) => s.size.height)
   const debug = useTuning((s) => s.lights.debug)
@@ -72,14 +74,14 @@ function CameraRig({ orbit }: { orbit: boolean }) {
       camera.position.set(0, dist * 2.2, dist * 5.5)
     } else if (orbit) {
       // Stage: the nav is ~1.3 units tall in a tall canvas; frame it at a comfortable distance.
-      camera.position.set(0, 1.5, 8)
+      camera.position.set(...(framePosition ?? [0, 1.5, 8]))
     } else {
       camera.position.set(0, 0, dist)
     }
     camera.lookAt(0, 0, 0)
     camera.updateProjectionMatrix()
     framed.current = true
-  }, [camera, height, debug, orbit])
+  }, [camera, height, debug, orbit, framePosition])
   return null
 }
 
