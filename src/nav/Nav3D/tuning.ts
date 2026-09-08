@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import savedJson from './tuning.saved.json'
 
 /**
  * Live-tunable scene parameters. Defaults are the shipped values; in dev, `DevControls`
@@ -270,23 +272,67 @@ export const defaultLights: LightsTuning = {
   ],
 }
 
-export const defaultTuning: Tuning = {
+/** Code defaults, before anything saved from the leva panel. */
+export const baseTuning: Tuning = {
   glass: glassPresets.roughGlass,
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }
 
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends (infer U)[] ? U[] : T[K] extends object ? DeepPartial<T[K]> : T[K] }
+
+/** Merge saved values over defaults: objects recurse, arrays (the rect lights) replace whole. */
+export function mergeTuning(base: Tuning, saved: DeepPartial<Tuning>): Tuning {
+  const merge = <T extends object>(b: T, s: DeepPartial<T> | undefined): T => {
+    if (!s) return b
+    const out = { ...b } as Record<string, unknown>
+    for (const [k, v] of Object.entries(s)) {
+      const bv = (b as Record<string, unknown>)[k]
+      out[k] =
+        v && typeof v === 'object' && !Array.isArray(v) && bv && typeof bv === 'object' && !Array.isArray(bv)
+          ? merge(bv as object, v as object)
+          : v
+    }
+    return out as T
+  }
+  return merge(base, saved)
+}
+
+/**
+ * What the scene starts from: code defaults + `tuning.saved.json` (written by the leva
+ * panel's "save to project" button). In dev, unsaved edits also persist in localStorage.
+ */
+export const defaultTuning: Tuning = mergeTuning(baseTuning, savedJson as DeepPartial<Tuning>)
+
 type TuningStore = Tuning & {
   set: <K extends keyof Tuning>(group: K, patch: Partial<Tuning[K]>) => void
   applyPreset: (name: GlassPreset) => void
+  /** Replace everything (import / reset). */
+  replace: (t: Tuning) => void
 }
 
-export const useTuning = create<TuningStore>()((set) => ({
+/** The plain data part of the store, for saving / exporting. */
+export const pickTuning = (s: Tuning): Tuning => ({ glass: s.glass, lights: s.lights, env: s.env, post: s.post })
+
+const initStore = (set: (p: Partial<TuningStore> | ((s: TuningStore) => Partial<TuningStore>)) => void): TuningStore => ({
   ...defaultTuning,
   set: (group, patch) => set((s) => ({ [group]: { ...s[group], ...patch } }) as Partial<Tuning>),
   applyPreset: (name) => set({ glass: glassPresets[name] }),
-}))
+  replace: (t) => set(pickTuning(t)),
+})
+
+// Dev: keep unsaved edits across reloads (localStorage). Prod: the saved JSON only.
+export const useTuning = import.meta.env.DEV
+  ? create<TuningStore>()(
+      persist(initStore, {
+        name: 'nav-tuning',
+        version: 1,
+        partialize: (s) => pickTuning(s),
+        merge: (persisted, current) => ({ ...current, ...mergeTuning(pickTuning(current), (persisted ?? {}) as DeepPartial<Tuning>) }),
+      }),
+    )
+  : create<TuningStore>()(initStore)
 
 declare global {
   interface Window {

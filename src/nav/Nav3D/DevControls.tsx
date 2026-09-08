@@ -1,19 +1,48 @@
-import { useEffect } from 'react'
-import { useControls, folder, Leva } from 'leva'
-import { useTuning, defaultTuning, glassPresets, type GlassPreset, type RectLightTuning, type Vec3 } from './tuning'
+import { useEffect, useRef } from 'react'
+import { useControls, folder, button, Leva } from 'leva'
+import {
+  useTuning,
+  defaultTuning,
+  baseTuning,
+  glassPresets,
+  pickTuning,
+  type GlassPreset,
+  type GlassTuning,
+  type RectLightTuning,
+  type Tuning,
+  type Vec3,
+} from './tuning'
 
 // leva vector controls use tuples; the store uses {x,y,z}.
 type V = [number, number, number]
 const toV = (v: Vec3): V => [v.x, v.y, v.z]
 const fromV = ([x, y, z]: V): Vec3 => ({ x, y, z })
 
-/** leva panel. Only ever imported in dev — see index.tsx. */
+/**
+ * leva panel. Only ever imported in dev — see index.tsx.
+ *
+ * Saving / editing:
+ *  - every change is written to the tuning store, which persists to localStorage in dev
+ *  - "save to project" POSTs the current tuning to the dev server, which writes
+ *    src/nav/Nav3D/tuning.saved.json — the values the app then starts from (dev and prod)
+ *  - "export" copies JSON to the clipboard, "import" pastes it, "reset" returns to code defaults
+ * The panel is initialised from the store (saved JSON + localStorage), not from code defaults.
+ */
 export default function DevControls() {
   const set = useTuning((s) => s.set)
+  const replace = useTuning((s) => s.replace)
   const applyPreset = useTuning((s) => s.applyPreset)
   const g = defaultTuning.glass
-  const { preset } = useControls({ preset: { value: 'roughGlass' as GlassPreset, options: Object.keys(glassPresets) as GlassPreset[] } })
-  const glass = useControls('glass', {
+  const L = defaultTuning.lights
+
+  const [{ preset }, setPresetPanel] = useControls(() => ({
+    preset: {
+      value: 'roughGlass' as GlassPreset,
+      options: Object.keys(glassPresets) as GlassPreset[],
+    },
+  }))
+
+  const [glass, setGlassPanel] = useControls('glass', () => ({
     look: folder({
       color: g.color,
       metalness: { value: g.metalness, min: 0, max: 1 },
@@ -55,73 +84,173 @@ export default function DevControls() {
       samples: { value: g.samples, min: 1, max: 8, step: 1 },
       resolution: { value: g.resolution, options: [256, 512, 1024] },
     }),
-  })
-  const env = useControls('environment', {
+  }))
+
+  const [env, setEnvPanel] = useControls('environment', () => ({
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
-  })
-  const post = useControls('post', {
+  }))
+  const [post, setPostPanel] = useControls('post', () => ({
     bloomIntensity: { value: defaultTuning.post.bloomIntensity, min: 0, max: 2 },
     bloomThreshold: { value: defaultTuning.post.bloomThreshold, min: 0, max: 1 },
     bloomSmoothing: { value: defaultTuning.post.bloomSmoothing, min: 0, max: 1 },
     aberration: { value: defaultTuning.post.aberration, min: 0, max: 0.01, step: 0.0001 },
-  })
+  }))
 
-  const L = defaultTuning.lights
-  const { debug, luminanceScale, emitters, emitterScale } = useControls('lights', {
+  const [lights, setLightsPanel] = useControls('lights', () => ({
     debug: L.debug,
     luminanceScale: { value: L.luminanceScale, min: 0, max: 2 },
     emitters: L.emitters,
     emitterScale: { value: L.emitterScale, min: 0, max: 1 },
-  })
-  const oh = useControls('lights.overhead', {
+  }))
+  const [oh, setOhPanel] = useControls('lights.overhead', () => ({
     color: L.overhead.color,
     intensity: { value: L.overhead.intensity, min: 0, max: 400 },
     position: { value: toV(L.overhead.position), step: 1 },
     target: { value: toV(L.overhead.target), step: 1 },
     angle: { value: L.overhead.angle, min: 1, max: 90 },
     penumbra: { value: L.overhead.penumbra, min: 0, max: 1 },
-  })
+  }))
   const rect0 = useRectControls(L.rects[0]!)
   const rect1 = useRectControls(L.rects[1]!)
   const rect2 = useRectControls(L.rects[2]!)
   const rect3 = useRectControls(L.rects[3]!)
-  useEffect(() => {
-    set('lights', {
-      debug,
-      luminanceScale,
-      emitters,
-      emitterScale,
-      overhead: {
-        color: oh.color,
-        intensity: oh.intensity,
-        position: fromV(oh.position),
-        target: fromV(oh.target),
-        angle: oh.angle,
-        penumbra: oh.penumbra,
-      },
-      rects: [rect0, rect1, rect2, rect3],
-    })
-  }, [debug, luminanceScale, emitters, emitterScale, oh, rect0, rect1, rect2, rect3, set])
 
-  useEffect(() => set('glass', glass), [glass, set])
-  // Preset select overrides the sliders (leva keeps its own values; pick a preset to reset the look).
-  useEffect(() => applyPreset(preset), [preset, applyPreset])
+  /** Push a whole Tuning into every leva folder (initial load, preset, import, reset). */
+  const fillPanel = useRef((t: Tuning) => {
+    setGlassPanel(t.glass)
+    setEnvPanel(t.env)
+    setPostPanel(t.post)
+    setLightsPanel({
+      debug: t.lights.debug,
+      luminanceScale: t.lights.luminanceScale,
+      emitters: t.lights.emitters,
+      emitterScale: t.lights.emitterScale,
+    })
+    setOhPanel({
+      ...t.lights.overhead,
+      position: toV(t.lights.overhead.position),
+      target: toV(t.lights.overhead.target),
+    })
+    ;[rect0, rect1, rect2, rect3].forEach((r, i) => {
+      const src = t.lights.rects[i]
+      if (src)
+        r.setPanel({
+          color: src.color,
+          luminance: src.luminance,
+          width: src.width,
+          height: src.height,
+          position: toV(src.position),
+          rotation: toV(src.rotation),
+        })
+    })
+  })
+
+  // Initialise the panel from the store (saved JSON + localStorage), once.
+  const initialised = useRef(false)
+  useEffect(() => {
+    if (initialised.current) return
+    initialised.current = true
+    fillPanel.current(pickTuning(useTuning.getState()))
+  }, [])
+
+  // Preset select → store and panel.
+  const lastPreset = useRef<GlassPreset | null>(null)
+  useEffect(() => {
+    if (lastPreset.current === null) {
+      lastPreset.current = preset
+      return
+    }
+    if (preset === lastPreset.current) return
+    lastPreset.current = preset
+    applyPreset(preset)
+    setGlassPanel(glassPresets[preset])
+  }, [preset, applyPreset, setGlassPanel])
+
+  useControls(
+    'file',
+    () => ({
+      'save to project': button(() => {
+        const t = pickTuning(useTuning.getState())
+        fetch('/__nav/tuning', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(t),
+        })
+          .then((r) =>
+            r.ok
+              ? console.info('[nav] tuning saved to src/nav/Nav3D/tuning.saved.json')
+              : console.warn('[nav] save failed', r.status),
+          )
+          .catch((e) => console.warn('[nav] save failed', e))
+      }),
+      'export (clipboard)': button(() => {
+        const json = JSON.stringify(pickTuning(useTuning.getState()), null, 2)
+        navigator.clipboard?.writeText(json).then(
+          () => console.info('[nav] tuning copied'),
+          () => console.log(json),
+        )
+      }),
+      'import (paste)': button(() => {
+        const text = window.prompt('Paste tuning JSON')
+        if (!text) return
+        try {
+          const t = pickTuning({ ...baseTuning, ...JSON.parse(text) })
+          replace(t)
+          fillPanel.current(t)
+        } catch (e) {
+          console.warn('[nav] import failed', e)
+        }
+      }),
+      'reset to code defaults': button(() => {
+        replace(baseTuning)
+        fillPanel.current(baseTuning)
+        setPresetPanel({ preset: 'roughGlass' })
+      }),
+    }),
+    // Pinned to the top of the panel.
+    { order: -1 },
+  )
+
+  // Panel → store.
+  useEffect(() => set('glass', glass as GlassTuning), [glass, set])
   useEffect(() => set('env', env), [env, set])
   useEffect(() => set('post', post), [post, set])
+  useEffect(() => {
+    set('lights', {
+      ...lights,
+      overhead: { ...oh, position: fromV(oh.position), target: fromV(oh.target) },
+      rects: [rect0.value, rect1.value, rect2.value, rect3.value],
+    })
+  }, [lights, oh, rect0.value, rect1.value, rect2.value, rect3.value, set])
 
   return <Leva collapsed titleBar={{ title: 'nav 3D' }} />
 }
 
+type RectPanel = {
+  color: string
+  luminance: number
+  width: number
+  height: number
+  position: V
+  rotation: V
+}
+
 /** One leva folder per rect light, in Womp units: area (in), colour, luminance, rotation (deg), position (in). */
-function useRectControls(d: RectLightTuning): RectLightTuning {
-  const c = useControls(`lights.rect: ${d.name}`, {
+function useRectControls(d: RectLightTuning): {
+  value: RectLightTuning
+  setPanel: (v: Partial<RectPanel>) => void
+} {
+  const [c, setPanel] = useControls(`lights.rect: ${d.name}`, () => ({
     color: d.color,
     luminance: { value: d.luminance, min: 0, max: 100 },
     width: { value: d.width, min: 0.5, max: 2000, step: 0.5 },
     height: { value: d.height, min: 0.5, max: 2000, step: 0.5 },
     position: { value: toV(d.position), step: 1 },
     rotation: { value: toV(d.rotation), step: 5 },
-  })
-  return { name: d.name, ...c, position: fromV(c.position), rotation: fromV(c.rotation) }
+  }))
+  return {
+    value: { name: d.name, ...c, position: fromV(c.position), rotation: fromV(c.rotation) },
+    setPanel,
+  }
 }
