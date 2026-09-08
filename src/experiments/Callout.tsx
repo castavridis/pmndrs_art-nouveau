@@ -86,6 +86,7 @@ export function Callout({
         <img
           className={styles.vectorIcon}
           src={iconOutline}
+          data-outline={vector || undefined}
           alt=""
           aria-hidden="true"
           width={m.width}

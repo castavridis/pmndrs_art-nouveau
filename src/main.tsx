@@ -11,6 +11,7 @@ import { AnnouncementPage } from './experiments/AnnouncementPage'
 import { DevIndex } from './experiments/DevIndex'
 import { TracePage } from './experiments/TracePage'
 import { FrankensteinPage } from './experiments/FrankensteinPage'
+import { ThemeApplier } from './theme'
 
 const root = document.getElementById('root')!
 const path = window.location.pathname
@@ -37,7 +38,12 @@ const page = !import.meta.env.DEV ? (
 ) : (
   <Home />
 )
-const app = <StrictMode>{page}</StrictMode>
+const app = (
+  <StrictMode>
+    <ThemeApplier />
+    {page}
+  </StrictMode>
+)
 // Production HTML is prerendered (see scripts/prerender.mjs); dev is client-only.
 if (root.hasChildNodes()) hydrateRoot(root, app)
 else createRoot(root).render(app)

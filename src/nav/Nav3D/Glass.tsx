@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { MeshTransmissionMaterial } from '@react-three/drei'
-import { getSheenNoise, useGlassPropsFor } from './materials'
+import { useThree } from '@react-three/fiber'
+import { getSheenNoise, registerTransmissionHost, useGlassPropsFor } from './materials'
 import { glassPresets, useTuning, type GlassPreset } from './tuning'
 
 export interface GlassProps {
@@ -36,8 +37,7 @@ export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
   // Adding or removing a map changes the shader's defines; three only recompiles on
   // needsUpdate, which a prop spread does not set. Remount the material when that flips.
   const mapKey = `${g.sheenNoise > 0 ? 's' : ''}${g.roughnessNoise > 0 ? 'r' : ''}${g.normalScale > 0 ? 'n' : ''}`
-  if (!solid)
-    return <MeshTransmissionMaterial key={mapKey} {...transmissive} transmissionSampler={sampler} />
+  if (!solid) return <Buffered key={mapKey} sampler={sampler} props={transmissive} />
   return (
     <meshPhysicalMaterial
       key={mapKey}
@@ -59,6 +59,30 @@ export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
       sheenColorMap={getSheenNoise(g.sheenNoise, g.sheenNoiseScale)}
       sheenRoughnessMap={getSheenNoise(g.sheenNoise, g.sheenNoiseScale)}
       roughnessMap={getSheenNoise(g.roughnessNoise, g.sheenNoiseScale)}
+    />
+  )
+}
+
+/**
+ * The transmission material. In buffered form (no sampler) the host mesh is registered so
+ * the light emitters show through it and the text layer stays out of its buffer.
+ */
+function Buffered({ sampler, props }: { sampler: boolean; props: ReturnType<typeof useGlassPropsFor> }) {
+  const ref = useRef<THREE.Material | null>(null)
+  const scene = useThree((s) => s.scene)
+  useEffect(() => {
+    const m = ref.current as (THREE.Material & { __r3f?: { parent?: { object?: THREE.Object3D } } }) | null
+    if (sampler || !m) return
+    // R3F attaches the material to its parent mesh; the instance record points back at it.
+    const host = m.__r3f?.parent?.object
+    if (!(host instanceof THREE.Mesh)) return
+    return registerTransmissionHost(scene, host, m)
+  }, [sampler, scene, props])
+  return (
+    <MeshTransmissionMaterial
+      ref={(m) => void (ref.current = (m as THREE.Material | null) ?? null)}
+      {...props}
+      transmissionSampler={sampler}
     />
   )
 }

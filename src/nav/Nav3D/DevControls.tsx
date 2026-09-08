@@ -97,6 +97,7 @@ export default function DevControls() {
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
     background: defaultTuning.env.background,
+    backgroundLight: defaultTuning.env.backgroundLight,
     fog: { value: defaultTuning.env.fog, min: 0, max: 0.3, step: 0.001 },
   }))
   const [post, setPostPanel] = useControls('post', () => ({
@@ -113,6 +114,12 @@ export default function DevControls() {
     emitterScale: { value: L.emitterScale, min: 0, max: 1 },
     sweep: { value: L.sweep, min: 0, max: 1 },
     sweepRange: { value: L.sweepRange, min: 0, max: 200 },
+  }))
+  const [roam, setRoamPanel] = useControls('lights.roam', () => ({
+    intensity: { value: L.roam.intensity, min: 0, max: 40 },
+    color: L.roam.color,
+    speed: { value: L.roam.speed, min: 0, max: 0.5 },
+    size: { value: L.roam.size, min: 1, max: 40 },
   }))
   const [oh, setOhPanel] = useControls('lights.overhead', () => ({
     color: L.overhead.color,
@@ -137,7 +144,10 @@ export default function DevControls() {
       luminanceScale: t.lights.luminanceScale,
       emitters: t.lights.emitters,
       emitterScale: t.lights.emitterScale,
+      sweep: t.lights.sweep,
+      sweepRange: t.lights.sweepRange,
     })
+    setRoamPanel(t.lights.roam)
     setOhPanel({
       ...t.lights.overhead,
       position: toV(t.lights.overhead.position),
@@ -235,10 +245,11 @@ export default function DevControls() {
   useEffect(() => {
     set('lights', {
       ...lights,
+      roam,
       overhead: { ...oh, position: fromV(oh.position), target: fromV(oh.target) },
       rects: [rect0.value, rect1.value, rect2.value, rect3.value],
     })
-  }, [lights, oh, rect0.value, rect1.value, rect2.value, rect3.value, set])
+  }, [lights, roam, oh, rect0.value, rect1.value, rect2.value, rect3.value, set])
 
   return <Leva collapsed titleBar={{ title: 'nav 3D' }} />
 }

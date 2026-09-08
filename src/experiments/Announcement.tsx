@@ -50,6 +50,7 @@ export function Announcement({
       {/* Vector layer: outlined banner (CSS) and the traced flourishes pinned to the ends. */}
       <img
         className={styles.vectorPart}
+        data-outline={vector || undefined}
         src={leftOutline}
         alt=""
         aria-hidden="true"
@@ -59,6 +60,7 @@ export function Announcement({
       />
       <img
         className={styles.vectorPart}
+        data-outline={vector || undefined}
         src={rightOutline}
         alt=""
         aria-hidden="true"

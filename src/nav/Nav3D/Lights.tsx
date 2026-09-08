@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
 import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper.js'
 import { Lightformer, useHelper } from '@react-three/drei'
@@ -37,6 +37,7 @@ export function Lights() {
   return (
     <>
       <Overhead debug={debug} />
+      <Roam debug={debug} />
       {rects.map((r, i) => (
         <Rect key={r.name ?? i} light={r} debug={debug} />
       ))}
@@ -90,6 +91,34 @@ function Overhead({ debug }: { debug: boolean }) {
         target={target}
       />
     </>
+  )
+}
+
+/**
+ * A small light that wanders the canvas on a slow Lissajous path in front of the scene, so
+ * highlights and refractions keep moving. Its emitter is only seen through the glass.
+ */
+function Roam({ debug }: { debug: boolean }) {
+  const r = useTuning((s) => s.lights.roam)
+  const size = useThree((s) => s.size)
+  const group = useRef<THREE.Group>(null!)
+  useFrame((state) => {
+    const g = group.current
+    if (!g) return
+    const t = state.clock.elapsedTime * r.speed * Math.PI * 2
+    const hw = px(size.width) / 2
+    const hh = px(size.height) / 2
+    g.position.set(Math.sin(t) * hw * 0.8, Math.sin(t * 0.63 + 1.3) * hh * 0.8, 1.2 + Math.sin(t * 0.41) * 0.4)
+  })
+  if (r.intensity <= 0) return null
+  return (
+    <group ref={group}>
+      <pointLight color={r.color} intensity={r.intensity} decay={2} />
+      <Emitter debug={debug}>
+        <sphereGeometry args={[px(r.size), 16, 12]} />
+        <meshBasicMaterial color={new THREE.Color(r.color).multiplyScalar(6)} toneMapped={false} />
+      </Emitter>
+    </group>
   )
 }
 

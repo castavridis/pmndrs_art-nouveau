@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import type { SpringValue } from '@react-spring/three'
-import { installTransmissionExclusion, useGlassProps } from './materials'
+import { registerTransmissionHost, useGlassProps } from './materials'
 import { PillMorph } from './pillGeometry'
 
 export interface PillProps {
@@ -28,7 +28,7 @@ export function Pill({ width }: PillProps) {
   useEffect(() => {
     const m = mesh.current
     if (!m) return
-    return installTransmissionExclusion(scene, m, m.material as THREE.Material)
+    return registerTransmissionHost(scene, m, m.material as THREE.Material)
   }, [scene, glass])
 
   const mapKey = `${glass.sheenColorMap ? 's' : ''}${glass.roughnessMap ? 'r' : ''}`

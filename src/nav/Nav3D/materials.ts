@@ -1,8 +1,24 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import type { MeshTransmissionMaterialProps } from '@react-three/drei/core/MeshTransmissionMaterial'
+import { useResolvedTheme } from '../../theme'
 import { useTuning, type Tuning } from './tuning'
 import { makeSheenNoiseMap, makeSurfaceNormalMap } from './surfaceNormals'
+
+/**
+ * three@0.182's sheen BRDF divides by zero at grazing angles under punctual lights
+ * (V_Neubelt when dotNL and dotNV are both 0, D_Charlie when the roughness underflows).
+ * One NaN pixel is invisible on its own, but the bloom pass blurs it across the whole frame
+ * and every canvas turns black as soon as a point or spot light is added. Clamp the
+ * denominators before any material compiles.
+ */
+const sheenChunk = THREE.ShaderChunk.lights_physical_pars_fragment
+THREE.ShaderChunk.lights_physical_pars_fragment = sheenChunk
+  .replace('float invAlpha = 1.0 / alpha;', 'float invAlpha = 1.0 / max( alpha, 1e-6 );')
+  .replace(
+    'return saturate( 1.0 / ( 4.0 * ( dotNL + dotNV - dotNL * dotNV ) ) );',
+    'return saturate( 1.0 / ( 4.0 * max( dotNL + dotNV - dotNL * dotNV, 1e-4 ) ) );',
+  )
 
 let surfaceNormals: THREE.DataTexture | undefined
 const getSurfaceNormals = () => (surfaceNormals ??= makeSurfaceNormalMap())
@@ -85,7 +101,12 @@ export function useGlassProps(): MeshTransmissionMaterialProps {
 
 /** Same, for a specific look (e.g. a palette preset) instead of the live-tuned one. */
 export function useGlassPropsFor(g: Tuning['glass']): MeshTransmissionMaterialProps {
-  const background = useMemo(() => new THREE.Color(g.background), [g.background])
+  // The buffer's clear colour is what shows "behind" the glass; on a light page use the
+  // light backdrop so a dark-tuned look does not turn into a black slab.
+  const light = useResolvedTheme() === 'light'
+  const backgroundLight = useTuning((s) => s.env.backgroundLight)
+  const hex = light ? backgroundLight : g.background
+  const background = useMemo(() => new THREE.Color(hex), [hex])
   const normalScale = useMemo(() => new THREE.Vector2(g.normalScale, g.normalScale), [g.normalScale])
   return useMemo(() => glassProps(g, background, getSurfaceNormals(), normalScale), [g, background, normalScale])
 }
@@ -103,24 +124,56 @@ export const transmissionExcluded = new Set<THREE.Object3D>()
  */
 export const transmissionOnly = new Set<THREE.Object3D>()
 
-export function installTransmissionExclusion(scene: THREE.Scene, host: THREE.Mesh, glass: THREE.Material) {
-  const prevBefore = scene.onBeforeRender
-  const prevAfter = scene.onAfterRender
-  scene.onBeforeRender = function (...args) {
-    const inBufferPass = host.material !== glass
-    for (const o of transmissionExcluded) o.visible = !inBufferPass
-    for (const o of transmissionOnly) o.visible = inBufferPass
-    prevBefore.apply(this, args)
+interface SceneHook {
+  hosts: Map<THREE.Mesh, THREE.Material>
+  restore: () => void
+}
+const sceneHooks = new Map<THREE.Scene, SceneHook>()
+
+/**
+ * Register a mesh whose buffered MeshTransmissionMaterial renders the scene into its own
+ * buffer. While any registered host is mid-buffer (drei swaps its material for a
+ * DiscardMaterial), `transmissionExcluded` objects are hidden and `transmissionOnly` ones shown.
+ * One hook per scene, installed with the first host and removed with the last, so the
+ * emitters show through every buffered glass (the pill, the cube, a callout surface).
+ */
+export function registerTransmissionHost(scene: THREE.Scene, host: THREE.Mesh, glass: THREE.Material): () => void {
+  let hook = sceneHooks.get(scene)
+  if (!hook) {
+    const hosts = new Map<THREE.Mesh, THREE.Material>()
+    const prevBefore = scene.onBeforeRender
+    const prevAfter = scene.onAfterRender
+    scene.onBeforeRender = function (...args) {
+      let inBufferPass = false
+      for (const [m, g] of hosts) if (m.material !== g) inBufferPass = true
+      for (const o of transmissionExcluded) o.visible = !inBufferPass
+      for (const o of transmissionOnly) o.visible = inBufferPass
+      prevBefore.apply(this, args)
+    }
+    scene.onAfterRender = function (...args) {
+      for (const o of transmissionExcluded) o.visible = true
+      for (const o of transmissionOnly) o.visible = false
+      prevAfter.apply(this, args)
+    }
+    hook = {
+      hosts,
+      restore: () => {
+        scene.onBeforeRender = prevBefore
+        scene.onAfterRender = prevAfter
+        for (const o of transmissionExcluded) o.visible = true
+        for (const o of transmissionOnly) o.visible = false
+      },
+    }
+    sceneHooks.set(scene, hook)
   }
-  scene.onAfterRender = function (...args) {
-    for (const o of transmissionExcluded) o.visible = true
-    for (const o of transmissionOnly) o.visible = false
-    prevAfter.apply(this, args)
-  }
+  hook.hosts.set(host, glass)
   return () => {
-    scene.onBeforeRender = prevBefore
-    scene.onAfterRender = prevAfter
-    for (const o of transmissionExcluded) o.visible = true
-    for (const o of transmissionOnly) o.visible = false
+    const h = sceneHooks.get(scene)
+    if (!h) return
+    h.hosts.delete(host)
+    if (h.hosts.size === 0) {
+      h.restore()
+      sceneHooks.delete(scene)
+    }
   }
 }

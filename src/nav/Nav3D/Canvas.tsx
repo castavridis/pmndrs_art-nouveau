@@ -1,12 +1,13 @@
-import { Suspense, useLayoutEffect, useRef, type ReactNode } from 'react'
+import { Suspense, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import { Canvas as R3FCanvas, useFrame, useThree } from '@react-three/fiber'
 import { Vector2 } from 'three'
 import { Environment, Lightformer, OrbitControls, Preload } from '@react-three/drei'
 import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
-import { ToneMappingMode } from 'postprocessing'
+import { Effect, ToneMappingMode } from 'postprocessing'
 import type { PerspectiveCamera } from 'three'
 import { tokens } from '../tokens'
 import { useLightsKey, useTuning } from './tuning'
+import { useResolvedTheme } from '../../theme'
 import { Lights, RectLightformers } from './Lights'
 import { Recenter } from './recenter'
 
@@ -122,13 +123,21 @@ function CameraRig({ orbit, framePosition }: { orbit: boolean; framePosition?: [
  */
 /** Exponential depth fog in the backdrop colour, so far petals sink into the background. */
 function Fog() {
-  const { fog, background } = useTuning((s) => s.env)
+  const fog = useTuning((s) => s.env.fog)
+  const background = useBackdrop()
   if (fog <= 0) return null
   return <fogExp2 attach="fog" args={[background, fog]} />
 }
 
+/** The environment backdrop for the page's colour scheme. */
+function useBackdrop() {
+  const { background, backgroundLight } = useTuning((s) => s.env)
+  return useResolvedTheme() === 'light' ? backgroundLight : background
+}
+
 function Studio() {
-  const { intensity, rotation, background } = useTuning((s) => s.env)
+  const { intensity, rotation } = useTuning((s) => s.env)
+  const background = useBackdrop()
   const lightsKey = useLightsKey() + background
   return (
     // Keyed on the lights so the one-shot cubemap re-renders whenever a strip is tweaked.
@@ -154,10 +163,35 @@ function Studio() {
   )
 }
 
+/**
+ * Replaces NaN/Inf pixels with black before bloom. A single non-finite pixel (a shader edge
+ * case in a lit material) would otherwise spread through bloom's mip chain and black out
+ * the whole frame. Its own pass (mergeMode "none") so bloom reads the cleaned buffer.
+ */
+class SanitizeEffect extends Effect {
+  constructor() {
+    super(
+      'Sanitize',
+      /* glsl */ `
+      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+        vec4 c = inputColor;
+        if (any(isnan(c)) || any(isinf(c))) c = vec4(0.0, 0.0, 0.0, c.a);
+        outputColor = c;
+      }`,
+    )
+  }
+}
+
+function Sanitize() {
+  const effect = useMemo(() => new SanitizeEffect(), [])
+  return <primitive object={effect} />
+}
+
 function Post() {
   const { bloomIntensity, bloomThreshold, bloomSmoothing, aberration } = useTuning((s) => s.post)
   return (
-    <EffectComposer multisampling={0}>
+    <EffectComposer multisampling={0} mergeMode="none">
+      <Sanitize />
       <Bloom intensity={bloomIntensity} luminanceThreshold={bloomThreshold} luminanceSmoothing={bloomSmoothing} mipmapBlur />
       <ChromaticAberration offset={[aberration, aberration]} radialModulation={false} modulationOffset={0} />
       {/* postprocessing@6 turns off gl.toneMapping while a composer is active; re-add it here. */}

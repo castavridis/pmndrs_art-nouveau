@@ -11,6 +11,7 @@ import leftOutline from './assets/fallback/outline/nav-left.svg'
 import rightOutline from './assets/fallback/outline/nav-right.svg'
 import petalOutline from './assets/fallback/outline/petal.svg'
 import fallback from './assets/fallback/manifest.json'
+import { middleSegment, petalPlacements } from './petalLayout'
 import styles from './Nav2D.module.css'
 // Same face as the 3D labels (uikit ships Inter as MSDF), so the DOM anchors sit exactly
 // under their 3D twins: focus rings and hover land on the right item.
@@ -26,6 +27,7 @@ import '@fontsource-variable/inter'
 export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: boolean }) {
   const mode = useNavStore((s) => s.mode)
   const [measured, setMeasured] = useState(false)
+  const [pillWidth, setPillWidth] = useState<number | null>(null)
   const setMode = useNavStore((s) => s.setMode)
   const active = useNavStore((s) => s.active)
   const setActive = useNavStore((s) => s.setActive)
@@ -75,6 +77,11 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
       const next = resolveMode(current, root.clientWidth, required.current)
       if (next !== current) setMode(next)
       setMeasured(true)
+      // The pill's settled width in the resolved mode: places the traced petals exactly where
+      // the 3D ones will be (see petalLayout.ts).
+      const w = required.current[next]! - tokens.clusterBleedX * 2
+      setPillWidth(w)
+      api.getState().setPillWidth(w)
     }
 
     // Defer observer-driven measurements to the next frame: probing mutates the pill's size,
@@ -114,6 +121,7 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
   }, [menuOpen, setMenuOpen])
 
   const petalCount = Math.min(Math.max(links.length, 1), 3)
+  const petals = useMemo(() => (pillWidth ? petalPlacements(pillWidth, petalCount) : []), [pillWidth, petalCount])
 
   return (
     <div
@@ -129,6 +137,7 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
         <img
           className={`${styles.cluster} ${styles.clusterLeft}`}
           src={vector ? leftOutline : leftCluster}
+          data-outline={vector || undefined}
           alt=""
           aria-hidden="true"
           width={fallback['nav-left'].width}
@@ -141,6 +150,7 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
         <img
           className={`${styles.cluster} ${styles.clusterRight}`}
           src={vector ? rightOutline : rightCluster}
+          data-outline={vector || undefined}
           alt=""
           aria-hidden="true"
           width={fallback['nav-right'].width}
@@ -153,22 +163,29 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
             top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY,
           }}
         />
-        {Array.from({ length: petalCount }, (_, i) => (
-          <img
-            key={i}
-            className={styles.petal}
-            src={vector ? petalOutline : petalSvg}
-            alt=""
-            aria-hidden="true"
-            width={fallback.petal.width}
-            height={fallback.petal.height}
-            style={{
-              left: `${30 + (i * 40) / petalCount}%`,
-              top: i % 2 ? '10%' : '80%',
-              transform: `rotate(${-30 + i * 35}deg)`,
-            }}
-          />
-        ))}
+        {petals.map((p, i) => {
+          // Pill centre inside .nav (which pads by the bleed), then the shared placement.
+          const cx = tokens.clusterBleedX + pillWidth! / 2 + p.fx * middleSegment(pillWidth!)
+          const cy = tokens.clusterBleedY + tokens.pillHeight / 2 - p.y
+          return (
+            <img
+              key={i}
+              className={styles.petal}
+              src={vector ? petalOutline : petalSvg}
+              data-outline={vector || undefined}
+              alt=""
+              aria-hidden="true"
+              width={fallback.petal.width}
+              height={fallback.petal.height}
+              style={{
+                left: cx - fallback.petal.originX,
+                top: cy - fallback.petal.originY,
+                // three's +z rotation is counter-clockwise on screen; CSS rotate is clockwise.
+                transform: `rotate(${-p.rotation[2]}rad)`,
+              }}
+            />
+          )
+        })}
 
         <div ref={pillRef} className={styles.pill}>
           <a

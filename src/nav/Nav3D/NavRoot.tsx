@@ -9,6 +9,7 @@ import { Clusters } from './Clusters'
 import { Petals } from './Petals'
 import { PetalField } from './PetalField'
 import { Indicator } from './Indicator'
+import { Glows } from './Glows'
 import { ItemRegistryContext, type ItemRegistry } from './items'
 import { transmissionExcluded } from './materials'
 import { useNavAssets } from './assets'
@@ -29,6 +30,8 @@ export function NavRoot() {
   const uiRef = useRef<Group>(null)
   const { logo } = useNavAssets()
   const [measured, setMeasured] = useState<number | null>(null)
+  const seen = useRef(false)
+  const [animate, setAnimate] = useState(false)
   const [registry] = useState<ItemRegistry>(() => new Map())
 
   // The text layer sits on the glass; it must not be refracted by it.
@@ -44,15 +47,21 @@ export function NavRoot() {
     const root = rootRef.current
     if (!root) return
     return root.size.subscribe((size) => {
-      if (size && size[0] > 0) setMeasured(size[0])
+      if (!size || size[0] <= 0) return
+      setMeasured(size[0])
+      // Only measurements after the first one animate (see `animate` below).
+      if (seen.current) setAnimate(true)
+      seen.current = true
     })
   }, [])
 
   const width = measured ?? tokens.pillRadius * 2
+  // The first measurement lands instantly (no pill growing in from a circle as the 3D layer
+  // fades up); `animate` is only set by the second measurement onwards. (`measured === null`
+  // would not do: it flips in the same render that delivers the width, which then animates.)
   const spring = useSpring({
     width,
-    // Skip the opening animation on first measure; animate every change after that.
-    immediate: measured === null || reducedMotion,
+    immediate: !animate || reducedMotion,
     config: { tension: 210, friction: 26 },
   })
 
@@ -63,6 +72,7 @@ export function NavRoot() {
       <Pill width={spring.width} />
       <Clusters width={spring.width} />
       <Indicator />
+      <Glows />
       {mode === 'full' && <PetalField count={100} />}
       {mode === 'full' && (
         <Petals

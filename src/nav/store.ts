@@ -7,6 +7,8 @@ export interface NavState {
   links: NavLink[]
   mode: NavMode
   hovered: string | null
+  /** The DOM pill's settled width in px (Nav2D measures it); seeds the shared petal scatter. */
+  pillWidth: number | null
   /** Keyboard focus among the items (mirrors the DOM anchors' focus). */
   focused: string | null
   active: string | null
@@ -22,6 +24,7 @@ export interface NavState {
   setLinks: (links: NavLink[]) => void
   setMode: (mode: NavMode) => void
   setHovered: (id: string | null) => void
+  setPillWidth: (w: number | null) => void
   setFocused: (id: string | null) => void
   setActive: (id: string | null) => void
   setIs3D: (is3D: boolean) => void
@@ -38,6 +41,7 @@ export function createNavStore(initial?: Partial<Pick<NavState, 'links'>>): NavS
     links: initial?.links ?? [],
     mode: 'full',
     hovered: null,
+    pillWidth: null,
     focused: null,
     active: null,
     is3D: false,
@@ -48,6 +52,7 @@ export function createNavStore(initial?: Partial<Pick<NavState, 'links'>>): NavS
     setLinks: (links) => set({ links }),
     setMode: (mode) => set((s) => (s.mode === mode ? s : { mode, menuOpen: false })),
     setHovered: (hovered) => set({ hovered }),
+    setPillWidth: (pillWidth) => set((s) => (s.pillWidth === pillWidth ? s : { pillWidth })),
     setFocused: (focused) => set({ focused }),
     setActive: (active) => set({ active }),
     setIs3D: (is3D) => set({ is3D }),

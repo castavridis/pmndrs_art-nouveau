@@ -93,6 +93,8 @@ export interface OverheadLightTuning {
 }
 
 export interface LightsTuning {
+  /** A point light wandering across the canvas (0 intensity = off). */
+  roam: { intensity: number; color: string; speed: number; size: number }
   /** Draw light helpers (rect outlines, spot cone) and pull the camera back. */
   debug: boolean
   /** Womp luminance → three RectAreaLight intensity (nits). */
@@ -126,6 +128,8 @@ export interface Tuning {
     background: string
     /** Exponential depth fog in the backdrop colour; 0 disables it. */
     fog: number
+    /** Backdrop used instead of `background` when the page is in light mode. */
+    backgroundLight: string
   }
   post: {
     bloomIntensity: number
@@ -330,6 +334,7 @@ export type GlassPreset = keyof typeof glassPresets
 
 export const defaultLights: LightsTuning = {
   debug: false,
+  roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6 },
   luminanceScale: 0.25,
   emitters: true,
   emitterScale: 0.12,
@@ -359,7 +364,7 @@ export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
   lights: defaultLights,
-  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0 },
+  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, backgroundLight: '#b9bcc8' },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }
 

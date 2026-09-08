@@ -3,6 +3,7 @@ import type { NavLink } from './nav/types'
 import { Announcement } from './experiments/Announcement'
 import { Callout } from './experiments/Callout'
 import { useIsClient } from './isClient'
+import { ThemeToggle } from './ThemeToggle'
 
 const LINKS: NavLink[] = [
   { id: 'docs', label: 'Docs', href: '/docs' },
@@ -19,8 +20,9 @@ export function Home() {
   const client = useIsClient()
   return (
     <>
-      <header style={{ padding: '32px 16px 0' }}>
+      <header style={{ padding: '32px 16px 0', position: 'relative' }}>
         <Nav links={LINKS} />
+        <ThemeToggle style={{ position: 'absolute', top: 16, right: 16 }} />
       </header>
       <main
         style={{

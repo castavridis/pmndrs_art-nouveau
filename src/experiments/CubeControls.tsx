@@ -6,6 +6,7 @@ import { useCubeScene } from './cubeScene'
 export default function CubeControls() {
   const s = useCubeScene()
   const [scene] = useControls('scene', () => ({
+    svg: { value: s.svg, label: 'svg mode' },
     insideOnly: { value: s.insideOnly, label: 'inside logo only' },
     petalsInside: { value: s.petalsInside, min: 0, max: 200, step: 1 },
     petalsOutside: { value: s.petalsOutside, min: 0, max: 300, step: 1 },

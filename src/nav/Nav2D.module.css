@@ -290,19 +290,19 @@
 
 /* --- vector mode: outlines only (svg level, and while the 3D layer loads) ---- */
 .root[data-vector] {
-  --ink: #f2f2ef;
+  --ink: var(--page-ink, #f2f2ef);
 }
 .root[data-vector] .pill {
   background: transparent;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.75);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 75%, transparent);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 .root[data-vector] .kbd {
   background: transparent;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.5);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 50%, transparent);
 }
 .root[data-vector] .menu .links {
-  background: rgb(20 20 18 / 0.9);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.6);
+  background: color-mix(in srgb, var(--page-bg, #141412) 90%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 60%, transparent);
 }

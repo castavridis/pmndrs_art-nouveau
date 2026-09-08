@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo } from 'react'
 import { RecenterButton } from '../nav/Nav3D/recenter'
+import { Ready } from '../nav/Nav3D/Ready'
 import * as THREE from 'three'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
@@ -26,7 +27,7 @@ if (USE_GLB) preloadLogoCube()
 /** The model is ~8 units tall; with the 22° camera that needs ~21 units of distance to fit. */
 const CAMERA: [number, number, number] = [0, 0.4, 26]
 
-export default function LogoCubeScene() {
+export default function LogoCubeScene({ onReady }: { onReady?: () => void }) {
   // This page has its own persisted tuning (TUNING_KEY). On the first visit, start from the
   // clear-glass preset and a lighter backdrop instead of the nav's milky defaults.
   useEffect(() => {
@@ -44,7 +45,10 @@ export default function LogoCubeScene() {
   return (
     <>
       <NavCanvas orbit framePosition={CAMERA}>
-        <Suspense fallback={null}>{USE_GLB ? <MeshModel /> : <PrismModel />}</Suspense>
+        <Suspense fallback={null}>
+          {USE_GLB ? <MeshModel /> : <PrismModel />}
+          <Ready onReady={onReady} />
+        </Suspense>
         {DevHandles && (
           <Suspense fallback={null}>
             <DevHandles />
