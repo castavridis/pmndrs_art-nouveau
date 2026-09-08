@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
-import { glassPresets, useTuning } from '../nav/Nav3D/tuning'
+import { TUNING_KEY, useTuning } from '../nav/Nav3D/tuning'
 import { preloadNavAssets } from '../nav/Nav3D/assets'
 import { preloadLogoCube, useLogoCube } from './logoCubeAssets'
 import { makeLogoGeometry } from './logoBlocks'
@@ -22,15 +22,19 @@ if (USE_GLB) preloadLogoCube()
 const CAMERA: [number, number, number] = [0, 0.4, 26]
 
 export default function LogoCubeScene() {
-  // Start from the clear-glass preset unless the user has already tuned the glass away from
-  // the nav's default (the tuning store is shared and persisted per browser).
+  // This page has its own persisted tuning (TUNING_KEY). On the first visit, start from the
+  // clear-glass preset and a lighter backdrop instead of the nav's milky defaults.
   useEffect(() => {
-    const st = useTuning.getState()
-    if (JSON.stringify(st.glass) === JSON.stringify(glassPresets.roughGlass)) {
-      st.applyPreset('clearCube')
-      // A lighter backdrop so the bevels catch something; the nav's default is much darker.
-      st.set('env', { intensity: 1, background: '#a0a3b0' })
+    let fresh = true
+    try {
+      fresh = !localStorage.getItem(TUNING_KEY)
+    } catch {
+      /* no storage: treat as fresh */
     }
+    if (!fresh) return
+    const st = useTuning.getState()
+    st.applyPreset('clearCube')
+    st.set('env', { intensity: 1, background: '#a0a3b0' })
   }, [])
   return (
     <>

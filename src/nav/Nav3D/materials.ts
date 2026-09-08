@@ -13,11 +13,13 @@ const getSurfaceNormals = () => (surfaceNormals ??= makeSurfaceNormalMap())
  */
 const sheenNoise = new Map<number, THREE.DataTexture>()
 export function getSheenNoise(strength: number, scale: number): THREE.DataTexture | null {
-  if (strength <= 0) return null
-  const key = Math.round(strength * 20) / 20
+  // Guard against tunings saved before these fields existed: a NaN repeat renders black.
+  if (!Number.isFinite(strength) || strength <= 0) return null
+  const s = Number.isFinite(scale) && scale > 0 ? scale : 1
+  const key = Math.round(Math.min(strength, 1) * 20) / 20
   let tex = sheenNoise.get(key)
   if (!tex) sheenNoise.set(key, (tex = makeSheenNoiseMap(key)))
-  tex.repeat.set(scale, scale)
+  tex.repeat.set(s, s)
   return tex
 }
 

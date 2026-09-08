@@ -361,14 +361,22 @@ const initStore = (set: (p: Partial<TuningStore> | ((s: TuningStore) => Partial<
   ...defaultTuning,
   set: (group, patch) => set((s) => ({ [group]: { ...s[group], ...patch } }) as Partial<Tuning>),
   applyPreset: (name) => set({ glass: glassPresets[name] }),
-  replace: (t) => set(pickTuning(t)),
+  // Merge so a JSON from before a field existed still yields a complete tuning.
+  replace: (t) => set(pickTuning(mergeTuning(baseTuning, t))),
 })
+
+/**
+ * Dev pages keep their own saved edits: the nav and the cube experiment want different
+ * looks, and sharing one key let a dark nav tune black out the cube.
+ */
+export const TUNING_KEY =
+  typeof window !== 'undefined' && window.location.pathname.startsWith('/dev/cube') ? 'cube-tuning' : 'nav-tuning'
 
 // Dev: keep unsaved edits across reloads (localStorage). Prod: the saved JSON only.
 export const useTuning = import.meta.env.DEV
   ? create<TuningStore>()(
       persist(initStore, {
-        name: 'nav-tuning',
+        name: TUNING_KEY,
         version: 1,
         partialize: (s) => pickTuning(s),
         merge: (persisted, current) => ({ ...current, ...mergeTuning(pickTuning(current), (persisted ?? {}) as DeepPartial<Tuning>) }),
