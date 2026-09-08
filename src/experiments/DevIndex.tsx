@@ -25,6 +25,11 @@ const pages = [
     text: 'GitHub-style callouts: 3D surface or plain div, with the lens icon.',
   },
   {
+    href: '/dev/palette',
+    title: 'Palette',
+    text: 'Every palette colour as a glass sample, each with its own material folder in the panel.',
+  },
+  {
     href: '/dev/announcement',
     title: 'Announcement',
     text: 'A wide glass banner with flourishes pinned to its ends.',

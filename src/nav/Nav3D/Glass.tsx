@@ -3,7 +3,8 @@ import * as THREE from 'three'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { getSheenNoise, registerTransmissionHost, useGlassPropsFor } from './materials'
-import { glassPresets, useTuning, type GlassPreset } from './tuning'
+import { useTuning, type GlassPreset } from './tuning'
+import { usePresetGlass } from './paletteTuning'
 
 export interface GlassProps {
   /**
@@ -25,7 +26,8 @@ export interface GlassProps {
 /** The one shared glass look (see tuning.ts presets) in its three render forms. */
 export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
   const live = useTuning((s) => s.glass)
-  const g = preset ? glassPresets[preset] : live
+  const presetGlass = usePresetGlass(preset ?? 'silverGlass')
+  const g = preset ? presetGlass : live
   const transmissive = useGlassPropsFor(g)
   // Without transmission there is no volume for the subsurface tint to act in, so the solid
   // form blends it into the base colour instead (this is what makes palette petals coloured).

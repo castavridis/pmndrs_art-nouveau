@@ -6,11 +6,10 @@ import { useSpring } from '@react-spring/three'
 import * as THREE from 'three'
 import { useNavStore } from '../store'
 import { tokens } from '../tokens'
-import { INK, triggerDom } from './dom'
+import { triggerDom, useInk } from './dom'
 import { useItemRegistry } from './items'
 import cmdIcon from '../assets/cmd.svg'
 
-const INK_HOVER = '#3b2a6e'
 const LIFT_PX = 2
 
 export interface NavItemProps {
@@ -34,6 +33,7 @@ export function NavItem({ id, label, kbd }: NavItemProps) {
   // uikit lengths are px; derive the em-based kbd metrics from the current font size.
   const em = tokens.fontSize[mode]
   const registry = useItemRegistry()
+  const { ink, kbd: kbdBg } = useInk()
   const ref = useRef<VanillaContainer>(null)
   useEffect(() => {
     const el = ref.current
@@ -60,14 +60,14 @@ export function NavItem({ id, label, kbd }: NavItemProps) {
           paddingX={0.4 * em}
           paddingY={0.15 * em}
           borderRadius={5}
-          // uikit@1.0 has no background opacity; this is 8% black over the pill's tint.
-          backgroundColor="#aab68a"
+          // uikit@1.0 has no background opacity; a solid badge colour per colour scheme.
+          backgroundColor={kbdBg}
           flexDirection="row"
           alignItems="center"
           gap={0.05 * em}
         >
-          {kbd.startsWith('⌘') && <Svg src={cmdIcon} width={0.75 * em} height={0.75 * em} color={INK} />}
-          <Text fontSize={0.7 * em} color={INK}>
+          {kbd.startsWith('⌘') && <Svg src={cmdIcon} width={0.75 * em} height={0.75 * em} color={ink} />}
+          <Text fontSize={0.7 * em} color={ink}>
             {kbd.replace('⌘', '')}
           </Text>
         </Container>
@@ -82,7 +82,8 @@ function Label({ id, label }: { id: string; label: string }) {
   const active = useNavStore((s) => s.active === id)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const spring = useSpring({ t: lit ? 1 : 0, immediate: reducedMotion, config: { tension: 300, friction: 18 } })
-  const anim = useMemo(() => new LabelAnim(), [])
+  const { ink, hover } = useInk()
+  const anim = useMemo(() => new LabelAnim(ink, hover), [ink, hover])
   useFrame(() => anim.update(spring.t.get()))
   return (
     <Text transformTranslateY={anim.y} color={anim.color} fontWeight={active ? 'medium' : 'normal'}>
@@ -97,10 +98,16 @@ function Label({ id, label }: { id: string; label: string }) {
  */
 class LabelAnim {
   readonly y = signal(0)
-  readonly color = signal(INK)
-  private readonly from = new THREE.Color(INK)
-  private readonly to = new THREE.Color(INK_HOVER)
+  readonly color: ReturnType<typeof signal<string>>
+  private readonly from: THREE.Color
+  private readonly to: THREE.Color
   private readonly tmp = new THREE.Color()
+
+  constructor(ink: string, hover: string) {
+    this.color = signal(ink)
+    this.from = new THREE.Color(ink)
+    this.to = new THREE.Color(hover)
+  }
 
   update(t: number) {
     const ny = -LIFT_PX * t

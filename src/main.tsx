@@ -11,6 +11,7 @@ import { AnnouncementPage } from './experiments/AnnouncementPage'
 import { DevIndex } from './experiments/DevIndex'
 import { TracePage } from './experiments/TracePage'
 import { FrankensteinPage } from './experiments/FrankensteinPage'
+import { PalettePage } from './experiments/PalettePage'
 import { ThemeApplier } from './theme'
 
 const root = document.getElementById('root')!
@@ -27,6 +28,8 @@ const page = !import.meta.env.DEV ? (
   <CalloutPage />
 ) : path.startsWith('/dev/announcement') ? (
   <AnnouncementPage />
+) : path.startsWith('/dev/palette') ? (
+  <PalettePage />
 ) : path.startsWith('/dev/trace') ? (
   <TracePage />
 ) : path.startsWith('/dev/x/') ? (

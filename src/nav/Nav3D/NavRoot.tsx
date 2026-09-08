@@ -14,8 +14,7 @@ import { ItemRegistryContext, type ItemRegistry } from './items'
 import { transmissionExcluded } from './materials'
 import { useNavAssets } from './assets'
 import { NavItem } from './NavItem'
-import { INK, triggerDom } from './dom'
-import { Glass } from './Glass'
+import { triggerDom, useInk } from './dom'
 
 /**
  * The 3D nav. A uikit row lays out Logo → links → Cmd in px (pixelSize = 1/pxPerUnit);
@@ -33,6 +32,7 @@ export function NavRoot() {
   const seen = useRef(false)
   const [animate, setAnimate] = useState(false)
   const [registry] = useState<ItemRegistry>(() => new Map())
+  const { ink } = useInk()
 
   // The text layer sits on the glass; it must not be refracted by it.
   useEffect(() => {
@@ -96,7 +96,7 @@ export function NavRoot() {
             paddingRight={tokens.pillPadEnd[mode]}
             gap={tokens.gap[mode]}
             fontSize={tokens.fontSize[mode]}
-            color={INK}
+            color={ink}
             depthTest={false}
           >
             <Container
@@ -107,8 +107,9 @@ export function NavRoot() {
               }}
             >
               <Content width={tokens.logoSize} height={tokens.logoSize} depthAlign="back" keepAspectRatio>
+                {/* The glyph in the ink colour, like the labels, so it reads on any glass. */}
                 <mesh geometry={logo}>
-                  <Glass sampler />
+                  <meshStandardMaterial color={ink} roughness={0.5} metalness={0.1} />
                 </mesh>
               </Content>
             </Container>
