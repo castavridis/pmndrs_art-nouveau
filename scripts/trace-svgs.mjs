@@ -2,7 +2,7 @@
 // to src/nav/assets/fallback/<asset>.svg plus a manifest with px sizes and origins.
 // Usage: dev server on :5173, then `node scripts/trace-svgs.mjs [asset ...]`
 import { chromium } from '@playwright/test'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const ASSETS = ['nav-left', 'nav-right', 'petal', 'flower', 'logo', 'logo-cube', 'callout-icon', 'announcement-left', 'announcement-right']
@@ -12,7 +12,9 @@ await mkdir(outDir, { recursive: true })
 
 const b = await chromium.launch({ channel: 'chrome', args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=metal'] })
 const p = await b.newPage({ viewport: { width: 1700, height: 1700 }, deviceScaleFactor: 1 })
-const manifest = {}
+// Merge into the existing manifest so tracing one asset keeps the others' entries.
+const manifestPath = path.join(outDir, 'manifest.json')
+const manifest = await readFile(manifestPath, 'utf8').then(JSON.parse).catch(() => ({}))
 for (const asset of wanted) {
   await p.goto(`http://localhost:5173/dev/trace?asset=${asset}`)
   await p.waitForFunction((a) => window.__trace?.asset === a, asset, { timeout: 30000 })
@@ -118,5 +120,5 @@ for (const asset of wanted) {
   manifest[asset] = { width: w, height: h, originX: +info.originX.toFixed(1), originY: +info.originY.toFixed(1), file: `${asset}.svg` }
   console.log(asset, `${w}×${h}px`, 'filled', result.filled, 'loops', result.loops, 'bytes', svg.length)
 }
-await writeFile(path.join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
+await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 await b.close()

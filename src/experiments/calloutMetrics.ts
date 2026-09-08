@@ -4,7 +4,7 @@ export const callout = {
   width: 560,
   /** Height before measurement (SSR / first paint); the card grows with its content. */
   height: 320,
-  radius: 40,
+  radius: 8,
   depth: 8,
   /** Icon (lens ring) diameter. */
   icon: 96,
