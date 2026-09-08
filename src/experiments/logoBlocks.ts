@@ -17,8 +17,8 @@ export interface Block {
 }
 
 export const DEPTH = [-401.1, 405.3] as const
-/** Edge bevel in px. 0 = sharp boxes; the export has ~15, 5 is a soft catch-light edge. */
-export const BEVEL = 5
+/** Edge bevel in px. 0 = sharp boxes; the export has ~15, 4 is a soft catch-light edge. */
+export const BEVEL = 4
 export const CENTRE: [number, number, number] = [4.2, 587.0, 2.1]
 
 export const LOGO_BLOCKS: Block[] = [
