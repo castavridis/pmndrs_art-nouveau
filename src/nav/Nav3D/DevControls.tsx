@@ -1,14 +1,17 @@
 import { useEffect } from 'react'
 import { useControls, folder, Leva } from 'leva'
-import { useTuning, defaultTuning } from './tuning'
+import { useTuning, defaultTuning, glassPresets, type GlassPreset } from './tuning'
 
 /** leva panel. Only ever imported in dev — see index.tsx. */
 export default function DevControls() {
   const set = useTuning((s) => s.set)
+  const applyPreset = useTuning((s) => s.applyPreset)
   const g = defaultTuning.glass
+  const { preset } = useControls({ preset: { value: 'roughGlass' as GlassPreset, options: Object.keys(glassPresets) as GlassPreset[] } })
   const glass = useControls('glass', {
     look: folder({
       color: g.color,
+      metalness: { value: g.metalness, min: 0, max: 1 },
       transmission: { value: g.transmission, min: 0, max: 1 },
       thickness: { value: g.thickness, min: 0, max: 2 },
       roughness: { value: g.roughness, min: 0, max: 1 },
@@ -16,6 +19,14 @@ export default function DevControls() {
       clearcoat: { value: g.clearcoat, min: 0, max: 1 },
       clearcoatRoughness: { value: g.clearcoatRoughness, min: 0, max: 1 },
       envMapIntensity: { value: g.envMapIntensity, min: 0, max: 4 },
+      opacity: { value: g.opacity, min: 0, max: 1 },
+    }),
+    specular: folder({
+      specularColor: g.specularColor,
+      specularIntensity: { value: g.specularIntensity, min: 0, max: 1 },
+      sheen: { value: g.sheen, min: 0, max: 1 },
+      sheenRoughness: { value: g.sheenRoughness, min: 0, max: 1 },
+      sheenColor: g.sheenColor,
     }),
     iridescence: folder({
       iridescence: { value: g.iridescence, min: 0, max: 1 },
@@ -52,6 +63,8 @@ export default function DevControls() {
   })
 
   useEffect(() => set('glass', glass), [glass, set])
+  // Preset select overrides the sliders (leva keeps its own values; pick a preset to reset the look).
+  useEffect(() => applyPreset(preset), [preset, applyPreset])
   useEffect(() => set('env', env), [env, set])
   useEffect(() => set('post', post), [post, set])
 

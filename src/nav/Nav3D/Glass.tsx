@@ -19,18 +19,20 @@ export function Glass({ solid = false }: GlassProps) {
   return (
     <meshPhysicalMaterial
       color={g.color}
-      roughness={g.roughness * 2}
-      metalness={0}
+      roughness={Math.min(g.roughness * 2, 1)}
+      metalness={g.metalness}
       ior={g.ior}
+      specularColor={g.specularColor}
+      specularIntensity={g.specularIntensity}
       iridescence={g.iridescence}
       iridescenceIOR={g.iridescenceIOR}
       iridescenceThicknessRange={[g.iridescenceThicknessMin, g.iridescenceThicknessMax]}
       clearcoat={g.clearcoat}
       clearcoatRoughness={g.clearcoatRoughness}
       envMapIntensity={g.envMapIntensity}
-      sheen={0.4}
-      sheenColor="#ffffff"
-      sheenRoughness={0.6}
+      sheen={Math.max(g.sheen, 0.4)}
+      sheenColor={g.sheenColor}
+      sheenRoughness={Math.max(g.sheenRoughness, 0.6)}
     />
   )
 }
