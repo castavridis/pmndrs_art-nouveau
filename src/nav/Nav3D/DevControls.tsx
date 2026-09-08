@@ -68,21 +68,26 @@ export default function DevControls() {
   })
 
   const L = defaultTuning.lights
-  const { debug } = useControls('lights', { debug: L.debug })
+  const { debug, luminanceScale } = useControls('lights', {
+    debug: L.debug,
+    luminanceScale: { value: L.luminanceScale, min: 0, max: 2 },
+  })
   const oh = useControls('lights.overhead', {
     color: L.overhead.color,
     intensity: { value: L.overhead.intensity, min: 0, max: 400 },
-    position: { value: toV(L.overhead.position), step: 10 },
-    target: { value: toV(L.overhead.target), step: 10 },
+    position: { value: toV(L.overhead.position), step: 1 },
+    target: { value: toV(L.overhead.target), step: 1 },
     angle: { value: L.overhead.angle, min: 1, max: 90 },
     penumbra: { value: L.overhead.penumbra, min: 0, max: 1 },
   })
   const rect0 = useRectControls(L.rects[0]!)
   const rect1 = useRectControls(L.rects[1]!)
   const rect2 = useRectControls(L.rects[2]!)
+  const rect3 = useRectControls(L.rects[3]!)
   useEffect(() => {
     set('lights', {
       debug,
+      luminanceScale,
       overhead: {
         color: oh.color,
         intensity: oh.intensity,
@@ -91,9 +96,9 @@ export default function DevControls() {
         angle: oh.angle,
         penumbra: oh.penumbra,
       },
-      rects: [rect0, rect1, rect2],
+      rects: [rect0, rect1, rect2, rect3],
     })
-  }, [debug, oh, rect0, rect1, rect2, set])
+  }, [debug, luminanceScale, oh, rect0, rect1, rect2, rect3, set])
 
   useEffect(() => set('glass', glass), [glass, set])
   // Preset select overrides the sliders (leva keeps its own values; pick a preset to reset the look).
@@ -104,14 +109,14 @@ export default function DevControls() {
   return <Leva collapsed titleBar={{ title: 'nav 3D' }} />
 }
 
-/** One leva folder per rect light: size, colour, luminosity, rotation (deg), position (px). */
+/** One leva folder per rect light, in Womp units: area (in), colour, luminance, rotation (deg), position (in). */
 function useRectControls(d: RectLightTuning): RectLightTuning {
   const c = useControls(`lights.rect: ${d.name}`, {
     color: d.color,
-    intensity: { value: d.intensity, min: 0, max: 40 },
-    width: { value: d.width, min: 10, max: 2000, step: 10 },
-    height: { value: d.height, min: 10, max: 2000, step: 10 },
-    position: { value: toV(d.position), step: 10 },
+    luminance: { value: d.luminance, min: 0, max: 100 },
+    width: { value: d.width, min: 0.5, max: 2000, step: 0.5 },
+    height: { value: d.height, min: 0.5, max: 2000, step: 0.5 },
+    position: { value: toV(d.position), step: 1 },
     rotation: { value: toV(d.rotation), step: 5 },
   })
   return { name: d.name, ...c, position: fromV(c.position), rotation: fromV(c.rotation) }

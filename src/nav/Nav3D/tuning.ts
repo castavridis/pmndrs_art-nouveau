@@ -51,15 +51,24 @@ export interface Vec3 {
   z: number
 }
 
-/** Positions/sizes in CSS px (nav space: 100px = 1 unit), rotations in degrees. */
+/**
+ * Lights are authored in Womp's frame so the values in Womp's inspector transfer 1:1:
+ * position and area in inches (Womp "in"), rotation in degrees (Womp X/Y/Z), luminance as
+ * Womp shows it. Lights.tsx converts to nav space: 1 in = 2.54 px (the navbar.glb is
+ * ~400 px ≈ 157 in wide, matching the 144 in middle strip), and applies the same 180°
+ * Y flip that assets.ts applies to the exported meshes.
+ */
 export interface RectLightTuning {
   name: string
   color: string
-  /** RectAreaLight intensity (nits). */
-  intensity: number
+  /** Womp luminance. */
+  luminance: number
+  /** Womp Area X / Y, inches. */
   width: number
   height: number
+  /** Inches, Womp frame. */
   position: Vec3
+  /** Degrees, Womp frame. */
   rotation: Vec3
 }
 
@@ -67,8 +76,8 @@ export interface OverheadLightTuning {
   color: string
   /** SpotLight intensity (candela). */
   intensity: number
+  /** Inches, Womp frame. */
   position: Vec3
-  /** Point the cone at this position. */
   target: Vec3
   /** Cone angle in degrees. */
   angle: number
@@ -76,8 +85,11 @@ export interface OverheadLightTuning {
 }
 
 export interface LightsTuning {
-  /** Draw light helpers (spot cone, rect outlines). */
+  /** Draw light helpers (rect outlines, spot cone) and pull the camera back. */
   debug: boolean
+  /** Womp luminance → three RectAreaLight intensity (nits). */
+  luminanceScale: number
+  /** Optional overhead spot in addition to the Womp rect lights. */
   overhead: OverheadLightTuning
   rects: RectLightTuning[]
 }
@@ -187,28 +199,30 @@ export type GlassPreset = keyof typeof glassPresets
 
 export const defaultLights: LightsTuning = {
   debug: false,
+  luminanceScale: 0.25,
   overhead: {
     color: '#ffffff',
-    intensity: 60,
-    position: { x: 0, y: 320, z: 260 },
+    intensity: 0,
+    position: { x: 0, y: 120, z: 100 },
     target: { x: 0, y: 0, z: 0 },
     angle: 40,
     penumbra: 0.6,
   },
+  // Values read from the Womp inspector (pmndrs – poppies, 2026-09-07).
   rects: [
-    // key: wide panel above and in front, tilted down at the pill
-    { name: 'key', color: '#ffffff', intensity: 6, width: 700, height: 220, position: { x: 0, y: 260, z: 320 }, rotation: { x: -40, y: 0, z: 0 } },
-    // fill: cool panel from the left
-    { name: 'fill', color: '#cfe0ff', intensity: 3, width: 260, height: 420, position: { x: -520, y: 20, z: 240 }, rotation: { x: 0, y: 60, z: 0 } },
-    // rim: warm panel from the right
-    { name: 'rim', color: '#ffd6ea', intensity: 3, width: 260, height: 420, position: { x: 520, y: 40, z: 240 }, rotation: { x: 0, y: -60, z: 0 } },
+    // "Overhead Light": the large panel above the scene. Womp did not show its numbers, so
+    // these are estimated from the viewport: roughly four nav widths wide, white, tilted at the nav.
+    { name: 'overhead', color: '#ffffff', luminance: 6, width: 700, height: 160, position: { x: 0, y: 70, z: 25 }, rotation: { x: -60, y: 0, z: 0 } },
+    { name: '45° top', color: '#caf543', luminance: 15, width: 98.62, height: 1.01, position: { x: 18.31, y: 38.7, z: 30.69 }, rotation: { x: -135, y: -180, z: -45 } },
+    { name: '45° middle', color: '#caf543', luminance: 50, width: 144.04, height: 0.76, position: { x: -1.75, y: 14.65, z: 6.64 }, rotation: { x: -135, y: -180, z: -45 } },
+    { name: '45° bottom', color: '#caf543', luminance: 15, width: 98.62, height: 0.53, position: { x: -14.04, y: -7.33, z: -9.99 }, rotation: { x: -135, y: -180, z: -45 } },
   ],
 }
 
 export const defaultTuning: Tuning = {
   glass: glassPresets.roughGlass,
   lights: defaultLights,
-  env: { intensity: 1, rotation: 0 },
+  env: { intensity: 0.15, rotation: 0 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }
 
