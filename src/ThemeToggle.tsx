@@ -1,16 +1,16 @@
 import { useResolvedTheme, useThemeStore, type ThemeChoice } from './theme'
 import { useIsClient } from './isClient'
 
-const NEXT: Record<ThemeChoice, ThemeChoice> = { system: 'light', light: 'dark', dark: 'system' }
+const NEXT: Record<ThemeChoice, ThemeChoice> = { dark: 'light', light: 'system', system: 'dark' }
 const LABEL: Record<ThemeChoice, string> = { system: 'System', light: 'Light', dark: 'Dark' }
 const GLYPH: Record<ThemeChoice, string> = { system: '◐', light: '☀', dark: '☾' }
 
-/** Cycles system → light → dark. Reads the current choice and shows the resolved scheme. */
+/** Cycles dark → light → system. Reads the current choice and shows the resolved scheme. */
 export function ThemeToggle({ style }: { style?: React.CSSProperties }) {
   // The stored choice is only known in the browser; render the neutral state during SSR and
   // hydration so the prerendered markup matches.
   const client = useIsClient()
-  const theme = useThemeStore((s) => (client ? s.theme : 'system'))
+  const theme = useThemeStore((s) => (client ? s.theme : 'dark'))
   const setTheme = useThemeStore((s) => s.setTheme)
   const resolvedLive = useResolvedTheme()
   const resolved = client ? resolvedLive : 'dark'

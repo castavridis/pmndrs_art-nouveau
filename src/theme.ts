@@ -10,9 +10,9 @@ interface ThemeStore {
   setTheme: (t: ThemeChoice) => void
 }
 
-/** The user's choice; `system` follows prefers-color-scheme. Persisted per browser. */
+/** The user's choice; dark by default, `system` follows prefers-color-scheme. Persisted per browser. */
 export const useThemeStore = create<ThemeStore>()(
-  persist((set) => ({ theme: 'system', setTheme: (theme) => set({ theme }) }), { name: 'theme' }),
+  persist((set) => ({ theme: 'dark', setTheme: (theme) => set({ theme }) }), { name: 'theme' }),
 )
 
 const query = () =>

@@ -1,6 +1,6 @@
 :root {
-  /* Dark is the default; ThemeApplier stamps data-theme, and before hydration the OS
-     preference applies via the media query below. */
+  /* Dark is the default (also before hydration and without JS); ThemeApplier stamps
+     data-theme once the stored choice is known, and "system" follows the OS from there. */
   --page-bg: #161612;
   --page-ink: #eeeeea;
   color-scheme: dark;
@@ -13,22 +13,11 @@
   --page-ink: #1a1a15;
   color-scheme: light;
 }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) {
-    --page-bg: #f1efe8;
-    --page-ink: #1a1a15;
-    color-scheme: light;
-  }
-}
 /* Traced outlines are white strokes; flip them on a light page. */
 :root[data-theme='light'] [data-outline] {
   filter: invert(1);
 }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) [data-outline] {
-    filter: invert(1);
-  }
-}
+
 body {
   margin: 0;
   min-height: 100dvh;

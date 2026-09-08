@@ -74,6 +74,11 @@ export function Home() {
             </p>
           </Callout>
         </section>
+        <footer style={{ display: 'flex', justifyContent: 'center', fontSize: 14, opacity: 0.7 }}>
+          <a href="/dev/" style={{ color: 'inherit', textUnderlineOffset: 3 }}>
+            Experiments and tuning pages →
+          </a>
+        </footer>
       </main>
     </>
   )
