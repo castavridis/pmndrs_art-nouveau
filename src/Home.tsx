@@ -22,7 +22,7 @@ export function Home() {
     <>
       <header style={{ padding: '32px 16px 0', position: 'relative' }}>
         <Nav links={LINKS} />
-        <ThemeToggle style={{ position: 'absolute', top: 16, right: 16 }} />
+        <ThemeToggle style={{ position: 'absolute', top: 16, left: 16 }} />
       </header>
       <main
         style={{

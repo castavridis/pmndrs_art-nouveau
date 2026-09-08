@@ -93,8 +93,11 @@ export interface OverheadLightTuning {
 }
 
 export interface LightsTuning {
-  /** A point light wandering across the canvas (0 intensity = off). */
-  roam: { intensity: number; color: string; speed: number; size: number }
+  /**
+   * A point light wandering across the canvas (0 intensity = off). `follow`: sits under the
+   * pointer while it is over the page. `body`: also draw its glowing sphere through the glass.
+   */
+  roam: { intensity: number; color: string; speed: number; size: number; follow: boolean; body: boolean }
   /** Draw light helpers (rect outlines, spot cone) and pull the camera back. */
   debug: boolean
   /** Womp luminance → three RectAreaLight intensity (nits). */
@@ -135,6 +138,8 @@ export interface Tuning {
     bloomIntensity: number
     bloomThreshold: number
     bloomSmoothing: number
+    /** Bloom spread (mipmap blur radius). */
+    bloomRadius: number
     aberration: number
   }
 }
@@ -334,7 +339,7 @@ export type GlassPreset = keyof typeof glassPresets
 
 export const defaultLights: LightsTuning = {
   debug: false,
-  roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6 },
+  roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6, follow: true, body: false },
   luminanceScale: 0.25,
   emitters: true,
   emitterScale: 0.12,
@@ -365,7 +370,7 @@ export const baseTuning: Tuning = {
   glass: glassPresets.silverGlass,
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, backgroundLight: '#b9bcc8' },
-  post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
+  post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004 },
 }
 
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends (infer U)[] ? U[] : T[K] extends object ? DeepPartial<T[K]> : T[K] }

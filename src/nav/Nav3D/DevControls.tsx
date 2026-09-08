@@ -104,6 +104,7 @@ export default function DevControls() {
     bloomIntensity: { value: defaultTuning.post.bloomIntensity, min: 0, max: 2 },
     bloomThreshold: { value: defaultTuning.post.bloomThreshold, min: 0, max: 1 },
     bloomSmoothing: { value: defaultTuning.post.bloomSmoothing, min: 0, max: 1 },
+    bloomRadius: { value: defaultTuning.post.bloomRadius, min: 0, max: 1 },
     aberration: { value: defaultTuning.post.aberration, min: 0, max: 0.01, step: 0.0001 },
   }))
 
@@ -120,6 +121,8 @@ export default function DevControls() {
     color: L.roam.color,
     speed: { value: L.roam.speed, min: 0, max: 0.5 },
     size: { value: L.roam.size, min: 1, max: 40 },
+    follow: { value: L.roam.follow, label: 'follow pointer' },
+    body: { value: L.roam.body, label: 'show body' },
   }))
   const [oh, setOhPanel] = useControls('lights.overhead', () => ({
     color: L.overhead.color,

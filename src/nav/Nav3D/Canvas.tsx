@@ -188,11 +188,11 @@ function Sanitize() {
 }
 
 function Post() {
-  const { bloomIntensity, bloomThreshold, bloomSmoothing, aberration } = useTuning((s) => s.post)
+  const { bloomIntensity, bloomThreshold, bloomSmoothing, bloomRadius, aberration } = useTuning((s) => s.post)
   return (
     <EffectComposer multisampling={0} mergeMode="none">
       <Sanitize />
-      <Bloom intensity={bloomIntensity} luminanceThreshold={bloomThreshold} luminanceSmoothing={bloomSmoothing} mipmapBlur />
+      <Bloom intensity={bloomIntensity} luminanceThreshold={bloomThreshold} luminanceSmoothing={bloomSmoothing} radius={bloomRadius} mipmapBlur />
       <ChromaticAberration offset={[aberration, aberration]} radialModulation={false} modulationOffset={0} />
       {/* postprocessing@6 turns off gl.toneMapping while a composer is active; re-add it here. */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />

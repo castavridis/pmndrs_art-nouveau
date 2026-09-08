@@ -94,30 +94,71 @@ function Overhead({ debug }: { debug: boolean }) {
   )
 }
 
+/** Last pointer position over the page (client px), shared by every canvas; null when it left. */
+let pointer: { x: number; y: number } | null = null
+let pointerListeners = 0
+function usePagePointer() {
+  useEffect(() => {
+    if (pointerListeners++ === 0) {
+      const move = (e: PointerEvent) => (pointer = { x: e.clientX, y: e.clientY })
+      const leave = () => (pointer = null)
+      window.addEventListener('pointermove', move, { passive: true })
+      document.documentElement.addEventListener('pointerleave', leave)
+      window.addEventListener('blur', leave)
+      ;(window as Window & { __navPointerOff?: () => void }).__navPointerOff = () => {
+        window.removeEventListener('pointermove', move)
+        document.documentElement.removeEventListener('pointerleave', leave)
+        window.removeEventListener('blur', leave)
+      }
+    }
+    return () => {
+      if (--pointerListeners === 0) (window as Window & { __navPointerOff?: () => void }).__navPointerOff?.()
+    }
+  }, [])
+}
+
+const target = new THREE.Vector3()
+
 /**
- * A small light that wanders the canvas on a slow Lissajous path in front of the scene, so
- * highlights and refractions keep moving. Its emitter is only seen through the glass.
+ * A small light in front of the scene. With `follow` it sits under the pointer whenever the
+ * mouse is over the page (each canvas maps the same page position into its own world), and
+ * otherwise wanders a slow Lissajous path; either way it is kept inside the canvas. Its body
+ * (a glowing sphere seen through the glass) is optional; by default only the light shows.
  */
 function Roam({ debug }: { debug: boolean }) {
   const r = useTuning((s) => s.lights.roam)
   const size = useThree((s) => s.size)
+  const gl = useThree((s) => s.gl)
   const group = useRef<THREE.Group>(null!)
-  useFrame((state) => {
+  usePagePointer()
+  useFrame((state, dt) => {
     const g = group.current
     if (!g) return
-    const t = state.clock.elapsedTime * r.speed * Math.PI * 2
     const hw = px(size.width) / 2
     const hh = px(size.height) / 2
-    g.position.set(Math.sin(t) * hw * 0.8, Math.sin(t * 0.63 + 1.3) * hh * 0.8, 1.2 + Math.sin(t * 0.41) * 0.4)
+    // Keep the light (and its light pool) inside the canvas: a margin of a few px.
+    const margin = px(Math.max(r.size, 8))
+    if (r.follow && pointer) {
+      const rect = gl.domElement.getBoundingClientRect()
+      target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), 1.0)
+    } else {
+      const t = state.clock.elapsedTime * r.speed * Math.PI * 2
+      target.set(Math.sin(t) * hw * 0.8, Math.sin(t * 0.63 + 1.3) * hh * 0.8, 1.2 + Math.sin(t * 0.41) * 0.4)
+    }
+    target.x = THREE.MathUtils.clamp(target.x, -hw + margin, hw - margin)
+    target.y = THREE.MathUtils.clamp(target.y, -hh + margin, hh - margin)
+    g.position.lerp(target, 1 - Math.exp(-dt * 14))
   })
   if (r.intensity <= 0) return null
   return (
     <group ref={group}>
       <pointLight color={r.color} intensity={r.intensity} decay={2} />
-      <Emitter debug={debug}>
-        <sphereGeometry args={[px(r.size), 16, 12]} />
-        <meshBasicMaterial color={new THREE.Color(r.color).multiplyScalar(6)} toneMapped={false} />
-      </Emitter>
+      {r.body && (
+        <Emitter debug={debug}>
+          <sphereGeometry args={[px(r.size), 16, 12]} />
+          <meshBasicMaterial color={new THREE.Color(r.color).multiplyScalar(6)} toneMapped={false} />
+        </Emitter>
+      )}
     </group>
   )
 }
