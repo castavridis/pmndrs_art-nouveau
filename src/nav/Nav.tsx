@@ -9,6 +9,7 @@ import {
   watchReducedMotion,
 } from './store'
 import { Nav2D } from './Nav2D'
+import { useOutlines } from './outlines'
 import { decideEnhancement, enhancementOverride, type Enhancement } from './gate'
 import { tokens } from './tokens'
 import styles from './Nav.module.css'
@@ -99,6 +100,8 @@ function NavInner({
   // Vector outlines: the svg level, and the loading state before the 3D layer has rendered
   // (the traced SVGs are tiny and need no WebGL, so they show while chunks and GLBs load).
   const vector = enhancement?.level === 'svg' || (want3D && !is3D)
+  // Outlines drawn over the live 3D as well (dev toggle / ?outlines).
+  const overlay = useOutlines((s) => s.overlay) && is3D
   const fade = useSpring({
     opacity: is3D ? 1 : 0,
     immediate: reducedMotion,
@@ -107,7 +110,7 @@ function NavInner({
 
   return (
     <div className={styles.root} data-3d={is3D || undefined} data-enhancement={enhancement?.level}>
-      <Nav2D links={links} vector={vector} />
+      <Nav2D links={links} vector={vector} overlay={overlay} />
       {want3D && (
         <animated.div className={styles.overlay} style={fade} aria-hidden="true">
           <Fallback2D

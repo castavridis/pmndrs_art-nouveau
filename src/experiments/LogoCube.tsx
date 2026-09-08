@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { createNavStore, NavStoreContext } from '../nav/store'
 import { useCubeScene } from './cubeScene'
 import { LogoCubeVector } from './LogoCubeVector'
+import { useOutlines } from '../nav/outlines'
 
 const Scene = lazy(() => import('./LogoCubeScene'))
 // The panel lives here, outside the scene, so it stays available while svg mode hides the 3D.
@@ -16,6 +17,7 @@ const CubeControls = import.meta.env.DEV ? lazy(() => import('./CubeControls')) 
 export function LogoCube() {
   const [store] = useState(() => createNavStore({ links: [] }))
   const svg = useCubeScene((s) => s.svg)
+  const overlay = useOutlines((s) => s.overlay)
   // `?svg` forces vector mode for this visit; the panel's "svg mode" is remembered otherwise.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has('svg')) useCubeScene.getState().set({ svg: true })
@@ -33,7 +35,7 @@ export function LogoCube() {
             </Suspense>
           </div>
         )}
-        <LogoCubeVector visible={svg || !ready} />
+        <LogoCubeVector visible={svg || overlay || !ready} />
         {DevControls && CubeControls && (
           <Suspense fallback={null}>
             <DevControls />

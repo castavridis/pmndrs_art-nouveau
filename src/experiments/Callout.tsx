@@ -22,6 +22,7 @@ import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
 import type { GlassPreset } from '../nav/Nav3D/tuning'
 import { useDomTilt, usePointerParallax } from './parallax'
 import { useMeasure } from './useMeasure'
+import { useOutlines } from '../nav/outlines'
 import { ParallaxRig } from './ParallaxRig'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
@@ -78,18 +79,21 @@ export function Callout({
   // 3D readiness: vector outlines until the canvas has drawn its first frames.
   const [ready, setReady] = useState(false)
   const vector = variant === 'svg' || !ready
+  // Dev: outlines over the live 3D as well.
+  const overlay = useOutlines((s) => s.overlay)
+  const outlines = vector || overlay
   const m = fallback['callout-icon']
   return (
     <div ref={rootRef} className={styles.parallaxRoot} style={outer}>
       <div
         ref={cardRef}
-        className={`${styles.root} ${variant === 'plain' && !vector ? styles.plain : ''} ${vector ? styles.vector : ''}`}
+        className={`${styles.root} ${variant === 'plain' && !vector ? styles.plain : ''} ${vector ? styles.vector : ''} ${outlines ? styles.outlined : ''}`}
       >
         {/* Vector layer: traced outline of the icon, in place until the 3D one is up. */}
         <img
           className={styles.vectorIcon}
           src={iconOutline}
-          data-outline={vector || undefined}
+          data-outline={outlines || undefined}
           alt=""
           aria-hidden="true"
           width={m.width}
@@ -97,7 +101,7 @@ export function Callout({
           style={{
             left: callout.iconX - m.originX,
             top: callout.iconY - m.originY,
-            opacity: vector ? 1 : 0,
+            opacity: outlines ? 1 : 0,
           }}
         />
         {variant === 'surface' ? (

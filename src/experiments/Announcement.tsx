@@ -14,6 +14,7 @@ import styles from './Announcement.module.css'
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
 
 if (typeof window !== 'undefined') preloadAnnouncementAssets()
+import { useOutlines } from '../nav/outlines'
 
 export interface AnnouncementProps {
   children: ReactNode
@@ -39,28 +40,31 @@ export function Announcement({
   const bleedY = tokens.clusterBleedY + 20
   const [ready, setReady] = useState(false)
   const vector = variant === 'svg' || !ready
+  // Dev: outlines over the live 3D as well.
+  const overlay = useOutlines((s) => s.overlay)
+  const outlines = vector || overlay
   const L = fallback['announcement-left']
   const R = fallback['announcement-right']
   const end = announcement.height / 2
   return (
     <div
-      className={`${styles.root} ${vector ? styles.vector : ''}`}
+      className={`${styles.root} ${vector ? styles.vector : ''} ${outlines ? styles.outlined : ''}`}
       style={{ width, height: announcement.height }}
     >
       {/* Vector layer: outlined banner (CSS) and the traced flourishes pinned to the ends. */}
       <img
         className={styles.vectorPart}
-        data-outline={vector || undefined}
+        data-outline={outlines || undefined}
         src={leftOutline}
         alt=""
         aria-hidden="true"
         width={L.width}
         height={L.height}
-        style={{ left: end - L.originX, top: end - L.originY, opacity: vector ? 1 : 0 }}
+        style={{ left: end - L.originX, top: end - L.originY, opacity: outlines ? 1 : 0 }}
       />
       <img
         className={styles.vectorPart}
-        data-outline={vector || undefined}
+        data-outline={outlines || undefined}
         src={rightOutline}
         alt=""
         aria-hidden="true"
@@ -69,7 +73,7 @@ export function Announcement({
         style={{
           right: end - (R.width - R.originX),
           top: end - R.originY,
-          opacity: vector ? 1 : 0,
+          opacity: outlines ? 1 : 0,
         }}
       />
       {variant === '3d' && (

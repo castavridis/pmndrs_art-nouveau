@@ -13,6 +13,7 @@ import {
   type Tuning,
   type Vec3,
 } from './tuning'
+import { useOutlines } from '../outlines'
 
 // leva vector controls use tuples; the store uses {x,y,z}.
 type V = [number, number, number]
@@ -38,6 +39,13 @@ export default function DevControls() {
 
   // The select shows the preset the store's glass was last set from (kept across reloads),
   // and `status` says whether the values still match it or carry edits.
+  // View: traced outlines over the live 3D (all components on the page).
+  const overlay = useOutlines((s) => s.overlay)
+  const setOverlay = useOutlines((s) => s.setOverlay)
+  const [{ outlines }, setViewPanel] = useControls('view', () => ({ outlines: { value: overlay, label: 'svg outlines' } }), { order: -1 })
+  useEffect(() => setOverlay(outlines), [outlines, setOverlay])
+  useEffect(() => setViewPanel({ outlines: overlay }), [overlay, setViewPanel])
+
   const [{ preset }, setPresetPanel] = useControls(() => ({
     preset: {
       value: useTuning.getState().preset,

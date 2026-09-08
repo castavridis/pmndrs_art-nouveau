@@ -24,7 +24,18 @@ import '@fontsource-variable/inter'
  * Until the first client-side measurement, no `data-mode` is set: the server HTML and
  * the no-JS experience use the `full` layout with a horizontally scrollable pill.
  */
-export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: boolean }) {
+export function Nav2D({
+  links,
+  vector = false,
+  overlay = false,
+}: {
+  links: NavLink[]
+  /** Vector outlines only (no fills, ink follows the page). */
+  vector?: boolean
+  /** Outlines drawn on top of the live 3D layer: clusters, petals and the pill's edge. */
+  overlay?: boolean
+}) {
+  const outlines = vector || overlay
   const mode = useNavStore((s) => s.mode)
   const [measured, setMeasured] = useState(false)
   const [pillWidth, setPillWidth] = useState<number | null>(null)
@@ -129,6 +140,7 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
       className={styles.root}
       data-mode={measured ? mode : undefined}
       data-vector={vector || undefined}
+      data-overlay={overlay || undefined}
       style={cssVars}
     >
       <nav aria-label="Main" className={styles.nav}>
@@ -136,8 +148,8 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
             centres exactly like the 3D ones: the manifest gives each SVG's size and origin. */}
         <img
           className={`${styles.cluster} ${styles.clusterLeft}`}
-          src={vector ? leftOutline : leftCluster}
-          data-outline={vector || undefined}
+          src={outlines ? leftOutline : leftCluster}
+          data-outline={outlines || undefined}
           alt=""
           aria-hidden="true"
           width={fallback['nav-left'].width}
@@ -149,8 +161,8 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
         />
         <img
           className={`${styles.cluster} ${styles.clusterRight}`}
-          src={vector ? rightOutline : rightCluster}
-          data-outline={vector || undefined}
+          src={outlines ? rightOutline : rightCluster}
+          data-outline={outlines || undefined}
           alt=""
           aria-hidden="true"
           width={fallback['nav-right'].width}
@@ -171,8 +183,8 @@ export function Nav2D({ links, vector = false }: { links: NavLink[]; vector?: bo
             <img
               key={i}
               className={styles.petal}
-              src={vector ? petalOutline : petalSvg}
-              data-outline={vector || undefined}
+              src={outlines ? petalOutline : petalSvg}
+              data-outline={outlines || undefined}
               alt=""
               aria-hidden="true"
               width={fallback.petal.width}
