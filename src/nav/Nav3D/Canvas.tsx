@@ -6,6 +6,7 @@ import { ToneMappingMode } from 'postprocessing'
 import type { PerspectiveCamera } from 'three'
 import { tokens } from '../tokens'
 import { useTuning } from './tuning'
+import { Lights } from './Lights'
 
 export interface NavCanvasProps {
   children?: ReactNode
@@ -40,6 +41,7 @@ export function NavCanvas({ children, postprocessing = true, className }: NavCan
       <CameraRig />
       <Suspense fallback={null}>
         <Studio />
+        <Lights />
         {children}
         {postprocessing && <Post />}
         <Preload all />
@@ -48,17 +50,26 @@ export function NavCanvas({ children, postprocessing = true, className }: NavCan
   )
 }
 
-/** Keeps the camera at the distance where the visible height at z=0 equals size.height / pxPerUnit. */
+/**
+ * Keeps the camera at the distance where the visible height at z=0 equals size.height / pxPerUnit.
+ * With `lights.debug` on, pulls back and up so the light helpers (which sit well outside the
+ * nav's own viewport) are in frame.
+ */
 function CameraRig() {
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const height = useThree((s) => s.size.height)
+  const debug = useTuning((s) => s.lights.debug)
   useLayoutEffect(() => {
     const visible = height / tokens.pxPerUnit
     const dist = visible / 2 / Math.tan((camera.fov * Math.PI) / 360)
-    camera.position.set(0, 0, dist)
+    if (debug) {
+      camera.position.set(0, dist * 2.2, dist * 5.5)
+    } else {
+      camera.position.set(0, 0, dist)
+    }
     camera.lookAt(0, 0, 0)
     camera.updateProjectionMatrix()
-  }, [camera, height])
+  }, [camera, height, debug])
   return null
 }
 

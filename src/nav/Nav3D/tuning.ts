@@ -45,8 +45,46 @@ export interface GlassTuning {
   normalRepeat: number
 }
 
+export interface Vec3 {
+  x: number
+  y: number
+  z: number
+}
+
+/** Positions/sizes in CSS px (nav space: 100px = 1 unit), rotations in degrees. */
+export interface RectLightTuning {
+  name: string
+  color: string
+  /** RectAreaLight intensity (nits). */
+  intensity: number
+  width: number
+  height: number
+  position: Vec3
+  rotation: Vec3
+}
+
+export interface OverheadLightTuning {
+  color: string
+  /** SpotLight intensity (candela). */
+  intensity: number
+  position: Vec3
+  /** Point the cone at this position. */
+  target: Vec3
+  /** Cone angle in degrees. */
+  angle: number
+  penumbra: number
+}
+
+export interface LightsTuning {
+  /** Draw light helpers (spot cone, rect outlines). */
+  debug: boolean
+  overhead: OverheadLightTuning
+  rects: RectLightTuning[]
+}
+
 export interface Tuning {
   glass: GlassTuning
+  lights: LightsTuning
   env: {
     intensity: number
     rotation: number
@@ -147,8 +185,29 @@ export const glassPresets = {
 
 export type GlassPreset = keyof typeof glassPresets
 
+export const defaultLights: LightsTuning = {
+  debug: false,
+  overhead: {
+    color: '#ffffff',
+    intensity: 60,
+    position: { x: 0, y: 320, z: 260 },
+    target: { x: 0, y: 0, z: 0 },
+    angle: 40,
+    penumbra: 0.6,
+  },
+  rects: [
+    // key: wide panel above and in front, tilted down at the pill
+    { name: 'key', color: '#ffffff', intensity: 6, width: 700, height: 220, position: { x: 0, y: 260, z: 320 }, rotation: { x: -40, y: 0, z: 0 } },
+    // fill: cool panel from the left
+    { name: 'fill', color: '#cfe0ff', intensity: 3, width: 260, height: 420, position: { x: -520, y: 20, z: 240 }, rotation: { x: 0, y: 60, z: 0 } },
+    // rim: warm panel from the right
+    { name: 'rim', color: '#ffd6ea', intensity: 3, width: 260, height: 420, position: { x: 520, y: 40, z: 240 }, rotation: { x: 0, y: -60, z: 0 } },
+  ],
+}
+
 export const defaultTuning: Tuning = {
   glass: glassPresets.roughGlass,
+  lights: defaultLights,
   env: { intensity: 1, rotation: 0 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, aberration: 0.0004 },
 }

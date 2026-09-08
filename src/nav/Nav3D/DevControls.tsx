@@ -1,6 +1,11 @@
 import { useEffect } from 'react'
 import { useControls, folder, Leva } from 'leva'
-import { useTuning, defaultTuning, glassPresets, type GlassPreset } from './tuning'
+import { useTuning, defaultTuning, glassPresets, type GlassPreset, type RectLightTuning, type Vec3 } from './tuning'
+
+// leva vector controls use tuples; the store uses {x,y,z}.
+type V = [number, number, number]
+const toV = (v: Vec3): V => [v.x, v.y, v.z]
+const fromV = ([x, y, z]: V): Vec3 => ({ x, y, z })
 
 /** leva panel. Only ever imported in dev — see index.tsx. */
 export default function DevControls() {
@@ -62,6 +67,34 @@ export default function DevControls() {
     aberration: { value: defaultTuning.post.aberration, min: 0, max: 0.01, step: 0.0001 },
   })
 
+  const L = defaultTuning.lights
+  const { debug } = useControls('lights', { debug: L.debug })
+  const oh = useControls('lights.overhead', {
+    color: L.overhead.color,
+    intensity: { value: L.overhead.intensity, min: 0, max: 400 },
+    position: { value: toV(L.overhead.position), step: 10 },
+    target: { value: toV(L.overhead.target), step: 10 },
+    angle: { value: L.overhead.angle, min: 1, max: 90 },
+    penumbra: { value: L.overhead.penumbra, min: 0, max: 1 },
+  })
+  const rect0 = useRectControls(L.rects[0]!)
+  const rect1 = useRectControls(L.rects[1]!)
+  const rect2 = useRectControls(L.rects[2]!)
+  useEffect(() => {
+    set('lights', {
+      debug,
+      overhead: {
+        color: oh.color,
+        intensity: oh.intensity,
+        position: fromV(oh.position),
+        target: fromV(oh.target),
+        angle: oh.angle,
+        penumbra: oh.penumbra,
+      },
+      rects: [rect0, rect1, rect2],
+    })
+  }, [debug, oh, rect0, rect1, rect2, set])
+
   useEffect(() => set('glass', glass), [glass, set])
   // Preset select overrides the sliders (leva keeps its own values; pick a preset to reset the look).
   useEffect(() => applyPreset(preset), [preset, applyPreset])
@@ -69,4 +102,17 @@ export default function DevControls() {
   useEffect(() => set('post', post), [post, set])
 
   return <Leva collapsed titleBar={{ title: 'nav 3D' }} />
+}
+
+/** One leva folder per rect light: size, colour, luminosity, rotation (deg), position (px). */
+function useRectControls(d: RectLightTuning): RectLightTuning {
+  const c = useControls(`lights.rect: ${d.name}`, {
+    color: d.color,
+    intensity: { value: d.intensity, min: 0, max: 40 },
+    width: { value: d.width, min: 10, max: 2000, step: 10 },
+    height: { value: d.height, min: 10, max: 2000, step: 10 },
+    position: { value: toV(d.position), step: 10 },
+    rotation: { value: toV(d.rotation), step: 5 },
+  })
+  return { name: d.name, ...c, position: fromV(c.position), rotation: fromV(c.rotation) }
 }
