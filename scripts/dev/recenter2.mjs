@@ -1,0 +1,15 @@
+// Re-center then zoom out: the zoom must stick.
+import { chromium } from '@playwright/test'
+const b = await chromium.launch({ channel: 'chrome', args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=metal'] })
+const p = await b.newPage({ viewport: { width: 1400, height: 900 } })
+await p.goto('http://localhost:5173/dev/cube'); await p.waitForFunction(() => !!window.__nav3d); await p.waitForTimeout(2500)
+const dist = () => p.evaluate(() => +window.__nav3d.camera.position.length().toFixed(2))
+await p.mouse.move(700, 450); await p.mouse.down(); await p.mouse.move(500, 300, { steps: 10 }); await p.mouse.up(); await p.waitForTimeout(400)
+await p.keyboard.press('r'); await p.waitForTimeout(2000)
+const afterRecenter = await dist()
+await p.mouse.move(700, 450); await p.mouse.wheel(0, 600); await p.waitForTimeout(1500)
+const afterZoomOut = await dist()
+await p.waitForTimeout(1500)
+const later = await dist()
+console.log(JSON.stringify({ afterRecenter, afterZoomOut, later, stuck: Math.abs(later - afterZoomOut) > 0.5 }))
+await b.close()

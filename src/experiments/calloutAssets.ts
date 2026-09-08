@@ -8,8 +8,6 @@ import leafBottomUrl from '../nav/Nav3D/generated/callout-leaf-bottom-transforme
 
 const DRACO = `${import.meta.env.BASE_URL}draco/`
 const URLS = [lensUrl, leafTopUrl, leafBottomUrl] as const
-/** Same back-to-front export as the nav assets. */
-const FLIP = new THREE.Matrix4().makeRotationY(Math.PI)
 
 export interface CalloutIconAsset {
   lens: THREE.BufferGeometry
@@ -21,9 +19,9 @@ export interface CalloutIconAsset {
 
 /**
  * The callout icon: a lens ring with a leaf curling in front and another behind. The three
- * exports share the nav's absolute space; they are flipped like the nav meshes, re-origined
- * at the lens centre and converted to world units, so the ring is centred on the origin and
- * the leaves keep their exported offsets.
+ * exports share the nav's absolute space; they are re-origined at the lens centre and
+ * converted to world units, so the ring is centred on the origin and the leaves keep their
+ * exported offsets.
  */
 export function useCalloutIcon(): CalloutIconAsset {
   const gltfs = useGLTF([...URLS], DRACO)
@@ -37,7 +35,8 @@ export function useCalloutIcon(): CalloutIconAsset {
       mesh.updateWorldMatrix(true, false)
       const g = mesh.geometry.clone()
       g.applyMatrix4(mesh.matrixWorld)
-      g.applyMatrix4(FLIP)
+      // Unlike the nav pieces these were exported facing the camera: no 180° flip, and the
+      // "leaf top" (higher z) correctly ends up in front of the lens.
       g.computeBoundingBox()
       return g
     }

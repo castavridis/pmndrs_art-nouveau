@@ -42,3 +42,18 @@
 .body p {
   margin: 0 0 10px;
 }
+.symbol {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  line-height: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.6));
+}
+.kind {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

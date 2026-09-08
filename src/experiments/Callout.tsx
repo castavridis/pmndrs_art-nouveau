@@ -6,6 +6,8 @@ import { tokens } from '../nav/tokens'
 import { preloadCalloutIcon, useCalloutIcon } from './calloutAssets'
 import styles from './Callout.module.css'
 import { callout } from './calloutMetrics'
+import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
+import type { GlassPreset } from '../nav/Nav3D/tuning'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
 
@@ -14,6 +16,8 @@ preloadCalloutIcon()
 export interface CalloutProps {
   /** `surface`: a 3D glass slab behind DOM content. `plain`: a CSS card with only the icon in 3D. */
   variant: 'surface' | 'plain'
+  /** GitHub-style kind: sets the symbol inside the lens, the label and the palette tint. */
+  kind?: CalloutKind
   title: string
   children: ReactNode
   postprocessing?: boolean
@@ -23,9 +27,12 @@ export interface CalloutProps {
  * A callout: the announcement icon (lens + leaves) in the top-left corner and DOM content.
  * Content is always DOM (accessible, selectable, wraps); only the decoration is 3D.
  */
-export function Callout({ variant, title, children, postprocessing = true }: CalloutProps) {
+export function Callout({ variant, kind = 'note', title, children, postprocessing = true }: CalloutProps) {
   const size: CSSProperties = { width: callout.width, height: callout.height }
   const bleed = tokens.clusterBleedX
+  const k = calloutKinds[kind]
+  const tint = kindHex(kind)
+  const preset: GlassPreset = k.colour
   return (
     <div className={`${styles.root} ${variant === 'plain' ? styles.plain : ''}`} style={size}>
       {variant === 'surface' ? (
@@ -33,8 +40,8 @@ export function Callout({ variant, title, children, postprocessing = true }: Cal
         <div className={styles.canvas} style={{ inset: -bleed }} aria-hidden="true">
           <NavCanvas postprocessing={postprocessing}>
             <Suspense fallback={null}>
-              <Surface />
-              <IconAtCorner />
+              <Surface preset={preset} />
+              <IconAtCorner preset={preset} />
             </Suspense>
             {DevHandles && (
               <Suspense fallback={null}>
@@ -55,9 +62,9 @@ export function Callout({ variant, title, children, postprocessing = true }: Cal
           }}
           aria-hidden="true"
         >
-          <NavCanvas postprocessing={postprocessing}>
+          <NavCanvas postprocessing={false}>
             <Suspense fallback={null}>
-              <Icon />
+              <Icon preset={preset} />
             </Suspense>
             {DevHandles && (
               <Suspense fallback={null}>
@@ -67,7 +74,18 @@ export function Callout({ variant, title, children, postprocessing = true }: Cal
           </NavCanvas>
         </div>
       )}
+      {/* The kind's symbol, centred in the lens (DOM, so it stays crisp at any size). */}
+      <div
+        className={styles.symbol}
+        style={{ left: callout.iconX, top: callout.iconY, fontSize: callout.icon * 0.42, color: tint }}
+        aria-hidden="true"
+      >
+        {k.icon}
+      </div>
       <div className={styles.content} style={{ padding: callout.padding, paddingLeft: callout.iconX + callout.icon * 0.75 }}>
+        <div className={styles.kind} style={{ color: tint }}>
+          {k.label}
+        </div>
         <h3 className={styles.title}>{title}</h3>
         <div className={styles.body}>{children}</div>
       </div>
@@ -76,41 +94,41 @@ export function Callout({ variant, title, children, postprocessing = true }: Cal
 }
 
 /** The glass slab, centred in the canvas (which is the card plus bleed). */
-function Surface() {
+function Surface({ preset }: { preset: GlassPreset }) {
   const geometry = useMemo(() => makeRoundedRectGeometry(callout.width, callout.height, callout.radius, callout.depth), [])
   useEffect(() => () => geometry.dispose(), [geometry])
   return (
     <mesh geometry={geometry}>
-      <Glass />
+      <Glass preset={preset} />
     </mesh>
   )
 }
 
 /** Icon placed at the card's top-left corner (canvas origin is the card centre). */
-function IconAtCorner() {
+function IconAtCorner({ preset }: { preset: GlassPreset }) {
   const x = (-callout.width / 2 + callout.iconX) / tokens.pxPerUnit
   const y = (callout.height / 2 - callout.iconY) / tokens.pxPerUnit
   return (
     <group position={[x, y, callout.depth / 2 / tokens.pxPerUnit + 0.02]}>
-      <Icon />
+      <Icon preset={preset} />
     </group>
   )
 }
 
 /** Lens ring with the two leaves, scaled so the ring is `callout.icon` px across. */
-export function Icon() {
+export function Icon({ preset }: { preset: GlassPreset }) {
   const { lens, leafTop, leafBottom, size } = useCalloutIcon()
   const s = callout.icon / tokens.pxPerUnit / size
   return (
     <group scale={s}>
       <mesh geometry={lens}>
-        <Glass sampler />
+        <Glass sampler preset={preset} />
       </mesh>
       <mesh geometry={leafTop}>
-        <Glass sampler />
+        <Glass sampler preset={preset} />
       </mesh>
       <mesh geometry={leafBottom}>
-        <Glass sampler />
+        <Glass sampler preset={preset} />
       </mesh>
     </group>
   )
