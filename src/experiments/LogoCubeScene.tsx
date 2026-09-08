@@ -6,12 +6,14 @@ import { glassPresets, useTuning } from '../nav/Nav3D/tuning'
 import { preloadNavAssets } from '../nav/Nav3D/assets'
 import { preloadLogoCube, useLogoCube } from './logoCubeAssets'
 import { makeLogoGeometry } from './logoBlocks'
-import { Inside, Outside } from './Inside'
+import { Flowers, Inside, Outside } from './Inside'
+import { preloadFlower } from './flowerAssets'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
 
 preloadNavAssets()
+preloadFlower()
 /** `?glb` shows the exported mesh instead of the procedural prisms. */
 const USE_GLB = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('glb')
 if (USE_GLB) preloadLogoCube()
@@ -70,6 +72,7 @@ function Logo({ geometry, boxes }: { geometry: THREE.BufferGeometry; boxes: THRE
       </mesh>
       <Inside boxes={boxes} />
       <Outside bounds={bounds} />
+      <Flowers boxes={boxes} bounds={bounds} />
     </>
   )
 }

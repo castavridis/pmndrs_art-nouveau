@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import { Generator } from 'maath/random'
 import { useNavStore } from '../nav/store'
 import { useNavAssets } from '../nav/Nav3D/assets'
+import { useFlower } from './flowerAssets'
 import { Glass } from '../nav/Nav3D/Glass'
 import { palette, type GlassPreset, type PaletteName } from '../nav/Nav3D/tuning'
 
@@ -34,7 +35,7 @@ const tmp = new THREE.Object3D()
 /** Bodies drifting inside boxes: slow constant velocity, tumble, bounce off the walls. */
 class Swarm {
   readonly bodies: Body[]
-  constructor(boxes: THREE.Box3[], count: number, seed: number, speed: number, scale: [number, number], margin: number) {
+  constructor(boxes: THREE.Box3[], count: number, seed: number, speed: number, scale: [number, number], margin: number, spin = 1.5) {
     const rng = new Generator(seed)
     const sizes = boxes.map((b) => b.getSize(new THREE.Vector3()))
     const volumes = sizes.map((s) => s.x * s.y * s.z)
@@ -67,7 +68,7 @@ class Swarm {
           ),
           v: new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).normalize().multiplyScalar(speed * (0.5 + r())),
           rot: new THREE.Euler(r() * Math.PI * 2, r() * Math.PI * 2, r() * Math.PI * 2),
-          spin: new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).multiplyScalar(1.5),
+          spin: new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).multiplyScalar(spin),
           scale: THREE.MathUtils.lerp(scale[0], scale[1], r()),
         })
       }
@@ -112,14 +113,16 @@ interface GroupProps {
   speed: number
   scale: [number, number]
   margin: number
+  /** Tumble rate (rad/s scale). */
+  spin?: number
 }
 
-function InstancedSwarm({ boxes, geometry, preset, boxIndex, count, seed, speed, scale, margin }: GroupProps) {
+function InstancedSwarm({ boxes, geometry, preset, boxIndex, count, seed, speed, scale, margin, spin }: GroupProps) {
   const mesh = useRef<THREE.InstancedMesh>(null!)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const swarm = useMemo(
-    () => new Swarm(boxIndex === undefined ? boxes : [boxes[boxIndex % boxes.length]!], count, seed, speed, scale, margin),
-    [boxes, boxIndex, count, seed, speed, scale, margin],
+    () => new Swarm(boxIndex === undefined ? boxes : [boxes[boxIndex % boxes.length]!], count, seed, speed, scale, margin, spin),
+    [boxes, boxIndex, count, seed, speed, scale, margin, spin],
   )
   useLayoutEffect(() => {
     const m = mesh.current
@@ -175,6 +178,37 @@ export function Outside({ bounds, petals = 60 }: OutsideProps) {
     <>
       {groups.map((g, i) => (
         <InstancedSwarm key={g.preset} boxes={volume} geometry={petalLo} preset={g.preset} count={g.count} seed={500 + i} speed={0.08} scale={[1, 2]} margin={0} />
+      ))}
+    </>
+  )
+}
+
+export interface FlowersProps {
+  boxes: THREE.Box3[]
+  bounds: THREE.Box3
+  inside?: number
+  outside?: number
+}
+
+/**
+ * Blossoms from flower.glb in random palette colours: a few inside the blocks, more around
+ * the model. The blossom is ~4.8 units wide natively, so it is scaled to a fraction of a block.
+ */
+export function Flowers({ boxes, bounds, inside = 6, outside = 10 }: FlowersProps) {
+  const flower = useFlower()
+  const around = useMemo(() => {
+    const size = bounds.getSize(new THREE.Vector3())
+    return [bounds.clone().expandByVector(new THREE.Vector3(size.x * 0.9, size.y * 0.35, 1.5))]
+  }, [bounds])
+  const inGroups = useMemo(() => randomSplit(inside, 31), [inside])
+  const outGroups = useMemo(() => randomSplit(outside, 47), [outside])
+  return (
+    <>
+      {inGroups.map((g, i) => (
+        <InstancedSwarm key={`in-${g.preset}`} boxes={boxes} geometry={flower} preset={g.preset} count={g.count} seed={700 + i} speed={0.05} scale={[0.16, 0.26]} margin={0.5} spin={0.4} />
+      ))}
+      {outGroups.map((g, i) => (
+        <InstancedSwarm key={`out-${g.preset}`} boxes={around} geometry={flower} preset={g.preset} count={g.count} seed={800 + i} speed={0.04} scale={[0.18, 0.34]} margin={0} spin={0.4} />
       ))}
     </>
   )
