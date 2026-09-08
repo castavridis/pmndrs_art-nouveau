@@ -17,7 +17,8 @@ export interface Block {
 }
 
 export const DEPTH = [-401.1, 405.3] as const
-export const BEVEL = 15
+/** Edge bevel in px. 0 = sharp boxes (the export has ~15). */
+export const BEVEL = 0
 export const CENTRE: [number, number, number] = [4.2, 587.0, 2.1]
 
 export const LOGO_BLOCKS: Block[] = [
@@ -115,6 +116,14 @@ function inset(points: [number, number][], d: number): [number, number][] {
   })
 }
 
+/** A plain polygon Shape. */
+function polygon(points: [number, number][]): THREE.Shape {
+  const shape = new THREE.Shape()
+  points.forEach(([x, y], i) => (i === 0 ? shape.moveTo(x, y) : shape.lineTo(x, y)))
+  shape.closePath()
+  return shape
+}
+
 /** A Shape whose corners are rounded with radius r (works for concave corners too). */
 function roundedPolygon(points: [number, number][], r: number): THREE.Shape {
   const shape = new THREE.Shape()
@@ -147,10 +156,12 @@ export function makeLogoGeometry(): ProceduralLogo {
   const depth = DEPTH[1] - DEPTH[0]
   const parts = LOGO_BLOCKS.map((b) => {
     // ExtrudeGeometry grows the outline by bevelSize; inset first so the finished silhouette
-    // matches the measured bounds (same trick as the nav pill).
-    const g = new THREE.ExtrudeGeometry(roundedPolygon(inset(b.outline, BEVEL), Math.max(BEVEL * 0.5, 4)), {
+    // matches the measured bounds (same trick as the nav pill). With BEVEL 0 the outline is
+    // used as-is and the corners stay sharp.
+    const shape = BEVEL > 0 ? roundedPolygon(inset(b.outline, BEVEL), Math.max(BEVEL * 0.5, 4)) : polygon(b.outline)
+    const g = new THREE.ExtrudeGeometry(shape, {
       depth: depth - BEVEL * 2,
-      bevelEnabled: true,
+      bevelEnabled: BEVEL > 0,
       bevelThickness: BEVEL,
       bevelSize: BEVEL,
       bevelSegments: 4,
