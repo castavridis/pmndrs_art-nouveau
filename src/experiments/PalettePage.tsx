@@ -13,6 +13,8 @@ import { preloadFlower, useFlower } from './flowerAssets'
 import { preloadCalloutIcon, useCalloutIcon } from './calloutAssets'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { Backing } from '../nav/Nav3D/Backing'
+import { Shards } from './Shards'
+import type { ThreeEvent } from '@react-three/fiber'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const PaletteControls = import.meta.env.DEV ? lazy(() => import('./PaletteControls')) : null
@@ -116,12 +118,26 @@ function Sample({ name }: { name: PaletteName }) {
   const hw = px(SLAB.width) / 2
   const hh = px(SLAB.height) / 2
   const front = px(SLAB.depth / 2)
+  // Click the slab to shatter it under the pointer; it re-forms once the shards have gone.
+  const [hit, setHit] = useState<[number, number] | null>(null)
+  const strike = (e: ThreeEvent<MouseEvent>) => {
+    if (hit) return
+    e.stopPropagation()
+    const local = e.object.worldToLocal(e.point.clone())
+    setHit([local.x, local.y])
+  }
   return (
     <group>
-      <Backing width={SLAB.width} height={SLAB.height} depth={SLAB.depth} />
-      <mesh geometry={slab}>
-        <Glass sampler />
-      </mesh>
+      {hit ? (
+        <Shards width={px(SLAB.width)} height={px(SLAB.height)} depth={px(SLAB.depth)} hit={hit} radius={SLAB.radius} onDone={() => setHit(null)} />
+      ) : (
+        <>
+          <Backing width={SLAB.width} height={SLAB.height} depth={SLAB.depth} />
+          <mesh geometry={slab} onClick={strike}>
+            <Glass sampler />
+          </mesh>
+        </>
+      )}
       {/* Blossom on the bottom-left corner, half over the slab. */}
       <mesh geometry={flower} scale={fs} rotation={[0.15, 0, 0.2]} position={[-hw + 0.1, -hh + 0.05, front + 0.08]}>
         <Glass sampler preset={name} />

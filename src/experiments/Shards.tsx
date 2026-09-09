@@ -6,6 +6,8 @@ import { Glass } from '../nav/Nav3D/Glass'
 import { usePresetGlass } from '../nav/Nav3D/paletteTuning'
 import { useTuning } from '../nav/Nav3D/tuning'
 import { fractureRect, shardGeometry } from './shatter'
+import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
+import { tokens } from '../nav/tokens'
 import type { PresetName } from '../nav/Nav3D/customPresets'
 
 interface Shard {
@@ -27,6 +29,8 @@ export interface ShardsProps {
   /** Seconds until the shards have fallen and faded; `onDone` fires then. */
   life?: number
   onDone?: () => void
+  /** Corner radius of the slab (px) for its falling backing. */
+  radius?: number
 }
 
 const GRAVITY = -9
@@ -36,7 +40,7 @@ const GRAVITY = -9
  * tumbles, falls under gravity and shrinks away. One draw per shard with the shared
  * transmission pass, so a few dozen shards cost about what the slab did.
  */
-export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }: ShardsProps) {
+export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, radius = 8 }: ShardsProps) {
   const shards = useMemo<Shard[]>(() => {
     const rng = new Generator(Math.round(hit[0] * 1000 + hit[1] * 7))
     return fractureRect(width, height, hit).map((cell) => {
@@ -57,11 +61,17 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
   }, [width, height, depth, hit])
   useEffect(() => () => shards.forEach((s) => s.geometry.dispose()), [shards])
 
-  // Each shard carries its own backing (a copy of its outline in the glass's buffer-background
-  // colour, just behind it) so it keeps the slab's tone as it flies, with nothing left static.
+  // The slab's backing (the glass's buffer-background colour, the tone the shards refract)
+  // stays one piece: it falls behind them as a single body, tilting as it goes, and fades with them.
   const live = useTuning((s) => s.glass.background)
   const presetBg = usePresetGlass(preset ?? 'silverGlass').background
   const backing = preset ? presetBg : live
+  const backingGeometry = useMemo(
+    () => makeRoundedRectGeometry(width * tokens.pxPerUnit, height * tokens.pxPerUnit, radius, 1),
+    [width, height, radius],
+  )
+  useEffect(() => () => backingGeometry.dispose(), [backingGeometry])
+  const backingMesh = useRef<THREE.Mesh>(null)
   // The shards fade out in place (opacity, no shrinking or regrouping) once they have flown apart.
   const refs = useRef<(THREE.Mesh | null)[]>([])
   // Wall clock, so the fade keeps pace with the banner's DOM timers even on a slow frame rate.
@@ -78,8 +88,6 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
       const mat = m.material as THREE.Material
       mat.transparent = true
       mat.opacity = fade
-      const back = m.children[0] as THREE.Mesh | undefined
-      if (back) (back.material as THREE.Material).opacity = fade
       s.v.y += GRAVITY * step
       s.p.addScaledVector(s.v, step)
       s.rot.x += s.spin.x * step
@@ -89,6 +97,16 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
       m.rotation.copy(s.rot)
       m.visible = fade > 0.01
     })
+    // The backing: a moment of hang, then a drop that slowly overtakes the shards, tilting away.
+    const bm = backingMesh.current
+    if (bm) {
+      const ft = Math.max(0, t - 0.15)
+      bm.position.y = -3.2 * ft * ft
+      bm.position.x = 0.15 * ft
+      bm.rotation.z = -0.12 * ft
+      bm.rotation.x = -0.35 * ft
+      ;(bm.material as THREE.Material).opacity = fade
+    }
     if (t >= life && !done.current) {
       done.current = true
       onDone?.()
@@ -96,12 +114,12 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
   })
   return (
     <>
+      <mesh ref={backingMesh} geometry={backingGeometry} position-z={-depth * 1.6} raycast={() => null}>
+        <meshBasicMaterial color={backing} transparent opacity={1} />
+      </mesh>
       {shards.map((s, i) => (
         <mesh key={i} ref={(el) => void (refs.current[i] = el)} geometry={s.geometry} raycast={() => null}>
           <Glass sampler preset={preset} />
-          <mesh geometry={s.geometry} position-z={-depth * 1.6} raycast={() => null}>
-            <meshBasicMaterial color={backing} transparent opacity={1} />
-          </mesh>
         </mesh>
       ))}
     </>
