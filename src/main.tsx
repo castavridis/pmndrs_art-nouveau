@@ -14,6 +14,7 @@ import { FrankensteinPage } from './experiments/FrankensteinPage'
 import { PalettePage } from './experiments/PalettePage'
 import { BentoPage } from './experiments/BentoPage'
 import { EnvPage } from './experiments/EnvPage'
+import { GlyphPage } from './experiments/GlyphPage'
 import { AppShell } from './AppShell'
 
 const root = document.getElementById('root')!
@@ -29,6 +30,8 @@ const page = path.startsWith('/dev/demo') ? (
   <CalloutPage />
 ) : path.startsWith('/dev/announcement') ? (
   <AnnouncementPage />
+) : path.startsWith('/dev/glyph') ? (
+  <GlyphPage />
 ) : path.startsWith('/dev/env') ? (
   <EnvPage />
 ) : path.startsWith('/dev/bento') ? (

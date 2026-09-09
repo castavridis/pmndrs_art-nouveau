@@ -25,6 +25,11 @@ const pages = [
     text: 'GitHub-style callouts: 3D surface or plain div, with the lens icon.',
   },
   {
+    href: '/dev/glyph',
+    title: 'Glyph',
+    text: 'Text baked into a glass slab: etched as a relief in the surface, or MSDF text laid on it.',
+  },
+  {
     href: '/dev/env',
     title: 'Environment',
     text: 'The cubemap the glass reflects, shown as the sky around a mirror ball, a glass ball and a matte ball.',
