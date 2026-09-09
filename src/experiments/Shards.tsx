@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { Generator } from 'maath/random'
 import { Glass } from '../nav/Nav3D/Glass'
+import { usePresetGlass } from '../nav/Nav3D/paletteTuning'
+import { useTuning } from '../nav/Nav3D/tuning'
 import { fractureRect, shardGeometry } from './shatter'
 import type { PresetName } from '../nav/Nav3D/customPresets'
 
@@ -55,6 +57,11 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
   }, [width, height, depth, hit])
   useEffect(() => () => shards.forEach((s) => s.geometry.dispose()), [shards])
 
+  // Each shard carries its own backing (a copy of its outline in the glass's buffer-background
+  // colour, just behind it) so it keeps the slab's tone as it flies, with nothing left static.
+  const live = useTuning((s) => s.glass.background)
+  const presetBg = usePresetGlass(preset ?? 'silverGlass').background
+  const backing = preset ? presetBg : live
   // The shards fade out in place (opacity, no shrinking or regrouping) once they have flown apart.
   const refs = useRef<(THREE.Mesh | null)[]>([])
   // Wall clock, so the fade keeps pace with the banner's DOM timers even on a slow frame rate.
@@ -71,6 +78,8 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
       const mat = m.material as THREE.Material
       mat.transparent = true
       mat.opacity = fade
+      const back = m.children[0] as THREE.Mesh | undefined
+      if (back) (back.material as THREE.Material).opacity = fade
       s.v.y += GRAVITY * step
       s.p.addScaledVector(s.v, step)
       s.rot.x += s.spin.x * step
@@ -90,6 +99,9 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
       {shards.map((s, i) => (
         <mesh key={i} ref={(el) => void (refs.current[i] = el)} geometry={s.geometry} raycast={() => null}>
           <Glass sampler preset={preset} />
+          <mesh geometry={s.geometry} position-z={-depth * 1.6} raycast={() => null}>
+            <meshBasicMaterial color={backing} transparent opacity={1} />
+          </mesh>
         </mesh>
       ))}
     </>

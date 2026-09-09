@@ -251,9 +251,7 @@ export function AnnouncementParts({
   })
   return (
     <group ref={fall}>
-      {/* Sampler slabs, and the shards in either mode, refract a backing in the glass's own
-          buffer-background colour, so the pieces keep the slab's tone instead of the page's. */}
-      {(sampler || shatter) && <Backing width={shatter ? shatter.width : width} height={shatter ? shatter.height : height} depth={announcement.depth} />}
+      {sampler && !shatter && <Backing width={width} height={height} depth={announcement.depth} />}
       {shatter ? (
         <Shards width={px(shatter.width)} height={px(shatter.height)} depth={px(announcement.depth)} hit={shatter.hit} />
       ) : (
