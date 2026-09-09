@@ -19,6 +19,7 @@ import { useOutlines } from '../nav/outlines'
 import { useMeasure } from './useMeasure'
 import { useInk } from '../nav/Nav3D/dom'
 import { useTuning } from '../nav/Nav3D/tuning'
+import { Backing } from '../nav/Nav3D/Backing'
 import { useIsClient } from '../isClient'
 
 export interface AnnouncementProps {
@@ -170,6 +171,7 @@ export function AnnouncementParts({ width, height, sampler = false }: { width: n
   const end = px(width) / 2 - px(announcement.height / 2)
   return (
     <>
+      {sampler && <Backing width={width} height={height} depth={announcement.depth} />}
       <mesh geometry={geometry}>
         <Glass sampler={sampler} />
       </mesh>

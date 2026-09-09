@@ -23,6 +23,7 @@ import type { GlassPreset } from '../nav/Nav3D/tuning'
 import { useDomTilt, usePointerParallax } from './parallax'
 import { useMeasure } from './useMeasure'
 import { useOutlines } from '../nav/outlines'
+import { Backing } from '../nav/Nav3D/Backing'
 import { ParallaxRig } from './ParallaxRig'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
@@ -215,11 +216,12 @@ interface Box {
 }
 
 /** The card's 3D parts (surface + lens icon at the corner), centred at the origin, for a shared page scene. */
-export function CalloutParts({ kind, width, height }: { kind: CalloutKind } & Box) {
+export function CalloutParts({ kind, width, height, sampler = false }: { kind: CalloutKind; sampler?: boolean } & Box) {
   const preset: GlassPreset = calloutKinds[kind].colour
   return (
     <>
-      <Surface preset={preset} width={width} height={height} />
+      {sampler && <Backing width={width} height={height} depth={callout.depth} preset={preset} />}
+      <Surface preset={preset} width={width} height={height} sampler={sampler} />
       <IconAtCorner preset={preset} width={width} height={height} />
     </>
   )

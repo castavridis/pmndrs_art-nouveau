@@ -38,6 +38,8 @@ export interface NavCanvasProps {
    */
   eventSource?: React.RefObject<HTMLElement | null>
   style?: React.CSSProperties
+  /** Device pixel ratio range (default [1, 2]); a full-page canvas may cap it lower. */
+  dpr?: [number, number]
 }
 
 /**
@@ -62,12 +64,13 @@ export function NavCanvas({
   strips = true,
   eventSource,
   style,
+  dpr = [1, 2],
 }: NavCanvasProps) {
   return (
     <R3FCanvas
       className={className}
       camera={{ fov: FOV, near: 0.1, far: 100 }}
-      dpr={[1, 2]}
+      dpr={dpr}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       style={{ background: 'transparent', ...style }}
       eventSource={eventSource?.current ?? undefined}

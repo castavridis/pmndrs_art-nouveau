@@ -42,21 +42,26 @@ export interface BentoSceneProps {
  * surface share petals, lights and the composer. Each 3D part follows its DOM slot every
  * frame (the canvas is fixed to the viewport, so scrolling moves the slots, not the camera).
  */
+/** `?slabs=buffered` restores one transmission buffer per slab (for comparison). */
+const BUFFERED = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('slabs') === 'buffered'
+
 export function BentoScene({ eventSource, navEl, announcement, callout, onReady }: BentoSceneProps) {
   return (
     <NavCanvas
       eventSource={eventSource}
       style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}
+      // A full-viewport canvas at 2x plus the pill's buffer is a lot of pixels; 1.5x is plenty.
+      dpr={[1, 1.5]}
     >
       <Suspense fallback={null}>
         <Slot el={navEl}>
           <NavRoot />
         </Slot>
         <Slot el={announcement}>
-          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} />}
+          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} />}
         </Slot>
         <Slot el={callout}>
-          {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} />}
+          {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} />}
         </Slot>
         <Ready onReady={onReady} frames={4} />
       </Suspense>
