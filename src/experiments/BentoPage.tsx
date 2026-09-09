@@ -6,6 +6,8 @@ import { Logo } from '../nav/Logo'
 import { Announcement } from './Announcement'
 import { Callout } from './Callout'
 import { BentoScene, type SlotBox } from './BentoScene'
+import { Button, ButtonLink, CopyButton, Kbd, Popover } from '../ui'
+import { BoltIcon, DiscordIcon, ExternalIcon, GitHubIcon, InfoIcon, TerminalIcon, TwitterIcon } from '../ui/Icons'
 import type { Shatter } from './Announcement'
 import { useIsClient } from '../isClient'
 import styles from './Bento.module.css'
@@ -13,9 +15,27 @@ import styles from './Bento.module.css'
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 
 const LINKS: NavLink[] = [
-  { id: 'docs', label: 'Docs', href: '/docs' },
-  { id: 'examples', label: 'Examples', href: '/examples' },
-  { id: 'blog', label: 'Blog', href: '/blog' },
+  {
+    id: 'docs',
+    label: 'Docs',
+    href: '/docs',
+    description: 'Guides and API reference for the whole collective.',
+    section: 'pmndrs / docs',
+  },
+  {
+    id: 'examples',
+    label: 'Examples',
+    href: '/examples',
+    description: 'Live sandboxes you can fork and edit in place.',
+    section: 'pmndrs / examples',
+  },
+  {
+    id: 'blog',
+    label: 'Blog',
+    href: '/blog',
+    description: 'Release notes, deep dives and the odd experiment.',
+    section: 'pmndrs / blog',
+  },
 ]
 
 const EMPTY: SlotBox = { el: null, width: 0, height: 0 }
@@ -84,7 +104,16 @@ export function BentoPage() {
             Somewhat Expressive
           </h2>
           <div className={styles.left}>
-            <CopyButton text="pnpm add @react-three/fiber" />
+            <CopyButton
+              value="pnpm add @react-three/fiber"
+              actions={[
+                { key: 'docs', label: 'Open the docs', icon: <InfoIcon />, href: '/docs' },
+                { key: 'sandbox', label: 'Open a sandbox', icon: <ExternalIcon />, href: '/examples' },
+                { key: 'repo', label: 'View the repository', icon: <GitHubIcon />, href: 'https://github.com/pmndrs' },
+                { key: 'run', label: 'Run it', icon: <BoltIcon /> },
+                { key: 'cli', label: 'Copy the CLI command', icon: <TerminalIcon /> },
+              ]}
+            />
             <button type="button" className={styles.glass} style={{ flexBasis: '100%', maxWidth: 240, justifyContent: 'center' }}>
               Article Launcher
             </button>
@@ -104,22 +133,27 @@ export function BentoPage() {
             Utilitarian
           </h2>
           <div className={styles.left}>
-            <button
-              type="button"
-              className={styles.glass}
-              onClick={() => document.querySelector<HTMLElement>('[data-id="cmd"]')?.click()}
-            >
-              Cmd <span className={styles.kbd}>K</span>
-            </button>
-            <a className={`${styles.glass} ${styles.icon}`} href="https://twitter.com/pmndrs" aria-label="Twitter">
-              TW
-            </a>
-            <a className={`${styles.glass} ${styles.icon}`} href="https://discord.gg/poimandres" aria-label="Discord">
-              DI
-            </a>
-            <a className={`${styles.glass} ${styles.icon}`} href="https://github.com/pmndrs" aria-label="GitHub">
-              GH
-            </a>
+            <Button onClick={() => document.querySelector<HTMLElement>('[data-id="cmd"]')?.click()}>
+              Cmd <Kbd>K</Kbd>
+            </Button>
+            <ButtonLink icon href="https://twitter.com/pmndrs" aria-label="Twitter">
+              <TwitterIcon />
+            </ButtonLink>
+            <ButtonLink icon href="https://discord.gg/poimandres" aria-label="Discord">
+              <DiscordIcon />
+            </ButtonLink>
+            <ButtonLink icon href="https://github.com/pmndrs" aria-label="GitHub">
+              <GitHubIcon />
+            </ButtonLink>
+            <Popover
+              label="Open"
+              items={[
+                { key: 'github', label: 'Open in GitHub', href: 'https://github.com/pmndrs' },
+                { key: 'chatgpt', label: 'Open in ChatGPT', href: 'https://chat.openai.com' },
+                { key: 'claude', label: 'Open in Claude', href: 'https://claude.ai' },
+                { key: 'cursor', label: 'Open in Cursor', href: 'https://cursor.com' },
+              ]}
+            />
           </div>
           <div className={styles.right}>
             <nav className={styles.docs} aria-label="Docs">
@@ -149,24 +183,5 @@ export function BentoPage() {
         </Suspense>
       )}
     </NavStoreContext.Provider>
-  )
-}
-
-/** Copies `text` and shows "Copied!" for a moment, as the wireframe's pair of states. */
-function CopyButton({ text }: { text: string }) {
-  const [done, setDone] = useState(false)
-  return (
-    <button
-      type="button"
-      className={`${styles.glass} ${done ? styles.done : ''}`}
-      onClick={() => {
-        navigator.clipboard?.writeText(text).catch(() => {})
-        setDone(true)
-        window.setTimeout(() => setDone(false), 1600)
-      }}
-      aria-live="polite"
-    >
-      {done ? 'Copied!' : 'Copy'}
-    </button>
   )
 }

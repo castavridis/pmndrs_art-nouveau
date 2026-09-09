@@ -1,3 +1,5 @@
+@import './ui/tokens.css';
+
 :root {
   /* Dark is the default (also before hydration and without JS); ThemeApplier stamps
      data-theme once the stored choice is known, and "system" follows the OS from there. */
