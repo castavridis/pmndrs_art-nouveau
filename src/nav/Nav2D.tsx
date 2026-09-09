@@ -7,9 +7,10 @@ import { CmdPalette } from './CmdPalette'
 import leftCluster from './assets/fallback/nav-left.svg'
 import rightCluster from './assets/fallback/nav-right.svg'
 import petalSvg from './assets/fallback/petal.svg'
-import leftOutline from './assets/fallback/outline/nav-left.svg'
-import rightOutline from './assets/fallback/outline/nav-right.svg'
-import petalOutline from './assets/fallback/outline/petal.svg'
+import leftOutline from './assets/fallback/outline/nav-left.svg?raw'
+import rightOutline from './assets/fallback/outline/nav-right.svg?raw'
+import petalOutline from './assets/fallback/outline/petal.svg?raw'
+import { DrawnOutline } from './DrawnOutline'
 import fallback from './assets/fallback/manifest.json'
 import { middleSegment, petalPlacements } from './petalLayout'
 import styles from './Nav2D.module.css'
@@ -146,55 +147,97 @@ export function Nav2D({
       <nav aria-label="Main" className={styles.nav}>
         {/* Traced silhouettes of the 3D clusters (scripts/trace-svgs.mjs), pinned to the pill's cap
             centres exactly like the 3D ones: the manifest gives each SVG's size and origin. */}
-        <img
-          className={`${styles.cluster} ${styles.clusterLeft}`}
-          src={outlines ? leftOutline : leftCluster}
-          data-outline={outlines || undefined}
-          alt=""
-          aria-hidden="true"
-          width={fallback['nav-left'].width}
-          height={fallback['nav-left'].height}
-          style={{
-            left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX,
-            top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY,
-          }}
-        />
-        <img
-          className={`${styles.cluster} ${styles.clusterRight}`}
-          src={outlines ? rightOutline : rightCluster}
-          data-outline={outlines || undefined}
-          alt=""
-          aria-hidden="true"
-          width={fallback['nav-right'].width}
-          height={fallback['nav-right'].height}
-          style={{
-            right:
-              tokens.clusterBleedX +
-              tokens.pillRadius -
-              (fallback['nav-right'].width - fallback['nav-right'].originX),
-            top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY,
-          }}
-        />
+        {outlines ? (
+          // Outlines draw themselves in, curve by curve (keyed so the sweep replays when they return).
+          <DrawnOutline
+            key="left-outline"
+            className={`${styles.cluster} ${styles.clusterLeft}`}
+            src={leftOutline}
+            width={fallback['nav-left'].width}
+            height={fallback['nav-left'].height}
+            style={{
+              left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX,
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY,
+            }}
+          />
+        ) : (
+          <img
+            className={`${styles.cluster} ${styles.clusterLeft}`}
+            src={leftCluster}
+            alt=""
+            aria-hidden="true"
+            width={fallback['nav-left'].width}
+            height={fallback['nav-left'].height}
+            style={{
+              left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX,
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY,
+            }}
+          />
+        )}
+        {outlines ? (
+          <DrawnOutline
+            key="right-outline"
+            className={`${styles.cluster} ${styles.clusterRight}`}
+            src={rightOutline}
+            width={fallback['nav-right'].width}
+            height={fallback['nav-right'].height}
+            stagger={220}
+            style={{
+              right:
+                tokens.clusterBleedX +
+                tokens.pillRadius -
+                (fallback['nav-right'].width - fallback['nav-right'].originX),
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY,
+            }}
+          />
+        ) : (
+          <img
+            className={`${styles.cluster} ${styles.clusterRight}`}
+            src={rightCluster}
+            alt=""
+            aria-hidden="true"
+            width={fallback['nav-right'].width}
+            height={fallback['nav-right'].height}
+            style={{
+              right:
+                tokens.clusterBleedX +
+                tokens.pillRadius -
+                (fallback['nav-right'].width - fallback['nav-right'].originX),
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY,
+            }}
+          />
+        )}
         {petals.map((p, i) => {
           // Pill centre inside .nav (which pads by the bleed), then the shared placement.
           const cx = tokens.clusterBleedX + pillWidth! / 2 + p.fx * middleSegment(pillWidth!)
           const cy = tokens.clusterBleedY + tokens.pillHeight / 2 - p.y
-          return (
+          const style = {
+            left: cx - fallback.petal.originX,
+            top: cy - fallback.petal.originY,
+            // three's +z rotation is counter-clockwise on screen; CSS rotate is clockwise.
+            transform: `rotate(${-p.rotation[2]}rad)`,
+          }
+          return outlines ? (
+            <DrawnOutline
+              key={`o${i}`}
+              className={styles.petal}
+              src={petalOutline}
+              width={fallback.petal.width}
+              height={fallback.petal.height}
+              duration={600}
+              delay={600 + i * 120}
+              style={style}
+            />
+          ) : (
             <img
               key={i}
               className={styles.petal}
-              src={outlines ? petalOutline : petalSvg}
-              data-outline={outlines || undefined}
+              src={petalSvg}
               alt=""
               aria-hidden="true"
               width={fallback.petal.width}
               height={fallback.petal.height}
-              style={{
-                left: cx - fallback.petal.originX,
-                top: cy - fallback.petal.originY,
-                // three's +z rotation is counter-clockwise on screen; CSS rotate is clockwise.
-                transform: `rotate(${-p.rotation[2]}rad)`,
-              }}
+              style={style}
             />
           )
         })}

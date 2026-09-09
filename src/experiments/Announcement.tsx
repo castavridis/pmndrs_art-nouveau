@@ -6,8 +6,9 @@ import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { px, tokens } from '../nav/tokens'
 import { preloadAnnouncementAssets, useAnnouncementAssets } from './announcementAssets'
 import { announcement } from './announcementMetrics'
-import leftOutline from '../nav/assets/fallback/outline/announcement-left.svg'
-import rightOutline from '../nav/assets/fallback/outline/announcement-right.svg'
+import leftOutline from '../nav/assets/fallback/outline/announcement-left.svg?raw'
+import rightOutline from '../nav/assets/fallback/outline/announcement-right.svg?raw'
+import { DrawnOutline } from '../nav/DrawnOutline'
 import fallback from '../nav/assets/fallback/manifest.json'
 import styles from './Announcement.module.css'
 
@@ -90,24 +91,24 @@ export function Announcement({
       style={{ width: '100%', maxWidth: width, minHeight: announcement.height, color: client && !vector ? ink : undefined }}
     >
       {/* Vector layer: outlined banner (CSS) and the traced flourishes pinned to the ends. */}
-      <img
+      {/* The flourishes draw themselves in, curve by curve, whenever the outlines show. */}
+      <DrawnOutline
+        key={outlines ? 'left-on' : 'left-off'}
         className={styles.vectorPart}
-        data-outline={outlines || undefined}
         src={leftOutline}
-        alt=""
-        aria-hidden="true"
         width={L.width}
         height={L.height}
+        play={outlines}
         style={{ left: end - L.originX, top: end - L.originY, opacity: outlines ? 1 : 0 }}
       />
-      <img
+      <DrawnOutline
+        key={outlines ? 'right-on' : 'right-off'}
         className={styles.vectorPart}
-        data-outline={outlines || undefined}
         src={rightOutline}
-        alt=""
-        aria-hidden="true"
         width={R.width}
         height={R.height}
+        play={outlines}
+        stagger={200}
         style={{
           right: end - (R.width - R.originX),
           top: end - R.originY,

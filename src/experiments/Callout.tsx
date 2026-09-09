@@ -14,7 +14,8 @@ import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { tokens } from '../nav/tokens'
 import { preloadCalloutIcon, useCalloutIcon } from './calloutAssets'
 import { Ready } from '../nav/Nav3D/Ready'
-import iconOutline from '../nav/assets/fallback/outline/callout-icon.svg'
+import iconOutline from '../nav/assets/fallback/outline/callout-icon.svg?raw'
+import { DrawnOutline } from '../nav/DrawnOutline'
 import fallback from '../nav/assets/fallback/manifest.json'
 import styles from './Callout.module.css'
 import { callout } from './calloutMetrics'
@@ -112,14 +113,13 @@ export function Callout({
         style={{ color: glassInk }}
       >
         {/* Vector layer: traced outline of the icon, in place until the 3D one is up. */}
-        <img
+        <DrawnOutline
+          key={outlines ? 'icon-on' : 'icon-off'}
           className={styles.vectorIcon}
           src={iconOutline}
-          data-outline={outlines || undefined}
-          alt=""
-          aria-hidden="true"
           width={m.width}
           height={m.height}
+          play={outlines}
           style={{
             left: callout.iconX - m.originX,
             top: callout.iconY - m.originY,
