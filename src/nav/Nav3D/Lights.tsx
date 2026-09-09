@@ -8,7 +8,7 @@ import { px } from '../tokens'
 import { useTuning, type RectLightTuning, type Vec3 } from './tuning'
 import { transmissionOnly } from './materials'
 import { StripsContext } from './strips'
-import { hoverAim, navAim } from './aim'
+import { hoverAim, navAim, pagePointer, usePagePointer } from './aim'
 
 // three@0.182: RectAreaLight needs its BRDF LUTs registered once before any material compiles.
 RectAreaLightUniformsLib.init()
@@ -114,29 +114,6 @@ const rectAim = new THREE.Vector3()
 const rectLook = new THREE.Matrix4()
 const UP = new THREE.Vector3(0, 1, 0)
 
-/** Last pointer position over the page (client px), shared by every canvas; null when it left. */
-let pointer: { x: number; y: number } | null = null
-let pointerListeners = 0
-function usePagePointer() {
-  useEffect(() => {
-    if (pointerListeners++ === 0) {
-      const move = (e: PointerEvent) => (pointer = { x: e.clientX, y: e.clientY })
-      const leave = () => (pointer = null)
-      window.addEventListener('pointermove', move, { passive: true })
-      document.documentElement.addEventListener('pointerleave', leave)
-      window.addEventListener('blur', leave)
-      ;(window as Window & { __navPointerOff?: () => void }).__navPointerOff = () => {
-        window.removeEventListener('pointermove', move)
-        document.documentElement.removeEventListener('pointerleave', leave)
-        window.removeEventListener('blur', leave)
-      }
-    }
-    return () => {
-      if (--pointerListeners === 0) (window as Window & { __navPointerOff?: () => void }).__navPointerOff?.()
-    }
-  }, [])
-}
-
 const target = new THREE.Vector3()
 
 /**
@@ -166,11 +143,10 @@ function Roam({ debug }: { debug: boolean }) {
       target.copy(hoverAim.point)
       target.z += r.hoverOffset
       heldZ.current = target.z
-    } else if (r.follow && pointer) {
-      // Off a petal: x/y keep following the pointer, but the depth stays where the last
-      // petal left it and only drifts back to the base depth slowly, so losing a petal
-      // never snaps the light.
-      heldZ.current += (r.z - heldZ.current) * (1 - Math.exp(-dt * 0.25))
+    } else if (r.follow && pagePointer.current) {
+      // Off a petal: x/y keep following the pointer; the depth stays exactly where the last
+      // petal left it until the next petal is hit.
+      const pointer = pagePointer.current
       const rect = gl.domElement.getBoundingClientRect()
       target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), heldZ.current)
     } else {
@@ -215,6 +191,7 @@ function Ray({ debug }: { debug: boolean }) {
     const hh = px(size.height) / 2
     // Anchor: above the canvas, a little in front.
     l.position.set(0, hh * 1.6, 1.6)
+    const pointer = pagePointer.current
     if (pointer) {
       const rect = gl.domElement.getBoundingClientRect()
       aim.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), 0)

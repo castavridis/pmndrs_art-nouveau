@@ -131,10 +131,25 @@ export interface LightsTuning {
   rects: RectLightTuning[]
 }
 
+/** Petal / flower motion (the nav's falling field and the cube page's swarms). */
+export interface MotionTuning {
+  /** Drift speed multiplier (0 holds still). */
+  speed: number
+  /** Tumble rate multiplier. */
+  spin: number
+  /** Sideways sway multiplier (falling petals). */
+  sway: number
+  /** How hard the pointer pushes nearby petals away (0 = off). */
+  stir: number
+  /** Reach of the pointer's push, in world units. */
+  stirRadius: number
+}
+
 export interface Tuning {
   /** The preset the glass was last set from (built-in or user-defined); edits keep the name. */
   preset: PresetName
   glass: GlassTuning
+  motion: MotionTuning
   lights: LightsTuning
   env: {
     intensity: number
@@ -394,6 +409,7 @@ export const defaultLights: LightsTuning = {
 export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
+  motion: { speed: 1, spin: 1, sway: 1, stir: 1, stirRadius: 0.8 },
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto' },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004, noise: 0, noiseBlend: 'screen', noisePremultiply: true },
@@ -482,7 +498,7 @@ function withPreset(t: Tuning, explicit: PresetName | undefined): Tuning {
 }
 
 /** The object-valued groups of Tuning (everything but the preset name). */
-export type TuningGroup = 'glass' | 'lights' | 'env' | 'post'
+export type TuningGroup = 'glass' | 'motion' | 'lights' | 'env' | 'post'
 
 type TuningStore = Tuning & {
   /** Which scheme the top-level values belong to; switched by the page theme. */
@@ -500,7 +516,7 @@ type TuningStore = Tuning & {
 }
 
 /** The plain data part of the store, for saving / exporting. */
-export const pickTuning = (s: Tuning): Tuning => ({ preset: s.preset, glass: s.glass, lights: s.lights, env: s.env, post: s.post })
+export const pickTuning = (s: Tuning): Tuning => ({ preset: s.preset, glass: s.glass, motion: s.motion, lights: s.lights, env: s.env, post: s.post })
 
 /** Both schemes, with the active one's live values: what "save to project" writes. */
 export const pickSchemes = (s: TuningStore): SchemeTunings => ({ ...s.schemes, [s.scheme]: pickTuning(s) })

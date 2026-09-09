@@ -1,7 +1,8 @@
-import { hoverAimHandlers } from '../nav/Nav3D/aim'
+import { capturedInstance, hoverAimHandlers, pointerWorldXY, usePagePointer } from '../nav/Nav3D/aim'
+import { useTuning, type MotionTuning } from '../nav/Nav3D/tuning'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Generator } from 'maath/random'
 import { useNavStore } from '../nav/store'
 import { useNavAssets } from '../nav/Nav3D/assets'
@@ -32,6 +33,7 @@ interface Body {
 }
 
 const tmp = new THREE.Object3D()
+const stirAt = new THREE.Vector3()
 
 /** Bodies drifting inside boxes: slow constant velocity, tumble, bounce off the walls. */
 class Swarm {
@@ -86,10 +88,23 @@ class Swarm {
     })
   }
 
-  update(m: THREE.InstancedMesh, step: number) {
+  update(m: THREE.InstancedMesh, step: number, motion: MotionTuning, stir: THREE.Vector3 | null) {
+    const held = capturedInstance(m)
     for (let i = 0; i < this.bodies.length; i++) {
       const b = this.bodies[i]!
-      b.p.addScaledVector(b.v, step)
+      b.p.addScaledVector(b.v, step * motion.speed)
+      if (stir && motion.stir > 0 && i !== held) {
+        // The pointer (at the canvas plane) nudges bodies within stirRadius away in x/y; the
+        // body it is holding (hoverAim) stays put so the hover does not chase it away.
+        const dx = b.p.x - stir.x
+        const dy = b.p.y - stir.y
+        const d = Math.hypot(dx, dy)
+        if (d < motion.stirRadius && d > 1e-4) {
+          const k = (motion.stir * (1 - d / motion.stirRadius) * step) / d
+          b.p.x += dx * k
+          b.p.y += dy * k
+        }
+      }
       for (const axis of ['x', 'y', 'z'] as const) {
         if (b.p[axis] < b.box.min[axis]) {
           b.p[axis] = b.box.min[axis]
@@ -99,9 +114,9 @@ class Swarm {
           b.v[axis] = -Math.abs(b.v[axis])
         }
       }
-      b.rot.x += b.spin.x * step
-      b.rot.y += b.spin.y * step
-      b.rot.z += b.spin.z * step
+      b.rot.x += b.spin.x * step * motion.spin
+      b.rot.y += b.spin.y * step * motion.spin
+      b.rot.z += b.spin.z * step * motion.spin
       tmp.position.copy(b.p)
       tmp.rotation.copy(b.rot)
       tmp.scale.setScalar(b.scale)
@@ -170,8 +185,14 @@ function InstancedSwarm({
     sphere.radius += 1.5 // bodies are scaled, and flowers are wide
     m.boundingSphere = sphere
   }, [boxes])
+  const gl = useThree((s) => s.gl)
+  const size = useThree((s) => s.size)
+  usePagePointer()
   useFrame((_, dt) => {
-    if (mesh.current) swarm.update(mesh.current, reducedMotion ? 0 : Math.min(dt, 0.05))
+    if (!mesh.current) return
+    const motion = useTuning.getState().motion
+    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt) ? stirAt : null
+    swarm.update(mesh.current, reducedMotion ? 0 : Math.min(dt, 0.05), motion, stir)
   })
   if (swarm.bodies.length === 0) return null
   return (

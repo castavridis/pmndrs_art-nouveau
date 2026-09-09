@@ -172,6 +172,14 @@ export default function DevControls() {
     }),
   }), { order: -70 })
 
+  const M = defaultTuning.motion
+  const [motion, setMotionPanel] = useControls('motion', () => ({
+    speed: { value: M.speed, min: 0, max: 4 },
+    spin: { value: M.spin, min: 0, max: 4 },
+    sway: { value: M.sway, min: 0, max: 4 },
+    stir: { value: M.stir, min: 0, max: 4, label: 'pointer stir' },
+    stirRadius: { value: M.stirRadius, min: 0.1, max: 4, label: 'stir radius' },
+  }), { order: -62 })
   const [env, setEnvPanel] = useControls('environment', () => ({
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
@@ -234,6 +242,7 @@ export default function DevControls() {
   /** Push a whole Tuning into every leva folder (initial load, preset, import, reset). */
   const fillPanel = useRef((t: Tuning) => {
     setGlassPanel(t.glass)
+    setMotionPanel(t.motion)
     // `ink` lives in the view folder, not the environment one.
     setEnvPanel({ intensity: t.env.intensity, rotation: t.env.rotation, background: t.env.background, fog: t.env.fog, labelScrim: t.env.labelScrim })
     setPostPanel(t.post)
@@ -348,6 +357,7 @@ export default function DevControls() {
   // Panel → store (skipped during the mount / scheme-swap commit, see `live`).
   useEffect(() => void (live.current && set('glass', glass as GlassTuning)), [glass, set])
   useEffect(() => void (live.current && set('env', env)), [env, set])
+  useEffect(() => void (live.current && set('motion', motion)), [motion, set])
   useEffect(() => void (live.current && set('post', post)), [post, set])
   // Keyed on a signature: leva hands back fresh objects each render, and pushing on every
   // render would overwrite store changes made elsewhere (scripts, page defaults) at once.

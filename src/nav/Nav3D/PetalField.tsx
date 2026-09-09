@@ -3,7 +3,8 @@ import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Generator } from 'maath/random'
 import { useNavStore } from '../store'
-import { hoverAimHandlers } from './aim'
+import { capturedInstance, hoverAimHandlers, pointerWorldXY, usePagePointer } from './aim'
+import { useTuning, type MotionTuning } from './tuning'
 import { px } from '../tokens'
 import { useNavAssets } from './assets'
 import { Glass } from './Glass'
@@ -30,6 +31,7 @@ interface P {
 }
 
 const tmp = new THREE.Object3D()
+const stirAt = new THREE.Vector3()
 
 /** Simulation state for the field; a class so per-frame mutation stays out of React's sight. */
 class Field {
@@ -49,19 +51,31 @@ class Field {
     }))
   }
 
-  update(m: THREE.InstancedMesh, t: number, step: number) {
+  update(m: THREE.InstancedMesh, t: number, step: number, motion: MotionTuning, stir: THREE.Vector3 | null) {
     const { halfW, halfH } = this
+    const held = capturedInstance(m)
     for (let i = 0; i < this.petals.length; i++) {
       const p = this.petals[i]!
-      p.y += p.vy * step
-      p.rot.x += p.spin.x * step
-      p.rot.y += p.spin.y * step
-      p.rot.z += p.spin.z * step
+      p.y += p.vy * step * motion.speed
+      p.rot.x += p.spin.x * step * motion.spin
+      p.rot.y += p.spin.y * step * motion.spin
+      p.rot.z += p.spin.z * step * motion.spin
+      if (stir && motion.stir > 0 && i !== held) {
+        // The pointer gently pushes petals within stirRadius away from it (not the one it holds).
+        const dx = p.x - stir.x
+        const dy = p.y - stir.y
+        const d = Math.hypot(dx, dy)
+        if (d < motion.stirRadius && d > 1e-4) {
+          const k = (motion.stir * (1 - d / motion.stirRadius) * step) / d
+          p.x += dx * k
+          p.y += dy * k
+        }
+      }
       if (p.y < -halfH - 0.1) {
         p.y = halfH + 0.1
         p.x = (Math.random() * 2 - 1) * halfW
       }
-      tmp.position.set(p.x + Math.sin(t * 0.8 + p.phase) * p.sway, p.y, p.z)
+      tmp.position.set(p.x + Math.sin(t * 0.8 + p.phase) * p.sway * motion.sway, p.y, p.z)
       tmp.rotation.copy(p.rot)
       tmp.scale.setScalar(p.scale)
       tmp.updateMatrix()
@@ -108,8 +122,13 @@ function PetalGroup({ preset, count, seed }: { preset: GlassPreset; count: numbe
     m.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Math.hypot(halfW, halfH) + 1)
   }, [halfW, halfH])
 
+  const gl = useThree((s) => s.gl)
+  usePagePointer()
   useFrame((state, dt) => {
-    if (mesh.current) field.update(mesh.current, state.clock.elapsedTime, reducedMotion ? 0 : Math.min(dt, 0.05))
+    if (!mesh.current) return
+    const motion = useTuning.getState().motion
+    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt) ? stirAt : null
+    field.update(mesh.current, state.clock.elapsedTime, reducedMotion ? 0 : Math.min(dt, 0.05), motion, stir)
   })
 
   if (count <= 0) return null

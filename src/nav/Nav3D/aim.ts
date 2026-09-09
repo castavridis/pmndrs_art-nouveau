@@ -41,7 +41,14 @@ export const useHitDebug = create<HitDebugStore>()((set) => ({
  * The pointer's hit point on a petal or flower (world units), with the canvas it came from,
  * so that canvas's roaming light can sit on the hovered piece. `active` clears on pointer-out.
  */
-export const hoverAim = { point: new THREE.Vector3(), active: false, canvas: null as EventTarget | null }
+export const hoverAim = {
+  point: new THREE.Vector3(),
+  active: false,
+  canvas: null as EventTarget | null,
+  /** The hovered mesh and instance: captured by the light, and left alone by the pointer stir. */
+  mesh: null as THREE.Object3D | null,
+  instanceId: null as number | null,
+}
 
 /** Pointer handlers for meshes the roaming light should settle on when hovered. */
 export const hoverAimHandlers = {
@@ -49,6 +56,8 @@ export const hoverAimHandlers = {
     hoverAim.point.copy(e.point)
     hoverAim.active = true
     hoverAim.canvas = e.nativeEvent.target
+    hoverAim.mesh = e.object
+    hoverAim.instanceId = e.instanceId ?? null
     if (useHitDebug.getState().enabled) {
       // All petal/flower intersections under the pointer (R3F lists every handled object hit).
       const hits: HitInfo[] = e.intersections
@@ -64,6 +73,8 @@ export const hoverAimHandlers = {
   },
   onPointerOut: () => {
     hoverAim.active = false
+    hoverAim.mesh = null
+    hoverAim.instanceId = null
     if (useHitDebug.getState().enabled) useHitDebug.getState().report([], useHitDebug.getState().x, useHitDebug.getState().y)
   },
 }
@@ -75,3 +86,47 @@ declare global {
   }
 }
 if (import.meta.env.DEV && typeof window !== 'undefined') window.__hitDebug = useHitDebug
+
+import { useEffect } from 'react'
+import { px } from '../tokens'
+
+/** Last pointer position over the page (client px), shared by every canvas; null when it left. */
+export const pagePointer: { current: { x: number; y: number } | null } = { current: null }
+let pointerListeners = 0
+let pointerOff: (() => void) | null = null
+export function usePagePointer() {
+  useEffect(() => {
+    if (pointerListeners++ === 0) {
+      const move = (e: PointerEvent) => (pagePointer.current = { x: e.clientX, y: e.clientY })
+      const leave = () => (pagePointer.current = null)
+      window.addEventListener('pointermove', move, { passive: true })
+      document.documentElement.addEventListener('pointerleave', leave)
+      window.addEventListener('blur', leave)
+      pointerOff = () => {
+        window.removeEventListener('pointermove', move)
+        document.documentElement.removeEventListener('pointerleave', leave)
+        window.removeEventListener('blur', leave)
+      }
+    }
+    return () => {
+      if (--pointerListeners === 0) pointerOff?.()
+    }
+  }, [])
+}
+
+/**
+ * The page pointer in a canvas's world x/y at z = 0 (1 unit = pxPerUnit px, origin at the
+ * canvas centre). False when the pointer is off the page.
+ */
+export function pointerWorldXY(canvas: HTMLCanvasElement, width: number, height: number, out: THREE.Vector3): boolean {
+  const p = pagePointer.current
+  if (!p) return false
+  const rect = canvas.getBoundingClientRect()
+  out.set(px(p.x - rect.left) - px(width) / 2, px(height) / 2 - px(p.y - rect.top), 0)
+  return true
+}
+
+/** Index of the instance the pointer holds on `mesh`, or -1: the stir must not move it. */
+export function capturedInstance(mesh: THREE.Object3D): number {
+  return hoverAim.active && hoverAim.mesh === mesh && hoverAim.instanceId !== null ? hoverAim.instanceId : -1
+}

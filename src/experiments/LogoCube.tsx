@@ -8,6 +8,7 @@ const Scene = lazy(() => import('./LogoCubeScene'))
 // The panel lives here, outside the scene, so it stays available while svg mode hides the 3D.
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const CubeControls = import.meta.env.DEV ? lazy(() => import('./CubeControls')) : null
+const PaletteControls = import.meta.env.DEV ? lazy(() => import('./PaletteControls')) : null
 
 /**
  * `/dev/cube`: the "logo cubed" model front and centre in a full-viewport canvas with orbit
@@ -36,10 +37,12 @@ export function LogoCube() {
           </div>
         )}
         <LogoCubeVector visible={svg || overlay || !ready} />
-        {DevControls && CubeControls && (
+        {DevControls && CubeControls && PaletteControls && (
           <Suspense fallback={null}>
             <DevControls />
             <CubeControls />
+            {/* The palette colours are what the swarms wear; edit them here too. */}
+            <PaletteControls />
           </Suspense>
         )}
       </div>
