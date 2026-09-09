@@ -45,6 +45,8 @@ function navTuningWriter(): Plugin {
 
 export default defineConfig({
   plugins: [react(), navTuningWriter()],
+  // The desktop preview assigns a port via PORT; default to 5173 (what the dev scripts expect).
+  server: { port: Number(process.env.PORT) || 5173 },
   resolve: { dedupe: ['three'] },
   // Absolute asset URLs: nested routes (/dev/cube) are served the same shell (see vercel.json).
   base: '/',
