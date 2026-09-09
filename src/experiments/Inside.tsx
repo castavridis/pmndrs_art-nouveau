@@ -1,3 +1,4 @@
+import { hoverAimHandlers } from '../nav/Nav3D/aim'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
@@ -158,14 +159,13 @@ function InstancedSwarm({
     const m = mesh.current
     if (!m) return
     m.frustumCulled = false
-    m.raycast = () => null
   }, [])
   useFrame((_, dt) => {
     if (mesh.current) swarm.update(mesh.current, reducedMotion ? 0 : Math.min(dt, 0.05))
   })
   if (swarm.bodies.length === 0) return null
   return (
-    <instancedMesh ref={mesh} args={[geometry, undefined, swarm.bodies.length]}>
+    <instancedMesh ref={mesh} args={[geometry, undefined, swarm.bodies.length]} {...hoverAimHandlers}>
       <Glass solid preset={preset} />
     </instancedMesh>
   )

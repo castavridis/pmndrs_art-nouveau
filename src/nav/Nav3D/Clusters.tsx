@@ -1,6 +1,7 @@
 import { animated, type SpringValue } from '@react-spring/three'
 import { px, tokens } from '../tokens'
 import { Glass } from './Glass'
+import { hoverAimHandlers } from './aim'
 import { useNavAssets } from './assets'
 
 export interface ClustersProps {
@@ -21,12 +22,12 @@ export function Clusters({ width }: ClustersProps) {
   return (
     <>
       <animated.group position-x={leftX}>
-        <mesh geometry={left}>
+        <mesh geometry={left} {...hoverAimHandlers}>
           <Glass sampler />
         </mesh>
       </animated.group>
       <animated.group position-x={rightX}>
-        <mesh geometry={right}>
+        <mesh geometry={right} {...hoverAimHandlers}>
           <Glass sampler />
         </mesh>
       </animated.group>

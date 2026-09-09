@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Generator } from 'maath/random'
 import { useNavStore } from '../store'
+import { hoverAimHandlers } from './aim'
 import { px } from '../tokens'
 import { useNavAssets } from './assets'
 import { Glass } from './Glass'
@@ -101,8 +102,6 @@ function PetalGroup({ preset, count, seed }: { preset: GlassPreset; count: numbe
     const m = mesh.current
     if (!m) return
     m.frustumCulled = false
-    // Decorative: never intercept pointer events meant for the items beneath.
-    m.raycast = () => null
   }, [])
 
   useFrame((state, dt) => {
@@ -111,7 +110,8 @@ function PetalGroup({ preset, count, seed }: { preset: GlassPreset; count: numbe
 
   if (count <= 0) return null
   return (
-    <instancedMesh ref={mesh} args={[petalLo, undefined, count]}>
+    // Hovered petals draw the roaming light to them (aim.ts); events still reach the items beneath.
+    <instancedMesh ref={mesh} args={[petalLo, undefined, count]} {...hoverAimHandlers}>
       <Glass sampler preset={preset} />
     </instancedMesh>
   )

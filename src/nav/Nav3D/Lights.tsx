@@ -8,7 +8,7 @@ import { px } from '../tokens'
 import { useTuning, type RectLightTuning, type Vec3 } from './tuning'
 import { transmissionOnly } from './materials'
 import { StripsContext } from './strips'
-import { navAim } from './aim'
+import { hoverAim, navAim } from './aim'
 
 // three@0.182: RectAreaLight needs its BRDF LUTs registered once before any material compiles.
 RectAreaLightUniformsLib.init()
@@ -158,7 +158,11 @@ function Roam({ debug }: { debug: boolean }) {
     const hh = px(size.height) / 2
     // Keep the light (and its light pool) inside the canvas: a margin of a few px.
     const margin = px(Math.max(r.size, 8))
-    if (r.follow && pointer) {
+    if (r.follow && hoverAim.active && hoverAim.canvas === gl.domElement) {
+      // On a hovered petal or flower: sit just in front of it, at its own depth.
+      target.copy(hoverAim.point)
+      target.z += 0.25
+    } else if (r.follow && pointer) {
       const rect = gl.domElement.getBoundingClientRect()
       target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), r.z)
     } else {
