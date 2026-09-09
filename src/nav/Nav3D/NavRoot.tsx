@@ -1,7 +1,7 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Container, Content, type VanillaContainer } from '@react-three/uikit'
 import { useSpring, type SpringValue } from '@react-spring/three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import type { Group } from 'three'
 import { useNavStore } from '../store'
 import { px, tokens } from '../tokens'
@@ -13,6 +13,9 @@ import { Indicator } from './Indicator'
 import { Glows } from './Glows'
 import { PillMorph } from './pillGeometry'
 import { useTuning } from './tuning'
+import type { ProbeRegion } from './LcProbe'
+
+const LcProbe = import.meta.env.DEV ? lazy(() => import('./LcProbe')) : null
 import { ItemRegistryContext, type ItemRegistry } from './items'
 import { transmissionExcluded } from './materials'
 import { useNavAssets } from './assets'
@@ -36,6 +39,23 @@ export function NavRoot() {
   const [animate, setAnimate] = useState(false)
   const [registry] = useState<ItemRegistry>(() => new Map())
   const { ink } = useInk()
+  // Dev legibility probe: the label boxes (uikit px → canvas px) and a way to hide the labels.
+  const size = useThree((s) => s.size)
+  const probeRegions = useCallback((): ProbeRegion[] => {
+    const out: ProbeRegion[] = []
+    for (const [id, el] of registry) {
+      const rc = el.relativeCenter.peek()
+      const sz = el.size.peek()
+      if (!rc || !sz) continue
+      out.push({ name: `nav: ${id}`, x: size.width / 2 + rc[0] - sz[0] / 2, y: size.height / 2 - rc[1] - sz[1] / 2, w: sz[0], h: sz[1] })
+    }
+    return out
+  }, [registry, size.width, size.height])
+  const hideLabels = useCallback((hidden: boolean) => {
+    const g = uiRef.current
+    if (!g) return
+    for (const c of g.children) if (c.name !== 'label-scrim') c.visible = !hidden
+  }, [])
 
   // The text layer sits on the glass; it must not be refracted by it.
   useEffect(() => {
@@ -84,6 +104,11 @@ export function NavRoot() {
           count={Math.min(Math.max(links.length, 1), 3)}
           float={!reducedMotion}
         />
+      )}
+      {LcProbe && (
+        <Suspense fallback={null}>
+          <LcProbe ink={ink} regions={probeRegions} hideText={hideLabels} />
+        </Suspense>
       )}
       <group ref={uiRef} position-z={z}>
         <Scrim width={spring.width} light={ink === '#f2f2ef'} />

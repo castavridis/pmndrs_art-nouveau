@@ -103,7 +103,7 @@ export interface LightsTuning {
    * A ray: a spot light anchored above the canvas whose aim follows the pointer (a slow
    * side-to-side sweep when the mouse is off the page). `cone` is the half-angle in degrees.
    */
-  ray: { intensity: number; color: string; cone: number; softness: number; speed: number }
+  ray: { enabled: boolean; intensity: number; color: string; cone: number; softness: number; speed: number }
   /** Draw light helpers (rect outlines, spot cone) and pull the camera back. */
   debug: boolean
   /** Womp luminance → three RectAreaLight intensity (nits). */
@@ -147,6 +147,8 @@ export interface Tuning {
      * ink, white under dark ink). Evens out what passes behind the text for legibility.
      */
     labelScrim: number
+    /** Text ink on the glass: picked from the backdrop (`auto`), or forced light / dark. */
+    ink: 'auto' | 'light' | 'dark'
   }
   post: {
     bloomIntensity: number
@@ -354,7 +356,7 @@ export type GlassPreset = keyof typeof glassPresets
 export const defaultLights: LightsTuning = {
   debug: false,
   roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6, follow: true, body: false },
-  ray: { intensity: 12, color: '#ffffff', cone: 18, softness: 0.6, speed: 0.05 },
+  ray: { enabled: true, intensity: 12, color: '#ffffff', cone: 18, softness: 0.6, speed: 0.05 },
   luminanceScale: 0.25,
   emitters: true,
   stripsInGlass: false,
@@ -385,7 +387,7 @@ export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
   lights: defaultLights,
-  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35 },
+  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto' },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004 },
 }
 

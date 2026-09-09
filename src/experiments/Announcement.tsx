@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
 import { Ready } from '../nav/Nav3D/Ready'
@@ -12,6 +12,7 @@ import fallback from '../nav/assets/fallback/manifest.json'
 import styles from './Announcement.module.css'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
+const LcProbe = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/LcProbe')) : null
 
 if (typeof window !== 'undefined') preloadAnnouncementAssets()
 import { useOutlines } from '../nav/outlines'
@@ -50,6 +51,17 @@ export function Announcement({
   // Ink follows the glass backdrop (see useInk); applied after hydration, CSS covers SSR/vector.
   const { ink } = useInk()
   const client = useIsClient()
+  const contentRef = useRef<HTMLDivElement>(null)
+  const canvasBox = useRef<HTMLDivElement>(null)
+  // Dev legibility probe: the text box in canvas px (the canvas is inset by the bleed).
+  const probeRegions = useCallback(() => {
+    const c = contentRef.current
+    const k = canvasBox.current
+    if (!c || !k) return []
+    const r = c.getBoundingClientRect()
+    const b = k.getBoundingClientRect()
+    return [{ name: 'announcement', x: r.x - b.x, y: r.y - b.y, w: r.width, h: r.height }]
+  }, [])
   // Dev: outlines over the live 3D as well.
   const overlay = useOutlines((s) => s.overlay)
   const outlines = vector || overlay
@@ -89,6 +101,7 @@ export function Announcement({
       />
       {variant === '3d' && (
         <div
+          ref={canvasBox}
           className={styles.canvas}
           style={{ inset: `${-bleedY}px ${-bleedX}px`, opacity: ready ? 1 : 0 }}
           aria-hidden="true"
@@ -97,6 +110,7 @@ export function Announcement({
             <Suspense fallback={null}>
               <Scene width={size.width} height={size.height} />
               <Ready onReady={() => setReady(true)} />
+              {LcProbe && <LcProbe ink={ink} regions={probeRegions} />}
             </Suspense>
             {DevHandles && (
               <Suspense fallback={null}>
@@ -107,6 +121,7 @@ export function Announcement({
         </div>
       )}
       <div
+        ref={contentRef}
         className={styles.content}
         style={{
           minHeight: announcement.height,

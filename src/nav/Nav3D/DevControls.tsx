@@ -15,6 +15,7 @@ import {
 } from './tuning'
 import { useOutlines } from '../outlines'
 import { isBuiltInPreset, presetNames, useCustomPresets } from './customPresets'
+import { useLcReadings } from './lcStore'
 
 // leva vector controls use tuples; the store uses {x,y,z}.
 type V = [number, number, number]
@@ -45,16 +46,29 @@ export default function DevControls() {
   const setOverlay = useOutlines((s) => s.setOverlay)
   const scheme = useTuning((s) => s.scheme)
   const copyToOther = useTuning((s) => s.copyToOther)
-  const [{ outlines }, setViewPanel] = useControls(
+  const inkChoice = useTuning((s) => s.env.ink)
+  const [{ outlines, ink: inkPanel }, setViewPanel] = useControls(
     'view',
     () => ({
       outlines: { value: overlay, label: 'svg outlines' },
+      ink: { value: inkChoice, options: ['auto', 'light', 'dark'] as const, label: 'text ink' },
+      lc: { value: '', editable: false, label: 'Lc (median/worst)' },
       scheme: { value: scheme, editable: false, label: 'tuning for' },
       'copy to other scheme': button(() => copyToOther()),
     }),
     { order: -1 },
   )
   useEffect(() => setViewPanel({ scheme }), [scheme, setViewPanel])
+  useEffect(() => set('env', { ink: inkPanel }), [inkPanel, set])
+  useEffect(() => setViewPanel({ ink: inkChoice }), [inkChoice, setViewPanel])
+  // Live legibility readings from the in-canvas probes (LcProbe.tsx), refreshed as they arrive.
+  const readings = useLcReadings((s) => s.readings)
+  useEffect(() => {
+    const text = Object.entries(readings)
+      .map(([k, v]) => `${k.replace('nav: ', '')} ${v.median}/${v.worst}${v.worst < 60 ? ' ✕' : v.worst < 75 ? ' ~' : ''}`)
+      .join(' · ')
+    setViewPanel({ lc: text || '—' })
+  }, [readings, setViewPanel])
   useEffect(() => setOverlay(outlines), [outlines, setOverlay])
   useEffect(() => setViewPanel({ outlines: overlay }), [overlay, setViewPanel])
 
@@ -177,6 +191,7 @@ export default function DevControls() {
     sweepRange: { value: L.sweepRange, min: 0, max: 200 },
   }))
   const [ray, setRayPanel] = useControls('lights.ray', () => ({
+    enabled: { value: L.ray.enabled, label: 'on' },
     intensity: { value: L.ray.intensity, min: 0, max: 60 },
     color: L.ray.color,
     cone: { value: L.ray.cone, min: 2, max: 60 },
@@ -207,7 +222,8 @@ export default function DevControls() {
   /** Push a whole Tuning into every leva folder (initial load, preset, import, reset). */
   const fillPanel = useRef((t: Tuning) => {
     setGlassPanel(t.glass)
-    setEnvPanel(t.env)
+    // `ink` lives in the view folder, not the environment one.
+    setEnvPanel({ intensity: t.env.intensity, rotation: t.env.rotation, background: t.env.background, fog: t.env.fog, labelScrim: t.env.labelScrim })
     setPostPanel(t.post)
     setLightsPanel({
       debug: t.lights.debug,
@@ -320,6 +336,9 @@ export default function DevControls() {
   useEffect(() => void (live.current && set('glass', glass as GlassTuning)), [glass, set])
   useEffect(() => void (live.current && set('env', env)), [env, set])
   useEffect(() => void (live.current && set('post', post)), [post, set])
+  // Keyed on a signature: leva hands back fresh objects each render, and pushing on every
+  // render would overwrite store changes made elsewhere (scripts, page defaults) at once.
+  const lightsSig = JSON.stringify([lights, roam, ray, oh, rect0.value, rect1.value, rect2.value, rect3.value])
   useEffect(() => {
     if (!live.current) return
     set('lights', {
@@ -329,7 +348,8 @@ export default function DevControls() {
       overhead: { ...oh, position: fromV(oh.position), target: fromV(oh.target) },
       rects: [rect0.value, rect1.value, rect2.value, rect3.value],
     })
-  }, [lights, roam, ray, oh, rect0.value, rect1.value, rect2.value, rect3.value, set])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightsSig, set])
 
   return <Leva collapsed titleBar={{ title: 'nav 3D' }} />
 }

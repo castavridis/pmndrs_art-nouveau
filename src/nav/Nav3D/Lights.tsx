@@ -177,7 +177,7 @@ function Ray({ debug }: { debug: boolean }) {
   const light = useRef<THREE.SpotLight>(null!)
   const target = useMemo(() => new THREE.Object3D(), [])
   usePagePointer()
-  useHelper(debug && r.intensity > 0 && light, THREE.SpotLightHelper, r.color)
+  useHelper(debug && r.enabled && r.intensity > 0 && light, THREE.SpotLightHelper, r.color)
   useFrame((state, dt) => {
     const l = light.current
     if (!l) return
@@ -195,7 +195,7 @@ function Ray({ debug }: { debug: boolean }) {
     target.position.lerp(aim, 1 - Math.exp(-dt * 12))
     target.updateMatrixWorld()
   })
-  if (r.intensity <= 0) return null
+  if (!r.enabled || r.intensity <= 0) return null
   return (
     <>
       <primitive object={target} />

@@ -22,6 +22,9 @@ function luminance(hex: string): number {
 export function useInk() {
   const theme = useResolvedTheme()
   const bg = useTuning((s) => s.glass.background)
+  const forced = useTuning((s) => s.env.ink)
+  if (forced === 'light') return INKS.dark // light ink is the dark-page set
+  if (forced === 'dark') return INKS.light
   const y = luminance(bg)
   const scheme = y < 0.25 ? 'dark' : y > 0.5 ? 'light' : theme
   return INKS[scheme]
