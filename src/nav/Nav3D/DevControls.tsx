@@ -215,6 +215,7 @@ export default function DevControls() {
     z: { value: L.roam.z, min: -10, max: 30, step: 0.1, label: 'depth (z)' },
     follow: { value: L.roam.follow, label: 'follow pointer' },
     hover: { value: L.roam.hover, label: 'go to hovered petal' },
+    hoverOffset: { value: L.roam.hoverOffset, min: 0, max: 3, step: 0.05, label: 'hover offset' },
     body: { value: L.roam.body, label: 'show body' },
   }), { order: -60 })
   const [oh, setOhPanel] = useControls('lights.overhead', () => ({

@@ -159,8 +159,10 @@ function Roam({ debug }: { debug: boolean }) {
     // Keep the light (and its light pool) inside the canvas: a margin of a few px.
     const margin = px(Math.max(r.size, 8))
     if (r.hover && hoverAim.active && hoverAim.canvas === gl.domElement) {
-      // On a hovered petal or flower: exactly where the pointer hit it (x, y, z).
+      // On a hovered petal or flower: the hit point, lifted toward the camera by hoverOffset
+      // so the light glints on the surface instead of sitting inside it.
       target.copy(hoverAim.point)
+      target.z += r.hoverOffset
     } else if (r.follow && pointer) {
       const rect = gl.domElement.getBoundingClientRect()
       target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), r.z)
