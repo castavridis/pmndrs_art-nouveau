@@ -25,8 +25,15 @@ export interface AnnouncementProps {
   children: ReactNode
   /** Maximum banner width in px; it fills its container up to this. The flourishes stay pinned to the ends. */
   width?: number
-  /** `3d` (default) cross-fades from the vector outlines once rendered; `svg` stays vector. */
-  variant?: '3d' | 'svg'
+  /**
+   * `3d` (default) cross-fades from the vector outlines once rendered; `svg` stays vector;
+   * `shared`: no canvas of its own — a page-level scene draws `AnnouncementParts` at this
+   * element (see `onSlot`), and `sharedReady` says when it has.
+   */
+  variant?: '3d' | 'svg' | 'shared'
+  sharedReady?: boolean
+  /** Shared mode: reports the banner element and its measured size for the page scene. */
+  onSlot?: (el: HTMLDivElement | null, size: { width: number; height: number }) => void
   postprocessing?: boolean
 }
 
@@ -39,6 +46,8 @@ export function Announcement({
   children,
   width = announcement.width,
   variant = '3d',
+  sharedReady = false,
+  onSlot,
   postprocessing = true,
 }: AnnouncementProps) {
   const bleedX = tokens.clusterBleedX
@@ -47,8 +56,12 @@ export function Announcement({
   // announcement.height); the glass slab follows the measured box.
   const rootRef = useRef<HTMLDivElement>(null)
   const size = useMeasure(rootRef, { width, height: announcement.height })
-  const [ready, setReady] = useState(false)
+  const [ownReady, setReady] = useState(false)
+  const ready = variant === 'shared' ? sharedReady : ownReady
   const vector = variant === 'svg' || !ready
+  useEffect(() => {
+    if (variant === 'shared') onSlot?.(rootRef.current, size)
+  }, [variant, onSlot, size])
   // Ink follows the glass backdrop (see useInk); applied after hydration, CSS covers SSR/vector.
   const { ink } = useInk()
   const client = useIsClient()
@@ -137,6 +150,15 @@ export function Announcement({
 }
 
 function Scene({ width, height }: { width: number; height: number }) {
+  return <AnnouncementParts width={width} height={height} />
+}
+
+/**
+ * The banner's 3D parts (slab + flourishes), centred at the origin, for its own canvas or a
+ * shared page scene. `sampler` uses three's shared transmission pass for the slab, which a
+ * scene with several glass surfaces prefers to one buffer per surface.
+ */
+export function AnnouncementParts({ width, height, sampler = false }: { width: number; height: number; sampler?: boolean }) {
   const { left, right } = useAnnouncementAssets()
   const choice = useTuning((s) => s.materials.flourishes)
   const preset = choice === 'live' ? undefined : choice
@@ -149,7 +171,7 @@ function Scene({ width, height }: { width: number; height: number }) {
   return (
     <>
       <mesh geometry={geometry}>
-        <Glass />
+        <Glass sampler={sampler} />
       </mesh>
       <group position-x={-end}>
         <mesh geometry={left}>

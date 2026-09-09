@@ -35,7 +35,11 @@ export interface CalloutProps {
    * `svg`: vector outlines only (the traced icon, an outlined card), no WebGL. The 3D variants
    * show the svg look while their canvas loads and cross-fade once it has rendered.
    */
-  variant: 'surface' | 'plain' | 'svg'
+  variant: 'surface' | 'plain' | 'svg' | 'shared'
+  /** Shared mode: the page scene has drawn `CalloutParts` for this card. */
+  sharedReady?: boolean
+  /** Shared mode: reports the card element and its measured size for the page scene. */
+  onSlot?: (el: HTMLDivElement | null, size: { width: number; height: number }) => void
   /** GitHub-style kind: sets the symbol inside the lens, the label and the palette tint. */
   kind?: CalloutKind
   title: string
@@ -59,6 +63,8 @@ export function Callout({
   postprocessing = true,
   strips = true,
   maxWidth = callout.width,
+  sharedReady = false,
+  onSlot,
 }: CalloutProps) {
   // The card is sized by its DOM content (width from the container, height from the text) and
   // the 3D slab follows the measured box; until measured (and in SSR) it uses the metrics.
@@ -78,8 +84,12 @@ export function Callout({
   const cardRef = useRef<HTMLDivElement>(null)
   useDomTilt(cardRef, pointer, variant === 'plain' ? 4 : 0, 0)
   // 3D readiness: vector outlines until the canvas has drawn its first frames.
-  const [ready, setReady] = useState(false)
+  const [ownReady, setReady] = useState(false)
+  const ready = variant === 'shared' ? sharedReady : ownReady
   const vector = variant === 'svg' || !ready
+  useEffect(() => {
+    if (variant === 'shared') onSlot?.(rootRef.current, size)
+  }, [variant, onSlot, size])
   // Dev: outlines over the live 3D as well.
   const overlay = useOutlines((s) => s.overlay)
   const outlines = vector || overlay
@@ -204,8 +214,19 @@ interface Box {
   height: number
 }
 
+/** The card's 3D parts (surface + lens icon at the corner), centred at the origin, for a shared page scene. */
+export function CalloutParts({ kind, width, height }: { kind: CalloutKind } & Box) {
+  const preset: GlassPreset = calloutKinds[kind].colour
+  return (
+    <>
+      <Surface preset={preset} width={width} height={height} />
+      <IconAtCorner preset={preset} width={width} height={height} />
+    </>
+  )
+}
+
 /** The glass slab, centred in the canvas (which is the card plus bleed), rebuilt per card size. */
-function Surface({ preset, width, height }: { preset: GlassPreset } & Box) {
+function Surface({ preset, width, height, sampler = false }: { preset: GlassPreset; sampler?: boolean } & Box) {
   const geometry = useMemo(
     () => makeRoundedRectGeometry(width, height, callout.radius, callout.depth),
     [width, height],
@@ -213,7 +234,7 @@ function Surface({ preset, width, height }: { preset: GlassPreset } & Box) {
   useEffect(() => () => geometry.dispose(), [geometry])
   return (
     <mesh geometry={geometry}>
-      <Glass preset={preset} />
+      <Glass preset={preset} sampler={sampler} />
     </mesh>
   )
 }

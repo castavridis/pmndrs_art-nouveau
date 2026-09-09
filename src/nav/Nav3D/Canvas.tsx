@@ -32,6 +32,12 @@ export interface NavCanvasProps {
    * the environment). Off for surfaces where the diagonal lines read as artefacts.
    */
   strips?: boolean
+  /**
+   * Take pointer events from this element instead of the canvas (R3F `eventSource`), for a
+   * full-page canvas that must not cover the DOM controls above it.
+   */
+  eventSource?: React.RefObject<HTMLElement | null>
+  style?: React.CSSProperties
 }
 
 /**
@@ -54,6 +60,8 @@ export function NavCanvas({
   orbit = false,
   framePosition,
   strips = true,
+  eventSource,
+  style,
 }: NavCanvasProps) {
   return (
     <R3FCanvas
@@ -61,7 +69,9 @@ export function NavCanvas({
       camera={{ fov: FOV, near: 0.1, far: 100 }}
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      style={{ background: 'transparent' }}
+      style={{ background: 'transparent', ...style }}
+      eventSource={eventSource?.current ?? undefined}
+      eventPrefix={eventSource ? 'client' : undefined}
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
       <StripsContext.Provider value={strips}>

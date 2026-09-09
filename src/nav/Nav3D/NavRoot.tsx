@@ -41,6 +41,9 @@ export function NavRoot() {
   const [animate, setAnimate] = useState(false)
   const [registry] = useState<ItemRegistry>(() => new Map())
   const { ink } = useInk()
+  // The whole nav can sit away from the canvas origin (shared scenes); items report positions
+  // relative to it, so the aim and probe add its world offset.
+  const rootRef3d = useRef<Group>(null)
   // Dev legibility probe: the label boxes (uikit px → canvas px) and a way to hide the labels.
   const size = useThree((s) => s.size)
   const probeRegions = useCallback((): ProbeRegion[] => {
@@ -49,7 +52,9 @@ export function NavRoot() {
       const rc = el.relativeCenter.peek()
       const sz = el.size.peek()
       if (!rc || !sz) continue
-      out.push({ name: `nav: ${id}`, x: size.width / 2 + rc[0] - sz[0] / 2, y: size.height / 2 - rc[1] - sz[1] / 2, w: sz[0], h: sz[1] })
+      const ox = (rootRef3d.current?.position.x ?? 0) * tokens.pxPerUnit
+      const oy = (rootRef3d.current?.position.y ?? 0) * tokens.pxPerUnit
+      out.push({ name: `nav: ${id}`, x: size.width / 2 + ox + rc[0] - sz[0] / 2, y: size.height / 2 - oy - rc[1] - sz[1] / 2, w: sz[0], h: sz[1] })
     }
     return out
   }, [registry, size.width, size.height])
@@ -94,11 +99,12 @@ export function NavRoot() {
 
   return (
     <ItemRegistryContext.Provider value={registry}>
+      <group ref={rootRef3d}>
       <Pill width={spring.width} />
       <Clusters width={spring.width} />
       <Indicator />
       <Glows />
-      <AimTracker />
+      <AimTracker root={rootRef3d} />
       {mode === 'full' && <PetalField count={100} />}
       {mode === 'full' && (
         <Petals
@@ -155,6 +161,7 @@ export function NavRoot() {
           </Container>
         </Suspense>
       </group>
+      </group>
     </ItemRegistryContext.Provider>
   )
 }
@@ -178,7 +185,7 @@ function Scrim({ width, light }: { width: SpringValue<number>; light: boolean })
 }
 
 /** Publishes the hovered (else current page) item's x for lights that aim at it (see aim.ts). */
-function AimTracker() {
+function AimTracker({ root }: { root: React.RefObject<Group | null> }) {
   const registry = useItemRegistry()
   const active = useNavStore((s) => s.active)
   const hovered = useNavStore((s) => s.hovered ?? s.focused)
@@ -187,7 +194,7 @@ function AimTracker() {
     const id = hovered ?? active
     const rc = id ? registry?.get(id)?.relativeCenter.peek() : undefined
     navAim.active = !!rc
-    if (rc) navAim.x = px(rc[0])
+    if (rc) navAim.x = px(rc[0]) + (root.current?.position.x ?? 0)
   })
   return null
 }
