@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type * as THREE from 'three'
 import { createNavStore, NavStoreContext } from '../nav/store'
@@ -10,12 +10,16 @@ import { px } from '../nav/tokens'
 import { palette, type PaletteName } from '../nav/Nav3D/tuning'
 import { usePresetGlass } from '../nav/Nav3D/paletteTuning'
 import { preloadFlower, useFlower } from './flowerAssets'
+import { preloadCalloutIcon, useCalloutIcon } from './calloutAssets'
+import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
+import { Backing } from '../nav/Nav3D/Backing'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 const PaletteControls = import.meta.env.DEV ? lazy(() => import('./PaletteControls')) : null
 
 preloadNavAssets()
 preloadFlower()
+preloadCalloutIcon()
 
 const PALETTE_NAMES = Object.keys(palette) as PaletteName[]
 
@@ -91,28 +95,46 @@ function PaletteCard({ name }: { name: PaletteName }) {
   )
 }
 
-/** A blossom with two loose petals, all in the colour's material, drifting gently. */
+/** The sample slab in CSS px: the announcement / callout glass, 8px corners. */
+const SLAB = { width: 168, height: 118, radius: 8, depth: 6 }
+
+/**
+ * A slab of the main glass (as the announcement and callouts wear it) with the colour's
+ * material on the pieces around it: the blossom on the bottom-left corner, a callout leaf
+ * over the top edge, and two petals just off the right edge. Each piece overlaps the slab so
+ * the colour can be judged against the shared glass, not only against the page.
+ */
 function Sample({ name }: { name: PaletteName }) {
   const flower = useFlower()
   const { petal } = useNavAssets()
-  // The blossom is ~4.8 units wide natively; show it ~130 px wide.
-  const s = px(130) / 4.8
-  const rotations = useMemo(
-    () => [
-      [0.2, 0, 0.6],
-      [-0.3, 0.2, -1.1],
-    ] as [number, number, number][],
-    [],
-  )
+  const { leafTop, size: iconSize } = useCalloutIcon()
+  const slab = useMemo(() => makeRoundedRectGeometry(SLAB.width, SLAB.height, SLAB.radius, SLAB.depth), [])
+  useEffect(() => () => slab.dispose(), [slab])
+  // The blossom is ~4.8 units wide natively; show it ~110 px wide. The leaf ~70 px tall.
+  const fs = px(110) / 4.8
+  const ls = px(70) / iconSize
+  const hw = px(SLAB.width) / 2
+  const hh = px(SLAB.height) / 2
+  const front = px(SLAB.depth / 2)
   return (
     <group>
-      <mesh geometry={flower} scale={s} rotation={[0.15, 0, 0]} position={[-0.25, 0, 0]}>
+      <Backing width={SLAB.width} height={SLAB.height} depth={SLAB.depth} />
+      <mesh geometry={slab}>
+        <Glass sampler />
+      </mesh>
+      {/* Blossom on the bottom-left corner, half over the slab. */}
+      <mesh geometry={flower} scale={fs} rotation={[0.15, 0, 0.2]} position={[-hw + 0.1, -hh + 0.05, front + 0.08]}>
         <Glass sampler preset={name} />
       </mesh>
-      <mesh geometry={petal} rotation={rotations[0]} position={[0.75, 0.35, 0.1]} scale={2}>
+      {/* Callout leaf curling over the top edge. */}
+      <mesh geometry={leafTop} scale={ls} rotation={[0, 0, -0.2]} position={[0.15, hh - 0.05, front + 0.1]}>
         <Glass sampler preset={name} />
       </mesh>
-      <mesh geometry={petal} rotation={rotations[1]} position={[0.85, -0.35, 0.05]} scale={1.6}>
+      {/* Petals slightly off the right edge. */}
+      <mesh geometry={petal} rotation={[0.2, 0, 0.6]} position={[hw + 0.08, 0.25, front + 0.05]} scale={2}>
+        <Glass sampler preset={name} />
+      </mesh>
+      <mesh geometry={petal} rotation={[-0.3, 0.2, -1.1]} position={[hw + 0.02, -0.3, front + 0.02]} scale={1.6}>
         <Glass sampler preset={name} />
       </mesh>
       <Drift />
