@@ -12,6 +12,7 @@ import { DevIndex } from './experiments/DevIndex'
 import { TracePage } from './experiments/TracePage'
 import { FrankensteinPage } from './experiments/FrankensteinPage'
 import { PalettePage } from './experiments/PalettePage'
+import { BentoPage } from './experiments/BentoPage'
 import { AppShell } from './AppShell'
 
 const root = document.getElementById('root')!
@@ -27,6 +28,8 @@ const page = path.startsWith('/dev/demo') ? (
   <CalloutPage />
 ) : path.startsWith('/dev/announcement') ? (
   <AnnouncementPage />
+) : path.startsWith('/dev/bento') ? (
+  <BentoPage />
 ) : path.startsWith('/dev/palette') ? (
   <PalettePage />
 ) : path.startsWith('/dev/trace') ? (

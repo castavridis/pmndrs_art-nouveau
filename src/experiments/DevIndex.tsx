@@ -25,6 +25,11 @@ const pages = [
     text: 'GitHub-style callouts: 3D surface or plain div, with the lens icon.',
   },
   {
+    href: '/dev/bento',
+    title: 'Bento',
+    text: 'The components by expressiveness: 3D nav and announcement, glass controls and callout, plain docs chrome.',
+  },
+  {
     href: '/dev/palette',
     title: 'Palette',
     text: 'Every palette colour as a glass sample, each with its own material folder in the panel.',
