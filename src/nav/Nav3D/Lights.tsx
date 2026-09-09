@@ -5,7 +5,7 @@ import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLigh
 import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper.js'
 import { Lightformer, useHelper } from '@react-three/drei'
 import { px } from '../tokens'
-import { useTuning, type RectLightTuning, type Vec3 } from './tuning'
+import { palette, useTuning, type RectLightTuning, type Vec3 } from './tuning'
 import { transmissionOnly } from './materials'
 import { StripsContext } from './strips'
 import { hoverAim, navAim, pagePointer, usePagePointer } from './aim'
@@ -109,6 +109,18 @@ function Overhead({ debug }: { debug: boolean }) {
   )
 }
 
+/** The bright palette colours, in wheel order (the dark and light neutrals left out). */
+const RAINBOW = [palette.purple, palette.red, palette.orange, palette.yellow, palette.green, palette.teal, palette.blue].map(
+  (h) => new THREE.Color(h),
+)
+/** Colour `t` steps around the wheel (fractional steps blend between neighbours). */
+function rainbowAt(t: number, out: THREE.Color) {
+  const n = RAINBOW.length
+  const i = Math.floor(((t % n) + n) % n)
+  const f = ((t % 1) + 1) % 1
+  out.copy(RAINBOW[i]!).lerp(RAINBOW[(i + 1) % n]!, f)
+}
+
 const overheadAim = new THREE.Vector3()
 const rectAim = new THREE.Vector3()
 const rectLook = new THREE.Matrix4()
@@ -127,8 +139,12 @@ function Roam({ debug }: { debug: boolean }) {
   const size = useThree((s) => s.size)
   const gl = useThree((s) => s.gl)
   const group = useRef<THREE.Group>(null!)
+  const light = useRef<THREE.PointLight>(null!)
   /** Depth the light is currently holding (see the follow branch below). */
   const heldZ = useRef(r.z)
+  /** Rainbow mode: position in the colour cycle, advanced by distance travelled. */
+  const cycle = useRef(0)
+  const lastPos = useRef<THREE.Vector3 | null>(null)
   usePagePointer()
   useFrame((state, dt) => {
     const g = group.current
@@ -157,11 +173,18 @@ function Roam({ debug }: { debug: boolean }) {
     target.x = THREE.MathUtils.clamp(target.x, -hw + margin, hw - margin)
     target.y = THREE.MathUtils.clamp(target.y, -hh + margin, hh - margin)
     g.position.lerp(target, 1 - Math.exp(-dt * 14))
+    // Rainbow: the colour advances only with movement, so a resting light holds its hue.
+    if (r.mode === 'rainbow' && light.current) {
+      if (lastPos.current) cycle.current += lastPos.current.distanceTo(g.position) * r.rainbowRate
+      else lastPos.current = new THREE.Vector3()
+      lastPos.current.copy(g.position)
+      rainbowAt(cycle.current, light.current.color)
+    }
   })
   if (r.intensity <= 0) return null
   return (
     <group ref={group}>
-      <pointLight color={r.color} intensity={r.intensity} decay={2} />
+      <pointLight ref={light} color={r.mode === 'rainbow' ? undefined : r.color} intensity={r.intensity} decay={2} />
       {r.body && (
         <Emitter debug={debug}>
           <sphereGeometry args={[px(r.size), 16, 12]} />

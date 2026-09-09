@@ -214,6 +214,7 @@ export default function DevControls() {
     bloomThreshold: { value: defaultTuning.post.bloomThreshold, min: 0, max: 1 },
     bloomSmoothing: { value: defaultTuning.post.bloomSmoothing, min: 0, max: 1 },
     bloomRadius: { value: defaultTuning.post.bloomRadius, min: 0, max: 1 },
+    bloomClamp: { value: defaultTuning.post.bloomClamp, min: 1, max: 100, label: 'bloom clamp (HDR)' },
     aberration: { value: defaultTuning.post.aberration, min: 0, max: 0.01, step: 0.0001 },
     noise: { value: defaultTuning.post.noise, min: 0, max: 1 },
     noiseBlend: { value: defaultTuning.post.noiseBlend, options: ['screen', 'overlay', 'softLight', 'add', 'multiply', 'normal'] as const },
@@ -239,7 +240,9 @@ export default function DevControls() {
   }), { order: -55 })
   const [roam, setRoamPanel] = useControls('lights.roam', () => ({
     intensity: { value: L.roam.intensity, min: 0, max: 40 },
+    mode: { value: L.roam.mode, options: ['solid', 'rainbow'] as const },
     color: L.roam.color,
+    rainbowRate: { value: L.roam.rainbowRate, min: 0.02, max: 3, label: 'rainbow rate' },
     speed: { value: L.roam.speed, min: 0, max: 0.5 },
     size: { value: L.roam.size, min: 1, max: 40 },
     z: { value: L.roam.z, min: -10, max: 30, step: 0.1, label: 'depth (z)' },

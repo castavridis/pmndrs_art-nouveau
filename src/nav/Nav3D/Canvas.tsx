@@ -1,6 +1,6 @@
 import { Suspense, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import { Canvas as R3FCanvas, useFrame, useThree } from '@react-three/fiber'
-import { Vector2 } from 'three'
+import { Uniform, Vector2 } from 'three'
 import { Environment, Lightformer, OrbitControls, Preload } from '@react-three/drei'
 import {
   EffectComposer,
@@ -272,21 +272,26 @@ function Studio() {
  * the whole frame. Its own pass (mergeMode "none") so bloom reads the cleaned buffer.
  */
 class SanitizeEffect extends Effect {
-  constructor() {
+  constructor(clamp: number) {
     super(
       'Sanitize',
       /* glsl */ `
+      uniform float maxValue;
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec4 c = inputColor;
         if (any(isnan(c)) || any(isinf(c))) c = vec4(0.0, 0.0, 0.0, c.a);
+        // Cap extreme HDR values so bloom cannot smear a single glint across the page.
+        c.rgb = min(c.rgb, vec3(maxValue));
         outputColor = c;
       }`,
+      { uniforms: new Map([['maxValue', new Uniform(clamp)]]) },
     )
   }
 }
 
-function Sanitize() {
-  const effect = useMemo(() => new SanitizeEffect(), [])
+function Sanitize({ clamp }: { clamp: number }) {
+  // Rebuilt on change (rare: a panel edit); the composer picks the new pass up.
+  const effect = useMemo(() => new SanitizeEffect(clamp), [clamp])
   return <primitive object={effect} />
 }
 
@@ -305,6 +310,7 @@ function Post() {
     bloomThreshold,
     bloomSmoothing,
     bloomRadius,
+    bloomClamp,
     aberration,
     noise,
     noiseBlend,
@@ -314,7 +320,7 @@ function Post() {
   )
   return (
     <EffectComposer multisampling={0} mergeMode="none">
-      <Sanitize />
+      <Sanitize clamp={bloomClamp} />
       <Bloom
         intensity={bloomIntensity}
         luminanceThreshold={bloomThreshold}
