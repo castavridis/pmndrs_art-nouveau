@@ -177,12 +177,15 @@ function Scrim({ width, light }: { width: SpringValue<number>; light: boolean })
   )
 }
 
-/** Publishes the current page item's x (world units) for lights that aim at it (see aim.ts). */
+/** Publishes the hovered (else current page) item's x for lights that aim at it (see aim.ts). */
 function AimTracker() {
   const registry = useItemRegistry()
   const active = useNavStore((s) => s.active)
+  const hovered = useNavStore((s) => s.hovered ?? s.focused)
   useFrame(() => {
-    const rc = active ? registry?.get(active)?.relativeCenter.peek() : undefined
+    // The item under the pointer (or keyboard focus) wins; otherwise the current page.
+    const id = hovered ?? active
+    const rc = id ? registry?.get(id)?.relativeCenter.peek() : undefined
     navAim.active = !!rc
     if (rc) navAim.x = px(rc[0])
   })

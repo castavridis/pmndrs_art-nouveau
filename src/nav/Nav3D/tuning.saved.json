@@ -54,19 +54,19 @@
     "sweepRange": 40,
     "overhead": {
       "color": "#ffffff",
-      "intensity": 0,
+      "intensity": 320,
       "position": {
         "x": 0,
         "y": 120,
-        "z": 100
+        "z": -315
       },
       "target": {
         "x": 0,
         "y": 0,
         "z": 0
       },
-      "angle": 40,
-      "penumbra": 0.6
+      "angle": 12,
+      "penumbra": 0.85
     },
     "rects": [
       {
@@ -85,7 +85,7 @@
           "y": 0,
           "z": 0
         },
-        "followActive": true
+        "followActive": false
       },
       {
         "name": "45\u00b0 top",
