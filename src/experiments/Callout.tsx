@@ -21,6 +21,8 @@ import { callout } from './calloutMetrics'
 import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
 import { useTuning, type GlassPreset } from '../nav/Nav3D/tuning'
 import type { PresetName } from '../nav/Nav3D/customPresets'
+import { useInk } from '../nav/Nav3D/dom'
+import { useIsClient } from '../isClient'
 import { useDomTilt, usePointerParallax } from './parallax'
 import { useMeasure } from './useMeasure'
 import { useOutlines } from '../nav/outlines'
@@ -76,6 +78,8 @@ export function Callout({
   const tint = kindHex(kind)
   const preset: GlassPreset = k.colour
   const surfacePreset = useSurfacePreset(kind)
+  const { ink } = useInk()
+  const client = useIsClient()
   // Parallax: the pointer over the card tilts the 3D layers (icon more than surface) and the
   // DOM content; the plain card tilts as a whole in CSS.
   const rootRef = useRef<HTMLDivElement>(null)
@@ -90,6 +94,9 @@ export function Callout({
   const [ownReady, setReady] = useState(false)
   const ready = variant === 'shared' ? sharedReady : ownReady
   const vector = variant === 'svg' || !ready
+  // Glass surfaces carry the main glass: the ink follows its backdrop (light on dark glass),
+  // like the announcement. The plain card keeps its own light gradient and dark ink.
+  const glassInk = variant !== 'plain' && client && !vector ? ink : undefined
   useEffect(() => {
     if (variant === 'shared') onSlot?.(rootRef.current, size)
   }, [variant, onSlot, size])
@@ -102,6 +109,7 @@ export function Callout({
       <div
         ref={cardRef}
         className={`${styles.root} ${variant === 'plain' && !vector ? styles.plain : ''} ${vector ? styles.vector : ''} ${outlines ? styles.outlined : ''}`}
+        style={{ color: glassInk }}
       >
         {/* Vector layer: traced outline of the icon, in place until the 3D one is up. */}
         <img
