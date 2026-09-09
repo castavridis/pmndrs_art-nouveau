@@ -164,6 +164,8 @@ export interface MaterialsTuning {
   indicator: PresetName
   /** The cube page's logo prisms. */
   model: MaterialChoice
+  /** Callout surfaces: the main glass (`live`), the kind's palette tint (`kind`), or a preset. */
+  callout: MaterialChoice | 'kind'
 }
 
 export interface Tuning {
@@ -446,6 +448,7 @@ export const baseTuning: Tuning = {
     flourishes: 'live',
     indicator: 'indicator',
     model: 'live',
+    callout: 'live',
   },
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto' },

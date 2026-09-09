@@ -19,7 +19,8 @@ import fallback from '../nav/assets/fallback/manifest.json'
 import styles from './Callout.module.css'
 import { callout } from './calloutMetrics'
 import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
-import type { GlassPreset } from '../nav/Nav3D/tuning'
+import { useTuning, type GlassPreset } from '../nav/Nav3D/tuning'
+import type { PresetName } from '../nav/Nav3D/customPresets'
 import { useDomTilt, usePointerParallax } from './parallax'
 import { useMeasure } from './useMeasure'
 import { useOutlines } from '../nav/outlines'
@@ -74,6 +75,7 @@ export function Callout({
   const k = calloutKinds[kind]
   const tint = kindHex(kind)
   const preset: GlassPreset = k.colour
+  const surfacePreset = useSurfacePreset(kind)
   // Parallax: the pointer over the card tilts the 3D layers (icon more than surface) and the
   // DOM content; the plain card tilts as a whole in CSS.
   const rootRef = useRef<HTMLDivElement>(null)
@@ -126,7 +128,7 @@ export function Callout({
             <NavCanvas postprocessing={postprocessing} strips={strips}>
               <Suspense fallback={null}>
                 <ParallaxRig pointer={pointer} depth={0}>
-                  <Surface preset={preset} width={size.width} height={size.height} />
+                  <Surface preset={surfacePreset} width={size.width} height={size.height} />
                 </ParallaxRig>
                 <ParallaxRig pointer={pointer} depth={1}>
                   <IconAtCorner preset={preset} width={size.width} height={size.height} />
@@ -215,20 +217,32 @@ interface Box {
   height: number
 }
 
+/**
+ * Which material the surface wears (materials.callout): the main tuned glass by default, so
+ * callouts match the pill and the announcement; `kind` tints it with the kind's colour.
+ */
+function useSurfacePreset(kind: CalloutKind): PresetName | undefined {
+  const choice = useTuning((s) => s.materials.callout)
+  if (choice === 'live') return undefined
+  if (choice === 'kind') return calloutKinds[kind].colour
+  return choice
+}
+
 /** The card's 3D parts (surface + lens icon at the corner), centred at the origin, for a shared page scene. */
 export function CalloutParts({ kind, width, height, sampler = false }: { kind: CalloutKind; sampler?: boolean } & Box) {
-  const preset: GlassPreset = calloutKinds[kind].colour
+  const icon: GlassPreset = calloutKinds[kind].colour
+  const surface = useSurfacePreset(kind)
   return (
     <>
-      {sampler && <Backing width={width} height={height} depth={callout.depth} preset={preset} />}
-      <Surface preset={preset} width={width} height={height} sampler={sampler} />
-      <IconAtCorner preset={preset} width={width} height={height} />
+      {sampler && <Backing width={width} height={height} depth={callout.depth} preset={surface} />}
+      <Surface preset={surface} width={width} height={height} sampler={sampler} />
+      <IconAtCorner preset={icon} width={width} height={height} />
     </>
   )
 }
 
 /** The glass slab, centred in the canvas (which is the card plus bleed), rebuilt per card size. */
-function Surface({ preset, width, height, sampler = false }: { preset: GlassPreset; sampler?: boolean } & Box) {
+function Surface({ preset, width, height, sampler = false }: { preset?: PresetName; sampler?: boolean } & Box) {
   const geometry = useMemo(
     () => makeRoundedRectGeometry(width, height, callout.radius, callout.depth),
     [width, height],

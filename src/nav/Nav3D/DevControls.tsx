@@ -194,6 +194,7 @@ export default function DevControls() {
       flourishes: { value: MAT.flourishes, options: choices, label: 'announcement flourishes' },
       indicator: { value: MAT.indicator, options: names },
       model: { value: MAT.model, options: choices, label: 'cube model' },
+      callout: { value: MAT.callout, options: ['live', 'kind', ...names], label: 'callout surface' },
     }),
     { order: -61 },
     [names.join('|')],
@@ -268,7 +269,7 @@ export default function DevControls() {
   const fillPanel = useRef((t: Tuning) => {
     setGlassPanel(t.glass)
     setMotionPanel(t.motion)
-    setMatPanel({ clusters: t.materials.clusters, loosePetals: t.materials.loosePetals, flourishes: t.materials.flourishes, indicator: t.materials.indicator, model: t.materials.model })
+    setMatPanel({ clusters: t.materials.clusters, loosePetals: t.materials.loosePetals, flourishes: t.materials.flourishes, indicator: t.materials.indicator, model: t.materials.model, callout: t.materials.callout })
     setPetalPool(poolSchema(t.materials.petals))
     setFlowerPool(poolSchema(t.materials.flowers))
     // `ink` lives in the view folder, not the environment one.
