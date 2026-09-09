@@ -14,6 +14,8 @@ import { Glows } from './Glows'
 import { PillMorph } from './pillGeometry'
 import { useTuning } from './tuning'
 import type { ProbeRegion } from './LcProbe'
+import { navAim } from './aim'
+import { useItemRegistry } from './items'
 
 const LcProbe = import.meta.env.DEV ? lazy(() => import('./LcProbe')) : null
 import { ItemRegistryContext, type ItemRegistry } from './items'
@@ -96,6 +98,7 @@ export function NavRoot() {
       <Clusters width={spring.width} />
       <Indicator />
       <Glows />
+      <AimTracker />
       {mode === 'full' && <PetalField count={100} />}
       {mode === 'full' && (
         <Petals
@@ -172,4 +175,16 @@ function Scrim({ width, light }: { width: SpringValue<number>; light: boolean })
       <meshBasicMaterial color={light ? '#000000' : '#ffffff'} transparent opacity={opacity} depthWrite={false} toneMapped={false} />
     </mesh>
   )
+}
+
+/** Publishes the current page item's x (world units) for lights that aim at it (see aim.ts). */
+function AimTracker() {
+  const registry = useItemRegistry()
+  const active = useNavStore((s) => s.active)
+  useFrame(() => {
+    const rc = active ? registry?.get(active)?.relativeCenter.peek() : undefined
+    navAim.active = !!rc
+    if (rc) navAim.x = px(rc[0])
+  })
+  return null
 }

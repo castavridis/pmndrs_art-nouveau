@@ -8,6 +8,7 @@ import { px } from '../tokens'
 import { useTuning, type RectLightTuning, type Vec3 } from './tuning'
 import { transmissionOnly } from './materials'
 import { StripsContext } from './strips'
+import { navAim } from './aim'
 
 // three@0.182: RectAreaLight needs its BRDF LUTs registered once before any material compiles.
 RectAreaLightUniformsLib.init()
@@ -69,15 +70,26 @@ export function RectLightformers() {
   )
 }
 
+/**
+ * The overhead spot. Its aim follows the current page's item (the nav publishes it, see
+ * aim.ts), offset by the tuning's target, so the pill's top edge lights up above that page.
+ */
 function Overhead({ debug }: { debug: boolean }) {
   const o = useTuning((s) => s.lights.overhead)
   const ref = useRef<THREE.SpotLight>(null!)
   const target = useMemo(() => new THREE.Object3D(), [])
   const pos = wompPosition(o.position)
+  const offset = useMemo(() => wompPosition(o.target), [o.target])
   useLayoutEffect(() => {
-    target.position.copy(wompPosition(o.target))
+    target.position.copy(offset)
     target.updateMatrixWorld()
-  }, [o.target, target])
+  }, [offset, target])
+  useFrame((_, dt) => {
+    overheadAim.copy(offset)
+    if (navAim.active) overheadAim.x += navAim.x
+    target.position.lerp(overheadAim, 1 - Math.exp(-dt * 10))
+    target.updateMatrixWorld()
+  })
   useHelper(debug && o.intensity > 0 && ref, THREE.SpotLightHelper, o.color)
   if (o.intensity <= 0) return null
   return (
@@ -96,6 +108,11 @@ function Overhead({ debug }: { debug: boolean }) {
     </>
   )
 }
+
+const overheadAim = new THREE.Vector3()
+const rectAim = new THREE.Vector3()
+const rectLook = new THREE.Matrix4()
+const UP = new THREE.Vector3(0, 1, 0)
 
 /** Last pointer position over the page (client px), shared by every canvas; null when it left. */
 let pointer: { x: number; y: number } | null = null
@@ -227,12 +244,22 @@ function Rect({ light, debug }: { light: RectLightTuning; debug: boolean }) {
   const quaternion = useMemo(() => wompRotation(light.rotation), [light.rotation])
   const group = useRef<THREE.Group>(null!)
   // Sweep: slide the strip (and its emitter) along the diagonal, bottom-left → top-right and back.
-  useFrame((state) => {
+  const aimTarget = useMemo(() => new THREE.Vector3(), [])
+  useFrame((state, dt) => {
     const g = group.current
     if (!g) return
     const amp = px(sweepRange * IN)
     const s = sweep > 0 ? Math.sin(state.clock.elapsedTime * sweep * Math.PI * 2) * amp : 0
     g.position.copy(position).addScaledVector(SWEEP_DIR, s)
+    if (light.followActive) {
+      // Face the current page's item (the nav publishes it, see aim.ts); eased so a page
+      // change swings the panel and its highlight across rather than snapping.
+      rectAim.set(navAim.active ? navAim.x : 0, 0, 0)
+      aimTarget.lerp(rectAim, 1 - Math.exp(-dt * 8))
+      // RectAreaLight emits along its local −Z: camera-style lookAt points −Z at the target.
+      rectLook.lookAt(g.position, aimTarget, UP)
+      g.quaternion.setFromRotationMatrix(rectLook)
+    }
   })
   const w = px(light.width * IN)
   const h = px(Math.max(light.height, MIN_HEIGHT_IN) * IN)

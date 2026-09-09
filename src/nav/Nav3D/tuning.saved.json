@@ -78,16 +78,17 @@
         "position": {
           "x": 0,
           "y": 500,
-          "z": 0
+          "z": -315
         },
         "rotation": {
           "x": -80,
           "y": 0,
           "z": 0
-        }
+        },
+        "followActive": true
       },
       {
-        "name": "45° top",
+        "name": "45\u00b0 top",
         "color": "#caf543",
         "luminance": 100,
         "width": 697.12,
@@ -104,7 +105,7 @@
         }
       },
       {
-        "name": "45° middle",
+        "name": "45\u00b0 middle",
         "color": "#caf543",
         "luminance": 100,
         "width": 624.54,
@@ -121,7 +122,7 @@
         }
       },
       {
-        "name": "45° bottom",
+        "name": "45\u00b0 bottom",
         "color": "#caf543",
         "luminance": 100,
         "width": 707.62,

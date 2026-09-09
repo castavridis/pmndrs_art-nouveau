@@ -78,7 +78,8 @@ export interface RectLightTuning {
   /** Inches, Womp frame. */
   position: Vec3
   /** Degrees, Womp frame. */
-  rotation: Vec3
+  rotation: Vec3  /** Turn the panel toward the current page's item (nav) instead of using `rotation`. */
+  followActive?: boolean
 }
 
 export interface OverheadLightTuning {
@@ -363,6 +364,7 @@ export const defaultLights: LightsTuning = {
   emitterScale: 0.12,
   sweep: 0.08,
   sweepRange: 40,
+  // Spot, off by default; when on it aims at the current page's item (see Lights.tsx).
   overhead: {
     color: '#ffffff',
     intensity: 0,
@@ -375,7 +377,7 @@ export const defaultLights: LightsTuning = {
   rects: [
     // "Overhead Light": the large panel above the scene. Womp did not show its numbers, so
     // these are estimated from the viewport: roughly four nav widths wide, white, tilted at the nav.
-    { name: 'overhead', color: '#ffffff', luminance: 6, width: 700, height: 200, position: { x: 0, y: 110, z: 30 }, rotation: { x: -80, y: 0, z: 0 } },
+    { name: 'overhead', color: '#ffffff', luminance: 6, width: 700, height: 200, position: { x: 0, y: 110, z: -315 }, rotation: { x: -80, y: 0, z: 0 }, followActive: true },
     { name: '45° top', color: '#caf543', luminance: 15, width: 98.62, height: 1.01, position: { x: 18.31, y: 38.7, z: 30.69 }, rotation: { x: -135, y: -180, z: -45 } },
     { name: '45° middle', color: '#caf543', luminance: 50, width: 144.04, height: 0.76, position: { x: -1.75, y: 14.65, z: 6.64 }, rotation: { x: -135, y: -180, z: -45 } },
     { name: '45° bottom', color: '#caf543', luminance: 15, width: 98.62, height: 0.53, position: { x: -14.04, y: -7.33, z: -9.99 }, rotation: { x: -135, y: -180, z: -45 } },

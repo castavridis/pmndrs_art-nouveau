@@ -208,7 +208,7 @@ export default function DevControls() {
   }))
   const [oh, setOhPanel] = useControls('lights.overhead', () => ({
     color: L.overhead.color,
-    intensity: { value: L.overhead.intensity, min: 0, max: 400 },
+    intensity: { value: L.overhead.intensity, min: 0, max: 1000 },
     position: { value: toV(L.overhead.position), step: 1 },
     target: { value: toV(L.overhead.target), step: 1 },
     angle: { value: L.overhead.angle, min: 1, max: 90 },
@@ -245,6 +245,7 @@ export default function DevControls() {
       const src = t.lights.rects[i]
       if (src)
         r.setPanel({
+          follow: src.followActive ?? false,
           color: src.color,
           luminance: src.luminance,
           width: src.width,
@@ -355,6 +356,7 @@ export default function DevControls() {
 }
 
 type RectPanel = {
+  follow: boolean
   color: string
   luminance: number
   width: number
@@ -369,6 +371,7 @@ function useRectControls(d: RectLightTuning): {
   setPanel: (v: Partial<RectPanel>) => void
 } {
   const [c, setPanel] = useControls(`lights.rect: ${d.name}`, () => ({
+    follow: { value: d.followActive ?? false, label: 'aim at current page' },
     color: d.color,
     luminance: { value: d.luminance, min: 0, max: 100 },
     width: { value: d.width, min: 0.5, max: 2000, step: 0.5 },
@@ -376,8 +379,9 @@ function useRectControls(d: RectLightTuning): {
     position: { value: toV(d.position), step: 1 },
     rotation: { value: toV(d.rotation), step: 5 },
   }))
+  const { follow, ...rest } = c
   return {
-    value: { name: d.name, ...c, position: fromV(c.position), rotation: fromV(c.rotation) },
+    value: { name: d.name, ...rest, followActive: follow, position: fromV(c.position), rotation: fromV(c.rotation) },
     setPanel,
   }
 }
