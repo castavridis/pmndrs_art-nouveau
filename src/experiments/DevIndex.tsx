@@ -25,6 +25,11 @@ const pages = [
     text: 'GitHub-style callouts: 3D surface or plain div, with the lens icon.',
   },
   {
+    href: '/dev/env',
+    title: 'Environment',
+    text: 'The cubemap the glass reflects, shown as the sky around a mirror ball, a glass ball and a matte ball.',
+  },
+  {
     href: '/dev/bento',
     title: 'Bento',
     text: 'The components by expressiveness: 3D nav and announcement, glass controls and callout, plain docs chrome.',

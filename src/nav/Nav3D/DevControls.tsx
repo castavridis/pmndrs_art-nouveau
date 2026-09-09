@@ -17,6 +17,7 @@ import {
 import { useOutlines } from '../outlines'
 import { isBuiltInPreset, presetNames, useCustomPresets } from './customPresets'
 import { useLcReadings } from './lcStore'
+import { studios, type StudioName } from './studios'
 import { useHitDebug } from './aim'
 import { HitDebugOverlay } from './HitDebugOverlay'
 
@@ -210,6 +211,8 @@ export default function DevControls() {
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
     background: defaultTuning.env.background,
+    studio: { value: defaultTuning.env.studio, options: Object.keys(studios) as StudioName[] },
+    panels: { value: defaultTuning.env.panels, min: 0, max: 3, label: 'panel strength' },
     fog: { value: defaultTuning.env.fog, min: 0, max: 0.3, step: 0.001 },
     labelScrim: { value: defaultTuning.env.labelScrim, min: 0, max: 0.9, label: 'label scrim' },
   }), { order: -40 })
@@ -276,7 +279,7 @@ export default function DevControls() {
     setPetalPool(poolSchema(t.materials.petals))
     setFlowerPool(poolSchema(t.materials.flowers))
     // `ink` lives in the view folder, not the environment one.
-    setEnvPanel({ intensity: t.env.intensity, rotation: t.env.rotation, background: t.env.background, fog: t.env.fog, labelScrim: t.env.labelScrim })
+    setEnvPanel({ intensity: t.env.intensity, rotation: t.env.rotation, background: t.env.background, fog: t.env.fog, labelScrim: t.env.labelScrim, studio: t.env.studio, panels: t.env.panels })
     setPostPanel(t.post)
     setLightsPanel({
       debug: t.lights.debug,

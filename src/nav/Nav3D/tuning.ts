@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import savedJson from './tuning.saved.json'
 import { getPreset, presetNames, type PresetName } from './customPresets'
+import type { StudioName } from './studios'
 
 /**
  * Live-tunable scene parameters. Defaults are the shipped values; in dev, `DevControls`
@@ -193,6 +194,10 @@ export interface Tuning {
     labelScrim: number
     /** Text ink on the glass: picked from the backdrop (`auto`), or forced light / dark. */
     ink: 'auto' | 'light' | 'dark'
+    /** Which set of light panels the glass reflects (see studios.ts). */
+    studio: StudioName
+    /** Multiplier on the panels' brightness. */
+    panels: number
   }
   post: {
     bloomIntensity: number
@@ -458,7 +463,7 @@ export const baseTuning: Tuning = {
     calloutLeafBottom: 'kind',
   },
   lights: defaultLights,
-  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto' },
+  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto', studio: 'studio', panels: 1 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, bloomClamp: 6, aberration: 0.0004, noise: 0, noiseBlend: 'screen', noisePremultiply: true },
 }
 

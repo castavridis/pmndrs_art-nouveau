@@ -16,6 +16,7 @@ import { useLightsKey, useTuning } from './tuning'
 import { useResolvedTheme } from '../../theme'
 import { Lights, RectLightformers } from './Lights'
 import { StripsContext } from './strips'
+import { studios } from './studios'
 import { Recenter } from './recenter'
 
 export interface NavCanvasProps {
@@ -40,6 +41,8 @@ export interface NavCanvasProps {
   style?: React.CSSProperties
   /** Device pixel ratio range (default [1, 2]); a full-page canvas may cap it lower. */
   dpr?: [number, number]
+  /** Show the environment cubemap itself as the scene background (the /dev/env page). */
+  environmentBackground?: boolean
 }
 
 /**
@@ -65,6 +68,7 @@ export function NavCanvas({
   eventSource,
   style,
   dpr = [1, 2],
+  environmentBackground = false,
 }: NavCanvasProps) {
   return (
     <R3FCanvas
@@ -88,7 +92,7 @@ export function NavCanvas({
           </>
         )}
         <Suspense fallback={null}>
-          <Studio />
+          <Studio background={environmentBackground} />
           <Fog />
           <Lights />
           {children}
@@ -177,91 +181,34 @@ function SchemeSync() {
   return null
 }
 
-function Studio() {
-  const { intensity, rotation, background } = useTuning((s) => s.env)
-  const lightsKey = useLightsKey() + background
+function Studio({ background: showBackground = false }: { background?: boolean }) {
+  const { intensity, rotation, background, studio, panels } = useTuning((s) => s.env)
+  const lightsKey = useLightsKey() + background + studio + panels
   return (
-    // Keyed on the lights so the one-shot cubemap re-renders whenever a strip is tweaked.
+    // Keyed on the lights so the one-shot cubemap re-renders whenever a strip or panel changes.
     <Environment
       key={lightsKey}
-      resolution={256}
+      // 256 is plenty for reflections; shown as the sky (/dev/env) it needs more.
+      resolution={showBackground ? 1024 : 256}
       frames={1}
       environmentIntensity={intensity}
       environmentRotation={[0, rotation, 0]}
+      background={showBackground}
     >
       <color attach="background" args={[background]} />
       <RectLightformers />
-      {/*
-       * The pill's front face reflects the direction straight behind the camera (+z), so that is
-       * where the colour has to be. A cluster of overlapping pastel panels behind the camera gives
-       * the soft gradient seen in the reference; side/top panels light the bevels and clusters.
-       */}
-      <Lightformer
-        form="rect"
-        intensity={1.6}
-        color="#ffffff"
-        position={[0, 0, 9]}
-        scale={[14, 9, 1]}
-        target={[0, 0, 0]}
-      />
-      <Lightformer
-        form="rect"
-        intensity={1.4}
-        color="#ffd6ea"
-        position={[-4, 2.5, 8]}
-        scale={[5, 4, 1]}
-        target={[0, 0, 0]}
-      />
-      <Lightformer
-        form="rect"
-        intensity={1.4}
-        color="#cde4ff"
-        position={[4.5, -1.5, 8]}
-        scale={[5, 4, 1]}
-        target={[0, 0, 0]}
-      />
-      <Lightformer
-        form="rect"
-        intensity={1.2}
-        color="#d3fff1"
-        position={[-1.5, -3, 8]}
-        scale={[5, 3, 1]}
-        target={[0, 0, 0]}
-      />
-      <Lightformer
-        form="rect"
-        intensity={1.2}
-        color="#fff0c8"
-        position={[2.5, 3, 8]}
-        scale={[4, 3, 1]}
-        target={[0, 0, 0]}
-      />
-      <Lightformer
-        form="rect"
-        intensity={1.5}
-        color="#e6d9ff"
-        position={[6, 1, 6]}
-        scale={[3, 6, 1]}
-        target={[0, 0, 0]}
-      />
-      {/* key from top-left for bevel highlights */}
-      <Lightformer
-        form="rect"
-        intensity={3}
-        color="#ffffff"
-        position={[-5, 6, 4]}
-        scale={[6, 2, 1]}
-        target={[0, 0, 0]}
-      />
-      {/* rim from behind so the back bevel catches a highlight */}
-      <Lightformer
-        form="ring"
-        intensity={2}
-        color="#ffffff"
-        position={[0, 0, -6]}
-        scale={4}
-        target={[0, 0, 0]}
-      />
+      {/* The studio panels (studios.ts): what the glass reflects. */}
+      {studios[studio].map((p, i) => (
+        <Lightformer
+          key={i}
+          form={p.form}
+          intensity={p.intensity * panels}
+          color={p.color}
+          position={p.position}
+          scale={p.scale}
+          target={[0, 0, 0]}
+        />
+      ))}
     </Environment>
   )
 }
