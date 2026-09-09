@@ -25,6 +25,8 @@ export interface SlotBox {
   el: HTMLElement | null
   width: number
   height: number
+  /** Announcement: where it was struck, once clicked. */
+  shatter?: [number, number] | null
 }
 
 export interface BentoSceneProps {
@@ -58,7 +60,7 @@ export function BentoScene({ eventSource, navEl, announcement, callout, onReady 
           <NavRoot />
         </Slot>
         <Slot el={announcement}>
-          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} />}
+          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} shatter={announcement.shatter ?? null} />}
         </Slot>
         <Slot el={callout}>
           {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} />}
