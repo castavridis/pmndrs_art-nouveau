@@ -150,6 +150,8 @@ function Roam({ debug }: { debug: boolean }) {
   const size = useThree((s) => s.size)
   const gl = useThree((s) => s.gl)
   const group = useRef<THREE.Group>(null!)
+  /** Depth the light is currently holding (see the follow branch below). */
+  const heldZ = useRef(r.z)
   usePagePointer()
   useFrame((state, dt) => {
     const g = group.current
@@ -163,10 +165,16 @@ function Roam({ debug }: { debug: boolean }) {
       // so the light glints on the surface instead of sitting inside it.
       target.copy(hoverAim.point)
       target.z += r.hoverOffset
+      heldZ.current = target.z
     } else if (r.follow && pointer) {
+      // Off a petal: x/y keep following the pointer, but the depth stays where the last
+      // petal left it and only drifts back to the base depth slowly, so losing a petal
+      // never snaps the light.
+      heldZ.current += (r.z - heldZ.current) * (1 - Math.exp(-dt * 0.25))
       const rect = gl.domElement.getBoundingClientRect()
-      target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), r.z)
+      target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), heldZ.current)
     } else {
+      heldZ.current = r.z
       const t = state.clock.elapsedTime * r.speed * Math.PI * 2
       target.set(Math.sin(t) * hw * 0.8, Math.sin(t * 0.63 + 1.3) * hh * 0.8, r.z + Math.sin(t * 0.41) * 0.4)
     }
