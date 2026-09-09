@@ -5,6 +5,7 @@ import { useFlower } from './flowerAssets'
 import { useCalloutIcon } from './calloutAssets'
 import { useAnnouncementAssets } from './announcementAssets'
 import { makeLogoGeometry } from './logoBlocks'
+import { logoGeometry } from '../nav/Nav3D/logoGeometry'
 
 /** Every exported piece, normalised (origin at its centre or anchor, world units). */
 export interface Parts {
@@ -53,7 +54,7 @@ export function useParts(): Parts {
       petal: nav.petal,
       petalLo: nav.petalLo,
       flower,
-      logo: nav.logo,
+      logo: logoGeometry(),
       lens: icon.lens,
       leafTop: icon.leafTop,
       leafBottom: icon.leafBottom,

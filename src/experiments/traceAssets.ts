@@ -4,7 +4,6 @@ export const TRACE_ASSETS = [
   'nav-right',
   'petal',
   'flower',
-  'logo',
   'logo-cube',
   'callout-icon',
   'announcement-left',

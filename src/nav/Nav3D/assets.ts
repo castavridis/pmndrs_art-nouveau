@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { useGLTF } from '@react-three/drei'
-import { px, tokens } from '../tokens'
+import { px } from '../tokens'
 import navbarUrl from './generated/navbar-transformed.glb'
 import leftUrl from './generated/left-transformed.glb'
 import rightUrl from './generated/right-transformed.glb'
 import petalUrl from './generated/petal-transformed.glb'
-import logoUrl from './generated/logo-transformed.glb'
 import petalLoUrl from './generated/petal-lo-transformed.glb'
 
 /**
@@ -18,7 +17,6 @@ import petalLoUrl from './generated/petal-lo-transformed.glb'
  *  - units become world units (`px()`), i.e. 1/tokens.pxPerUnit
  *  - the origin of `left` / `right` is the centre of the pill cap it decorates
  *  - the origin of `petal` is the petal's own centre
- *  - the origin of `logo` is its centre, scaled to tokens.logoSize, facing +z
  * so components only ever position them, never scale them (CLAUDE.md: no distortion).
  */
 export interface NavAssets {
@@ -27,12 +25,11 @@ export interface NavAssets {
   petal: THREE.BufferGeometry
   /** Simplified petal (~8% of the vertices) for the instanced petal field. */
   petalLo: THREE.BufferGeometry
-  logo: THREE.BufferGeometry
   /** Pill dimensions as exported, in CSS px, for reference / sanity checks. */
   exported: { width: number; height: number; depth: number }
 }
 
-const URLS = [navbarUrl, leftUrl, rightUrl, petalUrl, logoUrl, petalLoUrl] as const
+const URLS = [navbarUrl, leftUrl, rightUrl, petalUrl, petalLoUrl] as const
 /** Self-hosted draco decoder (see scripts/copy-benchmarks.mjs); drei@10 defaults to a Google CDN. */
 const DRACO = `${import.meta.env.BASE_URL}draco/`
 
@@ -58,7 +55,7 @@ function firstMesh(gltf: GLTFLike): THREE.Mesh {
 
 const FLIP = new THREE.Matrix4().makeRotationY(Math.PI)
 
-function normalise([navbar, left, right, petal, logo, petalLo]: THREE.Mesh[]): NavAssets {
+function normalise([navbar, left, right, petal, petalLo]: THREE.Mesh[]): NavAssets {
   // World-space geometry of each mesh (bake node transforms), flipped to face our camera.
   const world = (m: THREE.Mesh) => {
     m.updateWorldMatrix(true, false)
@@ -91,28 +88,11 @@ function normalise([navbar, left, right, petal, logo, petalLo]: THREE.Mesh[]): N
   const petalCentre = petalG.boundingBox!.getCenter(new THREE.Vector3())
   const petalLoG = world(petalLo)
 
-  // Logo: exported at its own origin facing ±x; rotate so it faces +z, then fit to logoSize.
-  logo.updateWorldMatrix(true, false)
-  const logoG = logo.geometry.clone()
-  logoG.applyMatrix4(logo.matrixWorld)
-  logoG.rotateY(-Math.PI / 2)
-  logoG.computeBoundingBox()
-  const lb = logoG.boundingBox!
-  const lc = lb.getCenter(new THREE.Vector3())
-  const ls = lb.getSize(new THREE.Vector3())
-  logoG.translate(-lc.x, -lc.y, -lc.z)
-  const fit = px(tokens.logoSize) / Math.max(ls.x, ls.y)
-  logoG.scale(fit, fit, fit)
-  logoG.computeBoundingBox()
-  logoG.computeBoundingSphere()
-
-  nav.dispose()
   return {
     left: rebase(world(left), leftCap),
     right: rebase(world(right), rightCap),
     petal: rebase(petalG, petalCentre),
     petalLo: rebase(petalLoG, petalCentre),
-    logo: logoG,
     exported: { width: size.x, height: size.y, depth: size.z },
   }
 }

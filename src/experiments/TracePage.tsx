@@ -69,8 +69,6 @@ function useSubjectGeometry(asset: TraceAsset): THREE.BufferGeometry {
         return nav.right
       case 'petal':
         return nav.petal
-      case 'logo':
-        return nav.logo
       case 'flower':
         return flower
       case 'logo-cube':

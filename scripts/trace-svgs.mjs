@@ -5,7 +5,7 @@ import { chromium } from '@playwright/test'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-const ASSETS = ['nav-left', 'nav-right', 'petal', 'flower', 'logo', 'logo-cube', 'callout-icon', 'announcement-left', 'announcement-right']
+const ASSETS = ['nav-left', 'nav-right', 'petal', 'flower', 'logo-cube', 'callout-icon', 'announcement-left', 'announcement-right']
 const wanted = process.argv.slice(2).length ? process.argv.slice(2) : ASSETS
 const outDir = path.resolve('src/nav/assets/fallback')
 await mkdir(outDir, { recursive: true })

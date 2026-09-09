@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Container, Content, type VanillaContainer } from '@react-three/uikit'
+import { Container, Svg, type VanillaContainer } from '@react-three/uikit'
 import { useSpring, type SpringValue } from '@react-spring/three'
 import { useFrame, useThree } from '@react-three/fiber'
 import type { Group } from 'three'
@@ -20,9 +20,9 @@ import { useItemRegistry } from './items'
 const LcProbe = import.meta.env.DEV ? lazy(() => import('./LcProbe')) : null
 import { ItemRegistryContext, type ItemRegistry } from './items'
 import { transmissionExcluded } from './materials'
-import { useNavAssets } from './assets'
 import { NavItem } from './NavItem'
 import { triggerDom, useInk } from './dom'
+import logoUrl from '../assets/logo.svg'
 
 /**
  * The 3D nav. A uikit row lays out Logo → links → Cmd in px (pixelSize = 1/pxPerUnit);
@@ -35,7 +35,6 @@ export function NavRoot() {
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const rootRef = useRef<VanillaContainer>(null)
   const uiRef = useRef<Group>(null)
-  const { logo } = useNavAssets()
   const [measured, setMeasured] = useState<number | null>(null)
   const seen = useRef(false)
   const [animate, setAnimate] = useState(false)
@@ -144,12 +143,8 @@ export function NavRoot() {
                 triggerDom('logo')
               }}
             >
-              <Content width={tokens.logoSize} height={tokens.logoSize} depthAlign="back" keepAspectRatio>
-                {/* The glyph in the ink colour, like the labels, so it reads on any glass. */}
-                <mesh geometry={logo}>
-                  <meshStandardMaterial color={ink} roughness={0.5} metalness={0.1} />
-                </mesh>
-              </Content>
+              {/* The mark itself (assets/logo.svg), in the ink colour like the labels. */}
+              <Svg src={logoUrl} width={tokens.logoSize} height={tokens.logoSize} color={ink} />
             </Container>
             {mode === 'collapsed' ? (
               // Links live in Nav2D's disclosure; this item opens it.
