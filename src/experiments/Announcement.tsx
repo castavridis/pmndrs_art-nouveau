@@ -18,6 +18,7 @@ if (typeof window !== 'undefined') preloadAnnouncementAssets()
 import { useOutlines } from '../nav/outlines'
 import { useMeasure } from './useMeasure'
 import { useInk } from '../nav/Nav3D/dom'
+import { useTuning } from '../nav/Nav3D/tuning'
 import { useIsClient } from '../isClient'
 
 export interface AnnouncementProps {
@@ -137,6 +138,8 @@ export function Announcement({
 
 function Scene({ width, height }: { width: number; height: number }) {
   const { left, right } = useAnnouncementAssets()
+  const choice = useTuning((s) => s.materials.flourishes)
+  const preset = choice === 'live' ? undefined : choice
   const geometry = useMemo(
     () => makeRoundedRectGeometry(width, height, announcement.radius, announcement.depth),
     [width, height],
@@ -150,12 +153,12 @@ function Scene({ width, height }: { width: number; height: number }) {
       </mesh>
       <group position-x={-end}>
         <mesh geometry={left}>
-          <Glass sampler />
+          <Glass sampler preset={preset} />
         </mesh>
       </group>
       <group position-x={end}>
         <mesh geometry={right}>
-          <Glass sampler />
+          <Glass sampler preset={preset} />
         </mesh>
       </group>
     </>

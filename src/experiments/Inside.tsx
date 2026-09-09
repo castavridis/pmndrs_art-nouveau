@@ -8,16 +8,16 @@ import { useNavStore } from '../nav/store'
 import { useNavAssets } from '../nav/Nav3D/assets'
 import { useFlower } from './flowerAssets'
 import { Glass } from '../nav/Nav3D/Glass'
-import { palette, type GlassPreset, type PaletteName } from '../nav/Nav3D/tuning'
+import { presetPool } from '../nav/Nav3D/tuning'
+import type { PresetName } from '../nav/Nav3D/customPresets'
 
-const PALETTE = Object.keys(palette) as PaletteName[]
 
-/** Split `count` petals over the palette at random (seeded), one instanced group per colour. */
-function randomSplit(count: number, seed: number): { preset: PaletteName; count: number }[] {
+/** Split `count` bodies over `pool` at random (seeded), one instanced group per preset. */
+function randomSplit(count: number, seed: number, pool: PresetName[]): { preset: PresetName; count: number }[] {
   const rng = new Generator(seed)
-  const tally = new Map<PaletteName, number>()
+  const tally = new Map<PresetName, number>()
   for (let i = 0; i < count; i++) {
-    const preset = PALETTE[Math.floor(rng.value() * PALETTE.length)]!
+    const preset = pool[Math.floor(rng.value() * pool.length)]!
     tally.set(preset, (tally.get(preset) ?? 0) + 1)
   }
   return [...tally].map(([preset, n]) => ({ preset, count: n }))
@@ -131,7 +131,7 @@ interface GroupProps {
   boxes: THREE.Box3[]
   geometry: THREE.BufferGeometry
   /** Glass preset (solid variant, so the interior stays bright). */
-  preset: GlassPreset
+  preset: PresetName
   /** Name prefix for the mesh (hit debug): e.g. "petal inside". */
   label: string
   /** Restrict to one box (index) instead of spreading by volume. */
@@ -210,7 +210,8 @@ export interface InsideProps {
 /** Petals in random palette colours floating inside the model's blocks. */
 export function Inside({ boxes, petals = 40 }: InsideProps) {
   const { petalLo } = useNavAssets()
-  const groups = useMemo(() => randomSplit(petals, 11), [petals])
+  const pool = useTuning((s) => s.materials.petals)
+  const groups = useMemo(() => randomSplit(petals, 11, presetPool(pool)), [petals, pool])
   return (
     <>
       {groups.map((g, i) => (
@@ -245,7 +246,8 @@ export function Outside({ bounds, petals = 60 }: OutsideProps) {
     // Wider than tall so petals fill the viewport's sides; shallow so they stay near the model.
     return [bounds.clone().expandByVector(new THREE.Vector3(size.x * 0.9, size.y * 0.35, 1.5))]
   }, [bounds])
-  const groups = useMemo(() => randomSplit(petals, 23), [petals])
+  const pool = useTuning((s) => s.materials.petals)
+  const groups = useMemo(() => randomSplit(petals, 23, presetPool(pool)), [petals, pool])
   return (
     <>
       {groups.map((g, i) => (
@@ -283,8 +285,9 @@ export function Flowers({ boxes, bounds, inside = 6, outside = 10 }: FlowersProp
     const size = bounds.getSize(new THREE.Vector3())
     return [bounds.clone().expandByVector(new THREE.Vector3(size.x * 0.9, size.y * 0.35, 1.5))]
   }, [bounds])
-  const inGroups = useMemo(() => randomSplit(inside, 31), [inside])
-  const outGroups = useMemo(() => randomSplit(outside, 47), [outside])
+  const pool = useTuning((s) => s.materials.flowers)
+  const inGroups = useMemo(() => randomSplit(inside, 31, presetPool(pool)), [inside, pool])
+  const outGroups = useMemo(() => randomSplit(outside, 47, presetPool(pool)), [outside, pool])
   return (
     <>
       {inGroups.map((g, i) => (

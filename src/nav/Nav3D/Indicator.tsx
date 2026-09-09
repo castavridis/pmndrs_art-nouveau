@@ -6,6 +6,7 @@ import { useNavStore } from '../store'
 import { px, tokens } from '../tokens'
 import { useNavAssets } from './assets'
 import { Glass } from './Glass'
+import { useTuning } from './tuning'
 import { useItemRegistry } from './items'
 
 const GAP_PX = 10
@@ -17,6 +18,7 @@ const GAP_PX = 10
  */
 export function Indicator() {
   const { petal } = useNavAssets()
+  const preset = useTuning((s) => s.materials.indicator)
   const registry = useItemRegistry()
   const active = useNavStore((s) => s.active)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
@@ -53,7 +55,7 @@ export function Indicator() {
     <group ref={group} position={[0, 0, px(tokens.pillDepth / 2 + 4)]} scale={0.0001}>
       {/* Petal tip pointing up at the item. */}
       <mesh geometry={petal} rotation={[0.2, 0, Math.PI / 2]} raycast={() => null}>
-        <Glass preset="indicator" sampler />
+        <Glass preset={preset} sampler />
       </mesh>
     </group>
   )

@@ -145,11 +145,33 @@ export interface MotionTuning {
   stirRadius: number
 }
 
+/** `live` = the page's tuned glass (the pill's look); otherwise a preset name. */
+export type MaterialChoice = PresetName | 'live'
+
+/** Which materials the GLB parts wear, and which the petal / flower swarms draw from. */
+export interface MaterialsTuning {
+  /** Presets the falling petals and petal swarms are spread across (empty = whole palette). */
+  petals: PresetName[]
+  /** Presets the flower swarms are spread across (empty = whole palette). */
+  flowers: PresetName[]
+  /** nav-left / nav-right clusters. */
+  clusters: MaterialChoice
+  /** The loose petals spilling off the pill. */
+  loosePetals: MaterialChoice
+  /** Announcement flourishes. */
+  flourishes: MaterialChoice
+  /** Current-page indicator petal. */
+  indicator: PresetName
+  /** The cube page's logo prisms. */
+  model: MaterialChoice
+}
+
 export interface Tuning {
   /** The preset the glass was last set from (built-in or user-defined); edits keep the name. */
   preset: PresetName
   glass: GlassTuning
   motion: MotionTuning
+  materials: MaterialsTuning
   lights: LightsTuning
   env: {
     intensity: number
@@ -410,6 +432,15 @@ export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
   motion: { speed: 1, spin: 1, sway: 1, stir: 1, stirRadius: 0.8 },
+  materials: {
+    petals: Object.keys(palette) as PaletteName[],
+    flowers: Object.keys(palette) as PaletteName[],
+    clusters: 'live',
+    loosePetals: 'live',
+    flourishes: 'live',
+    indicator: 'indicator',
+    model: 'live',
+  },
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto' },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004, noise: 0, noiseBlend: 'screen', noisePremultiply: true },
@@ -498,7 +529,7 @@ function withPreset(t: Tuning, explicit: PresetName | undefined): Tuning {
 }
 
 /** The object-valued groups of Tuning (everything but the preset name). */
-export type TuningGroup = 'glass' | 'motion' | 'lights' | 'env' | 'post'
+export type TuningGroup = 'glass' | 'motion' | 'materials' | 'lights' | 'env' | 'post'
 
 type TuningStore = Tuning & {
   /** Which scheme the top-level values belong to; switched by the page theme. */
@@ -516,7 +547,7 @@ type TuningStore = Tuning & {
 }
 
 /** The plain data part of the store, for saving / exporting. */
-export const pickTuning = (s: Tuning): Tuning => ({ preset: s.preset, glass: s.glass, motion: s.motion, lights: s.lights, env: s.env, post: s.post })
+export const pickTuning = (s: Tuning): Tuning => ({ preset: s.preset, glass: s.glass, motion: s.motion, materials: s.materials, lights: s.lights, env: s.env, post: s.post })
 
 /** Both schemes, with the active one's live values: what "save to project" writes. */
 export const pickSchemes = (s: TuningStore): SchemeTunings => ({ ...s.schemes, [s.scheme]: pickTuning(s) })
@@ -592,4 +623,9 @@ if (import.meta.env.DEV && typeof window !== 'undefined') window.__navTuning = u
 export function useLightsKey() {
   const { rects, emitters, emitterScale } = useTuning((s) => s.lights)
   return JSON.stringify([emitters, emitterScale, rects])
+}
+
+/** A swarm's pool of presets: the tuned list, or the whole palette when it is empty. */
+export function presetPool(list: PresetName[]): PresetName[] {
+  return list.length ? list : (Object.keys(palette) as PaletteName[])
 }

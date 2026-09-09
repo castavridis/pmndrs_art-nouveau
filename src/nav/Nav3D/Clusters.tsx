@@ -2,6 +2,7 @@ import { animated, type SpringValue } from '@react-spring/three'
 import { px, tokens } from '../tokens'
 import { Glass } from './Glass'
 import { hoverAimHandlers } from './aim'
+import { useTuning } from './tuning'
 import { useNavAssets } from './assets'
 
 export interface ClustersProps {
@@ -15,6 +16,8 @@ export interface ClustersProps {
  * centres in assets.ts, so the only maths here is "where is the cap".
  */
 export function Clusters({ width }: ClustersProps) {
+  const choice = useTuning((s) => s.materials.clusters)
+  const preset = choice === 'live' ? undefined : choice
   const { left, right } = useNavAssets()
   const cap = px(tokens.pillRadius)
   const leftX = width.to((w) => -(px(w) / 2 - cap))
@@ -23,12 +26,12 @@ export function Clusters({ width }: ClustersProps) {
     <>
       <animated.group position-x={leftX}>
         <mesh geometry={left} name="cluster left" {...hoverAimHandlers}>
-          <Glass sampler />
+          <Glass sampler preset={preset} />
         </mesh>
       </animated.group>
       <animated.group position-x={rightX}>
         <mesh geometry={right} name="cluster right" {...hoverAimHandlers}>
-          <Glass sampler />
+          <Glass sampler preset={preset} />
         </mesh>
       </animated.group>
     </>

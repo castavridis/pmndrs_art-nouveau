@@ -79,10 +79,11 @@ function Logo({ geometry, boxes }: { geometry: THREE.BufferGeometry; boxes: THRE
     [geometry],
   )
   const scene = useCubeScene()
+  const choice = useTuning((s) => s.materials.model)
   return (
     <>
       <mesh geometry={geometry}>
-        <Glass />
+        <Glass preset={choice === 'live' ? undefined : choice} />
       </mesh>
       <Inside boxes={boxes} petals={scene.petalsInside} />
       {!scene.insideOnly && <Outside bounds={bounds} petals={scene.petalsOutside} />}

@@ -7,6 +7,7 @@ import {
   glassPresets,
   pickSchemes,
   matchesPreset,
+  palette,
   pickTuning,
   type GlassTuning,
   type RectLightTuning,
@@ -180,6 +181,27 @@ export default function DevControls() {
     stir: { value: M.stir, min: 0, max: 4, label: 'pointer stir' },
     stirRadius: { value: M.stirRadius, min: 0.1, max: 4, label: 'stir radius' },
   }), { order: -62 })
+  // Materials per GLB part, and the pools the petal / flower swarms draw from. The pools are
+  // checkboxes over the palette colours plus any user presets; folders rebuild when that list
+  // changes.
+  const MAT = defaultTuning.materials
+  const choices = ['live', ...names]
+  const [mat, setMatPanel] = useControls(
+    'materials',
+    () => ({
+      clusters: { value: MAT.clusters, options: choices },
+      loosePetals: { value: MAT.loosePetals, options: choices, label: 'loose petals' },
+      flourishes: { value: MAT.flourishes, options: choices, label: 'announcement flourishes' },
+      indicator: { value: MAT.indicator, options: names },
+      model: { value: MAT.model, options: choices, label: 'cube model' },
+    }),
+    { order: -61 },
+    [names.join('|')],
+  )
+  const poolNames = [...(Object.keys(palette) as string[]), ...names.filter((n) => !isBuiltInPreset(n))]
+  const poolSchema = (list: string[]) => Object.fromEntries(poolNames.map((n) => [n, list.includes(n)]))
+  const [petalPool, setPetalPool] = useControls('materials.petals', () => poolSchema(MAT.petals), { order: -60 }, [poolNames.join('|')])
+  const [flowerPool, setFlowerPool] = useControls('materials.flowers', () => poolSchema(MAT.flowers), { order: -59 }, [poolNames.join('|')])
   const [env, setEnvPanel] = useControls('environment', () => ({
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
@@ -243,6 +265,9 @@ export default function DevControls() {
   const fillPanel = useRef((t: Tuning) => {
     setGlassPanel(t.glass)
     setMotionPanel(t.motion)
+    setMatPanel({ clusters: t.materials.clusters, loosePetals: t.materials.loosePetals, flourishes: t.materials.flourishes, indicator: t.materials.indicator, model: t.materials.model })
+    setPetalPool(poolSchema(t.materials.petals))
+    setFlowerPool(poolSchema(t.materials.flowers))
     // `ink` lives in the view folder, not the environment one.
     setEnvPanel({ intensity: t.env.intensity, rotation: t.env.rotation, background: t.env.background, fog: t.env.fog, labelScrim: t.env.labelScrim })
     setPostPanel(t.post)
@@ -358,6 +383,17 @@ export default function DevControls() {
   useEffect(() => void (live.current && set('glass', glass as GlassTuning)), [glass, set])
   useEffect(() => void (live.current && set('env', env)), [env, set])
   useEffect(() => void (live.current && set('motion', motion)), [motion, set])
+  const petalsSig = JSON.stringify(petalPool)
+  const flowersSig = JSON.stringify(flowerPool)
+  useEffect(() => {
+    if (!live.current) return
+    set('materials', {
+      ...mat,
+      petals: Object.entries(petalPool).filter(([, on]) => on).map(([n]) => n),
+      flowers: Object.entries(flowerPool).filter(([, on]) => on).map(([n]) => n),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mat, petalsSig, flowersSig, set])
   useEffect(() => void (live.current && set('post', post)), [post, set])
   // Keyed on a signature: leva hands back fresh objects each render, and pushing on every
   // render would overwrite store changes made elsewhere (scripts, page defaults) at once.

@@ -8,15 +8,15 @@ import { useTuning, type MotionTuning } from './tuning'
 import { px } from '../tokens'
 import { useNavAssets } from './assets'
 import { Glass } from './Glass'
-import { palette, type GlassPreset, type PaletteName } from './tuning'
+import { presetPool } from './tuning'
+import type { PresetName } from './customPresets'
 
 export interface PetalFieldProps {
   count?: number
   /** Materials to spread across the petals (one instanced mesh per material). */
-  presets?: GlassPreset[]
+  presets?: PresetName[]
 }
 
-const PALETTE = Object.keys(palette) as PaletteName[]
 
 interface P {
   x: number
@@ -91,7 +91,10 @@ class Field {
  * Each petal falls at its own speed, sways sideways, tumbles, and re-enters from the top.
  * Under reduced motion it holds still.
  */
-export function PetalField({ count = 100, presets = PALETTE }: PetalFieldProps) {
+export function PetalField({ count = 100, presets: presetsProp }: PetalFieldProps) {
+  // Which materials the petals wear: the tuning's list unless the caller fixes one.
+  const tuned = useTuning((s) => s.materials.petals)
+  const presets = presetsProp ?? presetPool(tuned)
   const per = Math.ceil(count / presets.length)
   return (
     <>
@@ -102,7 +105,7 @@ export function PetalField({ count = 100, presets = PALETTE }: PetalFieldProps) 
   )
 }
 
-function PetalGroup({ preset, count, seed }: { preset: GlassPreset; count: number; seed: number }) {
+function PetalGroup({ preset, count, seed }: { preset: PresetName; count: number; seed: number }) {
   const { petalLo } = useNavAssets()
   const mesh = useRef<THREE.InstancedMesh>(null!)
   const size = useThree((s) => s.size)
