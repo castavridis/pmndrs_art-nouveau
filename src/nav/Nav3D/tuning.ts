@@ -166,6 +166,10 @@ export interface MaterialsTuning {
   model: MaterialChoice
   /** Callout surfaces: the main glass (`live`), the kind's palette tint (`kind`), or a preset. */
   callout: MaterialChoice | 'kind'
+  /** The callout icon's parts: the lens ring, the top leaf (rising to the top right) and the bottom leaf. */
+  calloutLens: MaterialChoice | 'kind'
+  calloutLeafTop: MaterialChoice | 'kind'
+  calloutLeafBottom: MaterialChoice | 'kind'
 }
 
 export interface Tuning {
@@ -449,6 +453,9 @@ export const baseTuning: Tuning = {
     indicator: 'indicator',
     model: 'live',
     callout: 'live',
+    calloutLens: 'kind',
+    calloutLeafTop: 'kind',
+    calloutLeafBottom: 'kind',
   },
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto' },

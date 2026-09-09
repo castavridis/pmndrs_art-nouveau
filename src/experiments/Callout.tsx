@@ -19,7 +19,7 @@ import fallback from '../nav/assets/fallback/manifest.json'
 import styles from './Callout.module.css'
 import { callout } from './calloutMetrics'
 import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
-import { useTuning, type GlassPreset } from '../nav/Nav3D/tuning'
+import { useTuning, type GlassPreset, type MaterialChoice } from '../nav/Nav3D/tuning'
 import type { PresetName } from '../nav/Nav3D/customPresets'
 import { useInk } from '../nav/Nav3D/dom'
 import { useIsClient } from '../isClient'
@@ -278,16 +278,19 @@ function IconAtCorner({ preset, width, height }: { preset: GlassPreset } & Box) 
 export function Icon({ preset }: { preset: GlassPreset }) {
   const { lens, leafTop, leafBottom, size } = useCalloutIcon()
   const s = callout.icon / tokens.pxPerUnit / size
+  // Each part's material (materials folder): the kind colour by default, the main glass, or a preset.
+  const m = useTuning((st) => st.materials)
+  const pick = (c: MaterialChoice | 'kind'): PresetName | undefined => (c === 'kind' ? preset : c === 'live' ? undefined : c)
   return (
     <group scale={s}>
-      <mesh geometry={lens}>
-        <Glass sampler preset={preset} />
+      <mesh geometry={lens} name="callout lens">
+        <Glass sampler preset={pick(m.calloutLens)} />
       </mesh>
-      <mesh geometry={leafTop}>
-        <Glass sampler preset={preset} />
+      <mesh geometry={leafTop} name="callout leaf top">
+        <Glass sampler preset={pick(m.calloutLeafTop)} />
       </mesh>
-      <mesh geometry={leafBottom}>
-        <Glass sampler preset={preset} />
+      <mesh geometry={leafBottom} name="callout leaf bottom">
+        <Glass sampler preset={pick(m.calloutLeafBottom)} />
       </mesh>
     </group>
   )

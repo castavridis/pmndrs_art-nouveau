@@ -195,6 +195,9 @@ export default function DevControls() {
       indicator: { value: MAT.indicator, options: names },
       model: { value: MAT.model, options: choices, label: 'cube model' },
       callout: { value: MAT.callout, options: ['live', 'kind', ...names], label: 'callout surface' },
+      calloutLens: { value: MAT.calloutLens, options: ['live', 'kind', ...names], label: 'callout lens' },
+      calloutLeafTop: { value: MAT.calloutLeafTop, options: ['live', 'kind', ...names], label: 'callout leaf (top right)' },
+      calloutLeafBottom: { value: MAT.calloutLeafBottom, options: ['live', 'kind', ...names], label: 'callout leaf (bottom)' },
     }),
     { order: -61 },
     [names.join('|')],
@@ -269,7 +272,7 @@ export default function DevControls() {
   const fillPanel = useRef((t: Tuning) => {
     setGlassPanel(t.glass)
     setMotionPanel(t.motion)
-    setMatPanel({ clusters: t.materials.clusters, loosePetals: t.materials.loosePetals, flourishes: t.materials.flourishes, indicator: t.materials.indicator, model: t.materials.model, callout: t.materials.callout })
+    setMatPanel({ clusters: t.materials.clusters, loosePetals: t.materials.loosePetals, flourishes: t.materials.flourishes, indicator: t.materials.indicator, model: t.materials.model, callout: t.materials.callout, calloutLens: t.materials.calloutLens, calloutLeafTop: t.materials.calloutLeafTop, calloutLeafBottom: t.materials.calloutLeafBottom })
     setPetalPool(poolSchema(t.materials.petals))
     setFlowerPool(poolSchema(t.materials.flowers))
     // `ink` lives in the view folder, not the environment one.
