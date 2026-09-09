@@ -160,10 +160,10 @@ function Roam({ debug }: { debug: boolean }) {
     const margin = px(Math.max(r.size, 8))
     if (r.follow && pointer) {
       const rect = gl.domElement.getBoundingClientRect()
-      target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), 1.0)
+      target.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), r.z)
     } else {
       const t = state.clock.elapsedTime * r.speed * Math.PI * 2
-      target.set(Math.sin(t) * hw * 0.8, Math.sin(t * 0.63 + 1.3) * hh * 0.8, 1.2 + Math.sin(t * 0.41) * 0.4)
+      target.set(Math.sin(t) * hw * 0.8, Math.sin(t * 0.63 + 1.3) * hh * 0.8, r.z + Math.sin(t * 0.41) * 0.4)
     }
     target.x = THREE.MathUtils.clamp(target.x, -hw + margin, hw - margin)
     target.y = THREE.MathUtils.clamp(target.y, -hh + margin, hh - margin)

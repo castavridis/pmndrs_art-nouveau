@@ -206,6 +206,7 @@ export default function DevControls() {
     color: L.roam.color,
     speed: { value: L.roam.speed, min: 0, max: 0.5 },
     size: { value: L.roam.size, min: 1, max: 40 },
+    z: { value: L.roam.z, min: -10, max: 30, step: 0.1, label: 'depth (z)' },
     follow: { value: L.roam.follow, label: 'follow pointer' },
     body: { value: L.roam.body, label: 'show body' },
   }))

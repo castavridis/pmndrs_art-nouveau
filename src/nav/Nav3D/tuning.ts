@@ -99,7 +99,7 @@ export interface LightsTuning {
    * A point light wandering across the canvas (0 intensity = off). `follow`: sits under the
    * pointer while it is over the page. `body`: also draw its glowing sphere through the glass.
    */
-  roam: { intensity: number; color: string; speed: number; size: number; follow: boolean; body: boolean }
+  roam: { intensity: number; color: string; speed: number; size: number; follow: boolean; body: boolean; /** Depth in world units in front of the scene (the nav's pill is at 0; the cube page's blocks reach about ±4). */ z: number }
   /**
    * A ray: a spot light anchored above the canvas whose aim follows the pointer (a slow
    * side-to-side sweep when the mouse is off the page). `cone` is the half-angle in degrees.
@@ -361,7 +361,7 @@ export type GlassPreset = keyof typeof glassPresets
 
 export const defaultLights: LightsTuning = {
   debug: false,
-  roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6, follow: true, body: false },
+  roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6, follow: true, body: false, z: 1.2 },
   ray: { enabled: true, intensity: 12, color: '#ffffff', cone: 18, softness: 0.6, speed: 0.05 },
   luminanceScale: 0.25,
   emitters: true,
