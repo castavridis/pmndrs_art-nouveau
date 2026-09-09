@@ -122,7 +122,7 @@ export default function DevControls() {
           .catch((e) => console.warn('[nav] save failed', e))
       }),
     }),
-    { order: -20, collapsed: true },
+    { order: -20 },
   )
 
   const [glass, setGlassPanel] = useControls('glass', () => ({
@@ -178,7 +178,7 @@ export default function DevControls() {
     background: defaultTuning.env.background,
     fog: { value: defaultTuning.env.fog, min: 0, max: 0.3, step: 0.001 },
     labelScrim: { value: defaultTuning.env.labelScrim, min: 0, max: 0.9, label: 'label scrim' },
-  }), { order: -40, collapsed: true })
+  }), { order: -40 })
   const [post, setPostPanel] = useControls('post', () => ({
     bloomIntensity: { value: defaultTuning.post.bloomIntensity, min: 0, max: 2 },
     bloomThreshold: { value: defaultTuning.post.bloomThreshold, min: 0, max: 1 },
@@ -188,7 +188,7 @@ export default function DevControls() {
     noise: { value: defaultTuning.post.noise, min: 0, max: 1 },
     noiseBlend: { value: defaultTuning.post.noiseBlend, options: ['screen', 'overlay', 'softLight', 'add', 'multiply', 'normal'] as const },
     noisePremultiply: { value: defaultTuning.post.noisePremultiply, label: 'noise premultiply' },
-  }), { order: -30, collapsed: true })
+  }), { order: -30 })
 
   const [lights, setLightsPanel] = useControls('lights', () => ({
     debug: L.debug,
@@ -225,7 +225,7 @@ export default function DevControls() {
     target: { value: toV(L.overhead.target), step: 1 },
     angle: { value: L.overhead.angle, min: 1, max: 90 },
     penumbra: { value: L.overhead.penumbra, min: 0, max: 1 },
-  }), { order: -10, collapsed: true })
+  }), { order: -10 })
   const rect0 = useRectControls(L.rects[0]!)
   const rect1 = useRectControls(L.rects[1]!)
   const rect2 = useRectControls(L.rects[2]!)
@@ -395,7 +395,7 @@ function useRectControls(d: RectLightTuning): {
     height: { value: d.height, min: 0.5, max: 2000, step: 0.5 },
     position: { value: toV(d.position), step: 1 },
     rotation: { value: toV(d.rotation), step: 5 },
-  }), { order: d.name === 'overhead' ? -45 : 0, collapsed: d.name !== 'overhead' })
+  }), { order: d.name === 'overhead' ? -45 : 0 })
   const { follow, ...rest } = c
   return {
     value: { name: d.name, ...rest, followActive: follow, position: fromV(c.position), rotation: fromV(c.rotation) },
