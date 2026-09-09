@@ -16,6 +16,8 @@ const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHand
 if (typeof window !== 'undefined') preloadAnnouncementAssets()
 import { useOutlines } from '../nav/outlines'
 import { useMeasure } from './useMeasure'
+import { useInk } from '../nav/Nav3D/dom'
+import { useIsClient } from '../isClient'
 
 export interface AnnouncementProps {
   children: ReactNode
@@ -45,6 +47,9 @@ export function Announcement({
   const size = useMeasure(rootRef, { width, height: announcement.height })
   const [ready, setReady] = useState(false)
   const vector = variant === 'svg' || !ready
+  // Ink follows the glass backdrop (see useInk); applied after hydration, CSS covers SSR/vector.
+  const { ink } = useInk()
+  const client = useIsClient()
   // Dev: outlines over the live 3D as well.
   const overlay = useOutlines((s) => s.overlay)
   const outlines = vector || overlay
@@ -55,7 +60,7 @@ export function Announcement({
     <div
       ref={rootRef}
       className={`${styles.root} ${vector ? styles.vector : ''} ${outlines ? styles.outlined : ''}`}
-      style={{ width: '100%', maxWidth: width, minHeight: announcement.height }}
+      style={{ width: '100%', maxWidth: width, minHeight: announcement.height, color: client && !vector ? ink : undefined }}
     >
       {/* Vector layer: outlined banner (CSS) and the traced flourishes pinned to the ends. */}
       <img

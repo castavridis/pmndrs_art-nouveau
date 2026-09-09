@@ -157,6 +157,7 @@ export default function DevControls() {
     rotation: { value: defaultTuning.env.rotation, min: -Math.PI, max: Math.PI },
     background: defaultTuning.env.background,
     fog: { value: defaultTuning.env.fog, min: 0, max: 0.3, step: 0.001 },
+    labelScrim: { value: defaultTuning.env.labelScrim, min: 0, max: 0.9, label: 'label scrim' },
   }))
   const [post, setPostPanel] = useControls('post', () => ({
     bloomIntensity: { value: defaultTuning.post.bloomIntensity, min: 0, max: 2 },
@@ -174,6 +175,13 @@ export default function DevControls() {
     emitterScale: { value: L.emitterScale, min: 0, max: 1 },
     sweep: { value: L.sweep, min: 0, max: 1 },
     sweepRange: { value: L.sweepRange, min: 0, max: 200 },
+  }))
+  const [ray, setRayPanel] = useControls('lights.ray', () => ({
+    intensity: { value: L.ray.intensity, min: 0, max: 60 },
+    color: L.ray.color,
+    cone: { value: L.ray.cone, min: 2, max: 60 },
+    softness: { value: L.ray.softness, min: 0, max: 1 },
+    speed: { value: L.ray.speed, min: 0, max: 0.5 },
   }))
   const [roam, setRoamPanel] = useControls('lights.roam', () => ({
     intensity: { value: L.roam.intensity, min: 0, max: 40 },
@@ -211,6 +219,7 @@ export default function DevControls() {
       sweepRange: t.lights.sweepRange,
     })
     setRoamPanel(t.lights.roam)
+    setRayPanel(t.lights.ray)
     setOhPanel({
       ...t.lights.overhead,
       position: toV(t.lights.overhead.position),
@@ -316,10 +325,11 @@ export default function DevControls() {
     set('lights', {
       ...lights,
       roam,
+      ray,
       overhead: { ...oh, position: fromV(oh.position), target: fromV(oh.target) },
       rects: [rect0.value, rect1.value, rect2.value, rect3.value],
     })
-  }, [lights, roam, oh, rect0.value, rect1.value, rect2.value, rect3.value, set])
+  }, [lights, roam, ray, oh, rect0.value, rect1.value, rect2.value, rect3.value, set])
 
   return <Leva collapsed titleBar={{ title: 'nav 3D' }} />
 }

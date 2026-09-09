@@ -1,6 +1,7 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Container, Content, type VanillaContainer } from '@react-three/uikit'
-import { useSpring } from '@react-spring/three'
+import { useSpring, type SpringValue } from '@react-spring/three'
+import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import { useNavStore } from '../store'
 import { px, tokens } from '../tokens'
@@ -10,6 +11,8 @@ import { Petals } from './Petals'
 import { PetalField } from './PetalField'
 import { Indicator } from './Indicator'
 import { Glows } from './Glows'
+import { PillMorph } from './pillGeometry'
+import { useTuning } from './tuning'
 import { ItemRegistryContext, type ItemRegistry } from './items'
 import { transmissionExcluded } from './materials'
 import { useNavAssets } from './assets'
@@ -83,6 +86,7 @@ export function NavRoot() {
         />
       )}
       <group ref={uiRef} position-z={z}>
+        <Scrim width={spring.width} light={ink === '#f2f2ef'} />
         <Suspense fallback={null}>
           <Container
             ref={rootRef}
@@ -124,5 +128,23 @@ export function NavRoot() {
         </Suspense>
       </group>
     </ItemRegistryContext.Provider>
+  )
+}
+
+/**
+ * A translucent slab just behind the labels, following the pill's width: black under light
+ * ink, white under dark ink. Evens out petals, highlights and the item glow passing behind the
+ * text (APCA worst case; see scripts/dev/apca.mjs). Opacity is `env.labelScrim`; 0 removes it.
+ */
+function Scrim({ width, light }: { width: SpringValue<number>; light: boolean }) {
+  const opacity = useTuning((s) => s.env.labelScrim)
+  const morph = useMemo(() => new PillMorph(), [])
+  useEffect(() => () => morph.dispose(), [morph])
+  useFrame(() => morph.setWidth(width.get()))
+  if (opacity <= 0) return null
+  return (
+    <mesh name="label-scrim" geometry={morph.geometry} scale-z={0.04} position-z={-0.003} raycast={() => null}>
+      <meshBasicMaterial color={light ? '#000000' : '#ffffff'} transparent opacity={opacity} depthWrite={false} toneMapped={false} />
+    </mesh>
   )
 }

@@ -39,6 +39,7 @@ export function Lights() {
     <>
       <Overhead debug={debug} />
       <Roam debug={debug} />
+      <Ray debug={debug} />
       {rects.map((r, i) => (
         <Rect key={r.name ?? i} light={r} debug={debug} />
       ))}
@@ -164,6 +165,53 @@ function Roam({ debug }: { debug: boolean }) {
     </group>
   )
 }
+
+/**
+ * A ray of light: a spot anchored above the canvas, aimed at the pointer while the mouse is
+ * over the page, otherwise sweeping slowly across. Its angle, not its position, follows.
+ */
+function Ray({ debug }: { debug: boolean }) {
+  const r = useTuning((s) => s.lights.ray)
+  const size = useThree((s) => s.size)
+  const gl = useThree((s) => s.gl)
+  const light = useRef<THREE.SpotLight>(null!)
+  const target = useMemo(() => new THREE.Object3D(), [])
+  usePagePointer()
+  useHelper(debug && r.intensity > 0 && light, THREE.SpotLightHelper, r.color)
+  useFrame((state, dt) => {
+    const l = light.current
+    if (!l) return
+    const hw = px(size.width) / 2
+    const hh = px(size.height) / 2
+    // Anchor: above the canvas, a little in front.
+    l.position.set(0, hh * 1.6, 1.6)
+    if (pointer) {
+      const rect = gl.domElement.getBoundingClientRect()
+      aim.set(px(pointer.x - rect.left) - hw, hh - px(pointer.y - rect.top), 0)
+    } else {
+      const t = state.clock.elapsedTime * r.speed * Math.PI * 2
+      aim.set(Math.sin(t) * hw * 0.7, Math.sin(t * 0.5) * hh * 0.4, 0)
+    }
+    target.position.lerp(aim, 1 - Math.exp(-dt * 12))
+    target.updateMatrixWorld()
+  })
+  if (r.intensity <= 0) return null
+  return (
+    <>
+      <primitive object={target} />
+      <spotLight
+        ref={light}
+        color={r.color}
+        intensity={r.intensity}
+        angle={(r.cone * Math.PI) / 180}
+        penumbra={r.softness}
+        decay={1}
+        target={target}
+      />
+    </>
+  )
+}
+const aim = new THREE.Vector3()
 
 /** 45° in the plane: the strips lie along (1,1), so this is their perpendicular travel. */
 const SWEEP_DIR = new THREE.Vector3(1, 1, 0).normalize()

@@ -99,6 +99,11 @@ export interface LightsTuning {
    * pointer while it is over the page. `body`: also draw its glowing sphere through the glass.
    */
   roam: { intensity: number; color: string; speed: number; size: number; follow: boolean; body: boolean }
+  /**
+   * A ray: a spot light anchored above the canvas whose aim follows the pointer (a slow
+   * side-to-side sweep when the mouse is off the page). `cone` is the half-angle in degrees.
+   */
+  ray: { intensity: number; color: string; cone: number; softness: number; speed: number }
   /** Draw light helpers (rect outlines, spot cone) and pull the camera back. */
   debug: boolean
   /** Womp luminance → three RectAreaLight intensity (nits). */
@@ -137,6 +142,11 @@ export interface Tuning {
     background: string
     /** Exponential depth fog in the backdrop colour; 0 disables it. */
     fog: number
+    /**
+     * Opacity of a translucent slab between the glass and the nav labels (black under light
+     * ink, white under dark ink). Evens out what passes behind the text for legibility.
+     */
+    labelScrim: number
   }
   post: {
     bloomIntensity: number
@@ -344,6 +354,7 @@ export type GlassPreset = keyof typeof glassPresets
 export const defaultLights: LightsTuning = {
   debug: false,
   roam: { intensity: 4, color: '#ffffff', speed: 0.06, size: 6, follow: true, body: false },
+  ray: { intensity: 12, color: '#ffffff', cone: 18, softness: 0.6, speed: 0.05 },
   luminanceScale: 0.25,
   emitters: true,
   stripsInGlass: false,
@@ -374,7 +385,7 @@ export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
   lights: defaultLights,
-  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0 },
+  env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35 },
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004 },
 }
 
