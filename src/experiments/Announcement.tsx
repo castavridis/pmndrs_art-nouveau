@@ -26,6 +26,13 @@ import { useFrame } from '@react-three/fiber'
 import type * as THREE from 'three'
 import { useIsClient } from '../isClient'
 
+/** A strike on the banner: where (slab-local x/y, world units) and the slab size at that moment. */
+export interface Shatter {
+  hit: [number, number]
+  width: number
+  height: number
+}
+
 export interface AnnouncementProps {
   children: ReactNode
   /** Maximum banner width in px; it fills its container up to this. The flourishes stay pinned to the ends. */
@@ -41,7 +48,7 @@ export interface AnnouncementProps {
    * Shared mode: reports the banner element and its measured size for the page scene, and
    * (after a click) where the glass was struck, in the slab's local x/y in world units.
    */
-  onSlot?: (el: HTMLDivElement | null, size: { width: number; height: number }, shatter?: [number, number] | null) => void
+  onSlot?: (el: HTMLDivElement | null, size: { width: number; height: number }, shatter?: Shatter | null) => void
   postprocessing?: boolean
   /** Clicking the banner shatters the glass under the pointer and the banner falls away. */
   dismissible?: boolean
@@ -74,7 +81,7 @@ export function Announcement({
   const ready = variant === 'shared' ? sharedReady : ownReady
   const vector = variant === 'svg' || !ready
   // Shatter: where the glass was struck (slab-local world units), then the fall and dismissal.
-  const [shatter, setShatter] = useState<[number, number] | null>(null)
+  const [shatter, setShatter] = useState<Shatter | null>(null)
   const [collapsed, setCollapsed] = useState(false)
   const [gone, setGone] = useState(false)
   useEffect(() => {
@@ -98,7 +105,8 @@ export function Announcement({
     if (!dismissible || shatter || vector) return
     if ((e.target as HTMLElement).closest('a, button')) return
     const r = rootRef.current!.getBoundingClientRect()
-    setShatter([px(e.clientX - r.left - r.width / 2), px(r.height / 2 - (e.clientY - r.top))])
+    // The size is captured now: the banner collapses later and the shards must not re-form.
+    setShatter({ hit: [px(e.clientX - r.left - r.width / 2), px(r.height / 2 - (e.clientY - r.top))], width: r.width, height: r.height })
   }
   // Ink follows the glass backdrop (see useInk); applied after hydration, CSS covers SSR/vector.
   const { ink } = useInk()
@@ -199,7 +207,7 @@ export function Announcement({
   )
 }
 
-function Scene({ width, height, shatter }: { width: number; height: number; shatter: [number, number] | null }) {
+function Scene({ width, height, shatter }: { width: number; height: number; shatter: Shatter | null }) {
   return <AnnouncementParts width={width} height={height} shatter={shatter} />
 }
 
@@ -217,8 +225,8 @@ export function AnnouncementParts({
   width: number
   height: number
   sampler?: boolean
-  /** Struck here (slab-local, world units): the slab becomes shards and the flourishes drop. */
-  shatter?: [number, number] | null
+  /** Struck: the slab becomes shards (built from the size at the strike) and the flourishes drop. */
+  shatter?: Shatter | null
 }) {
   const { left, right } = useAnnouncementAssets()
   const choice = useTuning((s) => s.materials.flourishes)
@@ -243,9 +251,11 @@ export function AnnouncementParts({
   })
   return (
     <group ref={fall}>
-      {sampler && !shatter && <Backing width={width} height={height} depth={announcement.depth} />}
+      {/* Sampler slabs, and the shards in either mode, refract a backing in the glass's own
+          buffer-background colour, so the pieces keep the slab's tone instead of the page's. */}
+      {(sampler || shatter) && <Backing width={shatter ? shatter.width : width} height={shatter ? shatter.height : height} depth={announcement.depth} />}
       {shatter ? (
-        <Shards width={px(width)} height={px(height)} depth={px(announcement.depth)} hit={shatter} />
+        <Shards width={px(shatter.width)} height={px(shatter.height)} depth={px(announcement.depth)} hit={shatter.hit} />
       ) : (
         <mesh geometry={geometry}>
           <Glass sampler={sampler} />

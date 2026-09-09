@@ -5,7 +5,7 @@ import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { NavRoot } from '../nav/Nav3D/NavRoot'
 import { Ready } from '../nav/Nav3D/Ready'
 import { px } from '../nav/tokens'
-import { AnnouncementParts } from './Announcement'
+import { AnnouncementParts, type Shatter } from './Announcement'
 import { CalloutParts } from './Callout'
 import type { CalloutKind } from './calloutKinds'
 import { preloadNavAssets } from '../nav/Nav3D/assets'
@@ -25,8 +25,8 @@ export interface SlotBox {
   el: HTMLElement | null
   width: number
   height: number
-  /** Announcement: where it was struck, once clicked. */
-  shatter?: [number, number] | null
+  /** Announcement: the strike, once clicked. */
+  shatter?: Shatter | null
 }
 
 export interface BentoSceneProps {

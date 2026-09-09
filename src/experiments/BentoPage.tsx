@@ -6,6 +6,7 @@ import { Logo } from '../nav/Logo'
 import { Announcement } from './Announcement'
 import { Callout } from './Callout'
 import { BentoScene, type SlotBox } from './BentoScene'
+import type { Shatter } from './Announcement'
 import { useIsClient } from '../isClient'
 import styles from './Bento.module.css'
 
@@ -38,7 +39,7 @@ export function BentoPage() {
   const [announcement, setAnnouncement] = useState<SlotBox>(EMPTY)
   const [callout, setCallout] = useState<SlotBox>(EMPTY)
   const [ready, setReady] = useState(false)
-  const onAnnouncementSlot = useCallback((el: HTMLDivElement | null, size: { width: number; height: number }, shatter?: [number, number] | null) => setAnnouncement({ el, ...size, shatter: shatter ?? null }), [])
+  const onAnnouncementSlot = useCallback((el: HTMLDivElement | null, size: { width: number; height: number }, shatter?: Shatter | null) => setAnnouncement({ el, ...size, shatter: shatter ?? null }), [])
   const onCalloutSlot = useCallback((el: HTMLDivElement | null, size: { width: number; height: number }) => setCallout({ el, ...size }), [])
   // The pill is centred on the DOM nav's padded box (its clusters bleed inside it).
   const setNavWrap = useCallback((node: HTMLDivElement | null) => {

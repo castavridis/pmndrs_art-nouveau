@@ -55,16 +55,22 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
   }, [width, height, depth, hit])
   useEffect(() => () => shards.forEach((s) => s.geometry.dispose()), [shards])
 
+  // The shards fade out in place (opacity, no shrinking or regrouping) once they have flown apart.
   const refs = useRef<(THREE.Mesh | null)[]>([])
-  const t = useRef(0)
+  // Wall clock, so the fade keeps pace with the banner's DOM timers even on a slow frame rate.
+  const start = useRef<number | null>(null)
   const done = useRef(false)
   useFrame((_, dt) => {
-    const step = Math.min(dt, 0.05)
-    t.current += step
-    const fade = Math.max(0, 1 - Math.max(0, t.current - life * 0.45) / (life * 0.55))
+    const step = Math.min(dt, 0.1)
+    if (start.current === null) start.current = performance.now()
+    const t = (performance.now() - start.current) / 1000
+    const fade = Math.max(0, 1 - Math.max(0, t - life * 0.35) / (life * 0.65))
     shards.forEach((s, i) => {
       const m = refs.current[i]
       if (!m) return
+      const mat = m.material as THREE.Material
+      mat.transparent = true
+      mat.opacity = fade
       s.v.y += GRAVITY * step
       s.p.addScaledVector(s.v, step)
       s.rot.x += s.spin.x * step
@@ -72,9 +78,9 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone }
       s.rot.z += s.spin.z * step
       m.position.copy(s.p)
       m.rotation.copy(s.rot)
-      m.scale.setScalar(Math.max(fade, 0.0001))
+      m.visible = fade > 0.01
     })
-    if (t.current >= life && !done.current) {
+    if (t >= life && !done.current) {
       done.current = true
       onDone?.()
     }
