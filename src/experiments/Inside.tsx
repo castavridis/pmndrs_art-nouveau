@@ -162,7 +162,14 @@ function InstancedSwarm({
     const m = mesh.current
     if (!m) return
     m.frustumCulled = false
-  }, [])
+    // Fixed bounding sphere over the swarm's volume (see PetalField): the cached one would
+    // only cover where the bodies were at the first raycast.
+    const all = new THREE.Box3()
+    for (const b of boxes) all.union(b)
+    const sphere = all.getBoundingSphere(new THREE.Sphere())
+    sphere.radius += 1.5 // bodies are scaled, and flowers are wide
+    m.boundingSphere = sphere
+  }, [boxes])
   useFrame((_, dt) => {
     if (mesh.current) swarm.update(mesh.current, reducedMotion ? 0 : Math.min(dt, 0.05))
   })

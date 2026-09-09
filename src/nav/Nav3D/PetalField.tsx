@@ -102,7 +102,11 @@ function PetalGroup({ preset, count, seed }: { preset: GlassPreset; count: numbe
     const m = mesh.current
     if (!m) return
     m.frustumCulled = false
-  }, [])
+    // three caches an InstancedMesh's bounding sphere from the instances' positions at first
+    // raycast and skips the mesh when the ray misses it; the petals move across the whole
+    // canvas, so give it a sphere that covers the field for good.
+    m.boundingSphere = new THREE.Sphere(new THREE.Vector3(), Math.hypot(halfW, halfH) + 1)
+  }, [halfW, halfH])
 
   useFrame((state, dt) => {
     if (mesh.current) field.update(mesh.current, state.clock.elapsedTime, reducedMotion ? 0 : Math.min(dt, 0.05))
