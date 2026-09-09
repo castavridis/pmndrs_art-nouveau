@@ -179,6 +179,9 @@ export default function DevControls() {
     bloomSmoothing: { value: defaultTuning.post.bloomSmoothing, min: 0, max: 1 },
     bloomRadius: { value: defaultTuning.post.bloomRadius, min: 0, max: 1 },
     aberration: { value: defaultTuning.post.aberration, min: 0, max: 0.01, step: 0.0001 },
+    noise: { value: defaultTuning.post.noise, min: 0, max: 1 },
+    noiseBlend: { value: defaultTuning.post.noiseBlend, options: ['screen', 'overlay', 'softLight', 'add', 'multiply', 'normal'] as const },
+    noisePremultiply: { value: defaultTuning.post.noisePremultiply, label: 'noise premultiply' },
   }))
 
   const [lights, setLightsPanel] = useControls('lights', () => ({

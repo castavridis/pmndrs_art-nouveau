@@ -6,9 +6,10 @@ import {
   EffectComposer,
   Bloom,
   ChromaticAberration,
+  Noise,
   ToneMapping,
 } from '@react-three/postprocessing'
-import { Effect, ToneMappingMode } from 'postprocessing'
+import { BlendFunction, Effect, ToneMappingMode } from 'postprocessing'
 import type { PerspectiveCamera } from 'three'
 import { tokens } from '../tokens'
 import { useLightsKey, useTuning } from './tuning'
@@ -276,8 +277,26 @@ function Sanitize() {
   return <primitive object={effect} />
 }
 
+const NOISE_BLEND = {
+  screen: BlendFunction.SCREEN,
+  overlay: BlendFunction.OVERLAY,
+  softLight: BlendFunction.SOFT_LIGHT,
+  add: BlendFunction.ADD,
+  multiply: BlendFunction.MULTIPLY,
+  normal: BlendFunction.NORMAL,
+} as const
+
 function Post() {
-  const { bloomIntensity, bloomThreshold, bloomSmoothing, bloomRadius, aberration } = useTuning(
+  const {
+    bloomIntensity,
+    bloomThreshold,
+    bloomSmoothing,
+    bloomRadius,
+    aberration,
+    noise,
+    noiseBlend,
+    noisePremultiply,
+  } = useTuning(
     (s) => s.post,
   )
   return (
@@ -297,6 +316,8 @@ function Post() {
       />
       {/* postprocessing@6 turns off gl.toneMapping while a composer is active; re-add it here. */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+      {/* Film grain after tone mapping, so it sits on the displayed image, not the HDR frame. */}
+      {noise > 0 && <Noise opacity={noise} premultiply={noisePremultiply} blendFunction={NOISE_BLEND[noiseBlend]} />}
     </EffectComposer>
   )
 }

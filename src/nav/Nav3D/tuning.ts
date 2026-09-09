@@ -157,7 +157,12 @@ export interface Tuning {
     bloomSmoothing: number
     /** Bloom spread (mipmap blur radius). */
     bloomRadius: number
-    aberration: number
+    aberration: number    /** Film grain over the frame: 0 is off. */
+    noise: number
+    /** How the grain blends: screen (lightens), overlay, soft-light, add, multiply, normal. */
+    noiseBlend: 'screen' | 'overlay' | 'softLight' | 'add' | 'multiply' | 'normal'
+    /** Scale the grain by the pixel's brightness (keeps blacks clean). */
+    noisePremultiply: boolean
   }
 }
 
@@ -390,7 +395,7 @@ export const baseTuning: Tuning = {
   glass: glassPresets.silverGlass,
   lights: defaultLights,
   env: { intensity: 0.6, rotation: 0, background: '#2a2d36', fog: 0, labelScrim: 0.35, ink: 'auto' },
-  post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004 },
+  post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, aberration: 0.0004, noise: 0, noiseBlend: 'screen', noisePremultiply: true },
 }
 
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends (infer U)[] ? U[] : T[K] extends object ? DeepPartial<T[K]> : T[K] }
