@@ -117,6 +117,8 @@ interface GroupProps {
   geometry: THREE.BufferGeometry
   /** Glass preset (solid variant, so the interior stays bright). */
   preset: GlassPreset
+  /** Name prefix for the mesh (hit debug): e.g. "petal inside". */
+  label: string
   /** Restrict to one box (index) instead of spreading by volume. */
   boxIndex?: number
   count: number
@@ -132,6 +134,7 @@ function InstancedSwarm({
   boxes,
   geometry,
   preset,
+  label,
   boxIndex,
   count,
   seed,
@@ -165,7 +168,7 @@ function InstancedSwarm({
   })
   if (swarm.bodies.length === 0) return null
   return (
-    <instancedMesh ref={mesh} args={[geometry, undefined, swarm.bodies.length]} {...hoverAimHandlers}>
+    <instancedMesh ref={mesh} name={`${label} ${preset}`} args={[geometry, undefined, swarm.bodies.length]} {...hoverAimHandlers}>
       <Glass solid preset={preset} />
     </instancedMesh>
   )
@@ -184,6 +187,7 @@ export function Inside({ boxes, petals = 40 }: InsideProps) {
     <>
       {groups.map((g, i) => (
         <InstancedSwarm
+          label="petal inside"
           key={g.preset}
           boxes={boxes}
           geometry={petalLo}
@@ -218,6 +222,7 @@ export function Outside({ bounds, petals = 60 }: OutsideProps) {
     <>
       {groups.map((g, i) => (
         <InstancedSwarm
+          label="petal outside"
           key={g.preset}
           boxes={volume}
           geometry={petalLo}
@@ -256,6 +261,7 @@ export function Flowers({ boxes, bounds, inside = 6, outside = 10 }: FlowersProp
     <>
       {inGroups.map((g, i) => (
         <InstancedSwarm
+          label="flower inside"
           key={`in-${g.preset}`}
           boxes={boxes}
           geometry={flower}
@@ -270,6 +276,7 @@ export function Flowers({ boxes, bounds, inside = 6, outside = 10 }: FlowersProp
       ))}
       {outGroups.map((g, i) => (
         <InstancedSwarm
+          label="flower outside"
           key={`out-${g.preset}`}
           boxes={around}
           geometry={flower}

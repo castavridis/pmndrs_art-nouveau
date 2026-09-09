@@ -22,12 +22,12 @@ export function Clusters({ width }: ClustersProps) {
   return (
     <>
       <animated.group position-x={leftX}>
-        <mesh geometry={left} {...hoverAimHandlers}>
+        <mesh geometry={left} name="cluster left" {...hoverAimHandlers}>
           <Glass sampler />
         </mesh>
       </animated.group>
       <animated.group position-x={rightX}>
-        <mesh geometry={right} {...hoverAimHandlers}>
+        <mesh geometry={right} name="cluster right" {...hoverAimHandlers}>
           <Glass sampler />
         </mesh>
       </animated.group>

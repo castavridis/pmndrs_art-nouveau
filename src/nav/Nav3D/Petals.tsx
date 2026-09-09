@@ -38,7 +38,7 @@ export function Petals({ width, layoutWidth, count, float = true }: PetalsProps)
       {placements.map((p, i) => (
         <animated.group key={i} position-x={width.to((w) => p.fx * px(middleSegment(w)))} position-y={px(p.y)} position-z={px(p.z)}>
           <Float enabled={float} speed={p.speed} rotationIntensity={0.4} floatIntensity={0.3} floatingRange={[-0.02, 0.02]}>
-            <mesh geometry={petal} rotation={p.rotation} {...hoverAimHandlers}>
+            <mesh geometry={petal} name={`petal loose ${i + 1}`} rotation={p.rotation} {...hoverAimHandlers}>
               <Glass sampler />
             </mesh>
           </Float>

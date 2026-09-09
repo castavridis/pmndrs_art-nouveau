@@ -111,7 +111,7 @@ function PetalGroup({ preset, count, seed }: { preset: GlassPreset; count: numbe
   if (count <= 0) return null
   return (
     // Hovered petals draw the roaming light to them (aim.ts); events still reach the items beneath.
-    <instancedMesh ref={mesh} args={[petalLo, undefined, count]} {...hoverAimHandlers}>
+    <instancedMesh ref={mesh} name={`petal field ${preset}`} args={[petalLo, undefined, count]} {...hoverAimHandlers}>
       <Glass sampler preset={preset} />
     </instancedMesh>
   )

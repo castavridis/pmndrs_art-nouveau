@@ -12,7 +12,7 @@ export default function CubeControls() {
     petalsOutside: { value: s.petalsOutside, min: 0, max: 300, step: 1 },
     flowersInside: { value: s.flowersInside, min: 0, max: 40, step: 1 },
     flowersOutside: { value: s.flowersOutside, min: 0, max: 60, step: 1 },
-  }))
+  }), { order: -65 })
   const set = useCubeScene((st) => st.set)
   useEffect(() => set(scene), [scene, set])
   return null

@@ -16,6 +16,8 @@ import {
 import { useOutlines } from '../outlines'
 import { isBuiltInPreset, presetNames, useCustomPresets } from './customPresets'
 import { useLcReadings } from './lcStore'
+import { useHitDebug } from './aim'
+import { HitDebugOverlay } from './HitDebugOverlay'
 
 // leva vector controls use tuples; the store uses {x,y,z}.
 type V = [number, number, number]
@@ -47,18 +49,22 @@ export default function DevControls() {
   const scheme = useTuning((s) => s.scheme)
   const copyToOther = useTuning((s) => s.copyToOther)
   const inkChoice = useTuning((s) => s.env.ink)
-  const [{ outlines, ink: inkPanel }, setViewPanel] = useControls(
+  const hitDebugOn = useHitDebug((s) => s.enabled)
+  const setHitDebug = useHitDebug((s) => s.setEnabled)
+  const [{ outlines, hits: hitsPanel, ink: inkPanel }, setViewPanel] = useControls(
     'view',
     () => ({
       outlines: { value: overlay, label: 'svg outlines' },
+      hits: { value: hitDebugOn, label: 'hit debug' },
       ink: { value: inkChoice, options: ['auto', 'light', 'dark'] as const, label: 'text ink' },
       lc: { value: '', editable: false, label: 'Lc (median/worst)' },
       scheme: { value: scheme, editable: false, label: 'tuning for' },
       'copy to other scheme': button(() => copyToOther()),
     }),
-    { order: -1 },
+    { order: -80 },
   )
   useEffect(() => setViewPanel({ scheme }), [scheme, setViewPanel])
+  useEffect(() => setHitDebug(hitsPanel), [hitsPanel, setHitDebug])
   useEffect(() => set('env', { ink: inkPanel }), [inkPanel, set])
   useEffect(() => setViewPanel({ ink: inkChoice }), [inkChoice, setViewPanel])
   // Live legibility readings from the in-canvas probes (LcProbe.tsx), refreshed as they arrive.
@@ -78,8 +84,8 @@ export default function DevControls() {
   const names = presetNames(custom)
   const [{ preset }, setPresetPanel] = useControls(
     () => ({
-      preset: { value: useTuning.getState().preset, options: names },
-      status: { value: '', editable: false },
+      preset: { value: useTuning.getState().preset, options: names, order: -100 },
+      status: { value: '', editable: false, order: -99 },
     }),
     [names.join('|')],
   )
@@ -116,7 +122,7 @@ export default function DevControls() {
           .catch((e) => console.warn('[nav] save failed', e))
       }),
     }),
-    { order: 0, collapsed: true },
+    { order: -20, collapsed: true },
   )
 
   const [glass, setGlassPanel] = useControls('glass', () => ({
@@ -164,7 +170,7 @@ export default function DevControls() {
       samples: { value: g.samples, min: 1, max: 8, step: 1 },
       resolution: { value: g.resolution, options: [256, 512, 768, 1024, 1536, 2048, 4096] },
     }),
-  }))
+  }), { order: -70 })
 
   const [env, setEnvPanel] = useControls('environment', () => ({
     intensity: { value: defaultTuning.env.intensity, min: 0, max: 4 },
@@ -172,7 +178,7 @@ export default function DevControls() {
     background: defaultTuning.env.background,
     fog: { value: defaultTuning.env.fog, min: 0, max: 0.3, step: 0.001 },
     labelScrim: { value: defaultTuning.env.labelScrim, min: 0, max: 0.9, label: 'label scrim' },
-  }))
+  }), { order: -40, collapsed: true })
   const [post, setPostPanel] = useControls('post', () => ({
     bloomIntensity: { value: defaultTuning.post.bloomIntensity, min: 0, max: 2 },
     bloomThreshold: { value: defaultTuning.post.bloomThreshold, min: 0, max: 1 },
@@ -182,7 +188,7 @@ export default function DevControls() {
     noise: { value: defaultTuning.post.noise, min: 0, max: 1 },
     noiseBlend: { value: defaultTuning.post.noiseBlend, options: ['screen', 'overlay', 'softLight', 'add', 'multiply', 'normal'] as const },
     noisePremultiply: { value: defaultTuning.post.noisePremultiply, label: 'noise premultiply' },
-  }))
+  }), { order: -30, collapsed: true })
 
   const [lights, setLightsPanel] = useControls('lights', () => ({
     debug: L.debug,
@@ -192,7 +198,7 @@ export default function DevControls() {
     emitterScale: { value: L.emitterScale, min: 0, max: 1 },
     sweep: { value: L.sweep, min: 0, max: 1 },
     sweepRange: { value: L.sweepRange, min: 0, max: 200 },
-  }))
+  }), { order: -50 })
   const [ray, setRayPanel] = useControls('lights.ray', () => ({
     enabled: { value: L.ray.enabled, label: 'on' },
     intensity: { value: L.ray.intensity, min: 0, max: 60 },
@@ -200,7 +206,7 @@ export default function DevControls() {
     cone: { value: L.ray.cone, min: 2, max: 60 },
     softness: { value: L.ray.softness, min: 0, max: 1 },
     speed: { value: L.ray.speed, min: 0, max: 0.5 },
-  }))
+  }), { order: -55 })
   const [roam, setRoamPanel] = useControls('lights.roam', () => ({
     intensity: { value: L.roam.intensity, min: 0, max: 40 },
     color: L.roam.color,
@@ -210,7 +216,7 @@ export default function DevControls() {
     follow: { value: L.roam.follow, label: 'follow pointer' },
     hover: { value: L.roam.hover, label: 'go to hovered petal' },
     body: { value: L.roam.body, label: 'show body' },
-  }))
+  }), { order: -60 })
   const [oh, setOhPanel] = useControls('lights.overhead', () => ({
     color: L.overhead.color,
     intensity: { value: L.overhead.intensity, min: 0, max: 1000 },
@@ -218,7 +224,7 @@ export default function DevControls() {
     target: { value: toV(L.overhead.target), step: 1 },
     angle: { value: L.overhead.angle, min: 1, max: 90 },
     penumbra: { value: L.overhead.penumbra, min: 0, max: 1 },
-  }))
+  }), { order: -10, collapsed: true })
   const rect0 = useRectControls(L.rects[0]!)
   const rect1 = useRectControls(L.rects[1]!)
   const rect2 = useRectControls(L.rects[2]!)
@@ -334,8 +340,8 @@ export default function DevControls() {
         fillPanel.current(base)
       }),
     }),
-    // Pinned to the top of the panel.
-    { order: -1 },
+    // Right under the preset select: saving is the most frequent action after tuning.
+    { order: -90 },
   )
 
   // Panel → store (skipped during the mount / scheme-swap commit, see `live`).
@@ -357,7 +363,12 @@ export default function DevControls() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightsSig, set])
 
-  return <Leva collapsed titleBar={{ title: 'nav 3D' }} />
+  return (
+    <>
+      <Leva collapsed titleBar={{ title: 'nav 3D' }} />
+      <HitDebugOverlay />
+    </>
+  )
 }
 
 type RectPanel = {
@@ -383,7 +394,7 @@ function useRectControls(d: RectLightTuning): {
     height: { value: d.height, min: 0.5, max: 2000, step: 0.5 },
     position: { value: toV(d.position), step: 1 },
     rotation: { value: toV(d.rotation), step: 5 },
-  }))
+  }), { order: d.name === 'overhead' ? -45 : 0, collapsed: d.name !== 'overhead' })
   const { follow, ...rest } = c
   return {
     value: { name: d.name, ...rest, followActive: follow, position: fromV(c.position), rotation: fromV(c.rotation) },

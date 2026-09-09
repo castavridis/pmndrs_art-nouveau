@@ -52,7 +52,7 @@ export default function PaletteControls() {
       }),
       'reset to code presets': button(() => usePaletteTuning.getState().reset()),
     }),
-    { order: -2 },
+    { order: 5 },
   )
   return (
     <>
@@ -87,7 +87,7 @@ function Folder({ name }: { name: PaletteName }) {
       envMapIntensity: { value: initial.envMapIntensity, min: 0, max: 4 },
       opacity: { value: initial.opacity, min: 0, max: 1 },
     }),
-    { collapsed: true },
+    { collapsed: true, order: 10 },
   )
   // Reset / import: re-read the store into the panel.
   useEffect(() => {
