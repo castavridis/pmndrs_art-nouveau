@@ -25,7 +25,7 @@ import { Shards } from './Shards'
 import { printSegments, readPrintSegments, slabUv } from './announcementPrint'
 import { usePrintText } from '../nav/printText'
 import { PrintLayer, usePrintMaterial } from './PrintLayer'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useIsClient } from '../isClient'
 
@@ -90,7 +90,9 @@ export function Announcement({
   onDismiss,
   print,
 }: AnnouncementProps) {
-  const bleedX = tokens.clusterBleedX
+  // The flourishes reach ~50px past each end and sit in front of the slab, so perspective
+  // pushes them further out again; the canvas needs more room than the nav's cluster bleed.
+  const bleedX = tokens.clusterBleedX * 2
   const bleedY = tokens.clusterBleedY + 20
   // The banner is sized by its container (up to `width`) and its content (at least
   // announcement.height); the glass slab follows the measured box.
@@ -294,7 +296,7 @@ export function AnnouncementParts({
   /** Ink for the printed text. */
   ink?: string
 }) {
-  const { left, right } = useAnnouncementAssets()
+  const { left, right, rightAnchor } = useAnnouncementAssets()
   const choice = useTuning((s) => s.materials.flourishes)
   const preset = choice === 'live' ? undefined : choice
   const geometry = useMemo(() => {
@@ -306,6 +308,17 @@ export function AnnouncementParts({
   const printed = print ?? null
   const printMaterial = usePrintMaterial(printed, ink)
   const end = px(width) / 2 - px(announcement.height / 2)
+  // The flourishes sit in front of the slab, and a perspective camera magnifies what is
+  // nearer — enough to push the right blossom clear of the end it decorates. Solve for the
+  // placement that projects its centre onto the slab's own edge:
+  //   (x + anchorX) / (camZ - anchorZ) == edgeX / (camZ - frontZ)
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
+  const camZ = Math.max(0.001, camera.position.z)
+  const edgeX = px(width) / 2
+  const frontZ = px(announcement.depth) / 2
+  const rightEnd =
+    (edgeX * Math.max(0.001, camZ - rightAnchor.z)) / Math.max(0.001, camZ - frontZ) - rightAnchor.x
+
   // The flourishes fall away with the banner once it is struck.
   const fall = useRef<THREE.Group>(null)
   const fallT = useRef(0)
@@ -340,7 +353,7 @@ export function AnnouncementParts({
           <Glass sampler preset={preset} />
         </mesh>
       </group>
-      <group position-x={end}>
+      <group position-x={rightEnd}>
         <mesh geometry={right}>
           <Glass sampler preset={preset} />
         </mesh>

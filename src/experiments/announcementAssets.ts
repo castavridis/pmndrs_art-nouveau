@@ -17,6 +17,11 @@ export interface AnnouncementAsset {
   left: THREE.BufferGeometry
   /** Right flourishes (flower, tendril, petal), origin at the surface's right end centre. */
   right: THREE.BufferGeometry
+  /**
+   * Centre of the right flourish's blossom, in world units relative to that flourish's own
+   * origin. It is the end's landmark, so the banner aligns it with the slab's edge.
+   */
+  rightAnchor: THREE.Vector3
   /** Exported surface size in CSS px. */
   width: number
   height: number
@@ -60,11 +65,16 @@ export function useAnnouncementAssets(): AnnouncementAsset {
     const centre = sb.getCenter(new THREE.Vector3())
     const frontZ = sb.max.z
 
+    /**
+     * Flatten a flourish's parts onto a stack just above the surface, keeping the exported
+     * front-to-back order, then re-origin at the end it decorates. Each layer clears the
+     * previous part's own thickness: the right tendril is 37px deep, so a flat step buried
+     * the blossom inside it and the tendril read as passing through the petals.
+     *
+     * Also returns that flourish's blossom centre — the biggest piece that is roughly as tall
+     * as it is wide, the tendrils being long and thin — as the end's landmark.
+     */
     const build = (list: THREE.BufferGeometry[], originX: number) => {
-      // Flatten onto a stack just above the surface, keeping the exported front-to-back order.
-      // Each layer clears the previous part's own thickness: the right flourish's tendril is
-      // 37px deep, so a flat 2px step buried the flower inside it and the tendril read as
-      // passing through the petals.
       const ordered = [...list].sort((a, b) => a.boundingBox!.min.z - b.boundingBox!.min.z)
       const GAP = 2
       let cursor = frontZ + GAP
@@ -73,19 +83,34 @@ export function useAnnouncementAssets(): AnnouncementAsset {
         g.translate(0, 0, cursor - b.min.z)
         cursor += b.max.z - b.min.z + GAP
       }
+      const anchor = new THREE.Vector3()
+      let best = -Infinity
+      for (const g of ordered) {
+        g.computeBoundingBox()
+        const b = g.boundingBox!
+        const sz = b.getSize(new THREE.Vector3())
+        const aspect = Math.max(sz.x, sz.y) / Math.max(0.001, Math.min(sz.x, sz.y))
+        const score = aspect < 1.6 ? sz.x * sz.y : 0
+        if (score > best) {
+          best = score
+          b.getCenter(anchor)
+        }
+      }
       const g = ordered.length === 1 ? ordered[0]! : mergeParts(ordered)
       g.translate(-originX, -centre.y, -centre.z)
       g.scale(px(1), px(1), px(1))
       g.computeVertexNormals()
       g.computeBoundingBox()
       g.computeBoundingSphere()
-      return g
+      // The anchor rides the same transform.
+      anchor.set(px(anchor.x - originX), px(anchor.y - centre.y), px(anchor.z - centre.z))
+      return { geometry: g, anchor }
     }
     const end = size.y / 2
     const left = build(leftParts, sb.min.x + end)
     const right = build(rightParts, sb.max.x - end)
     surface.dispose()
-    return { left, right, width: size.x, height: size.y, depth: size.z }
+    return { left: left.geometry, right: right.geometry, rightAnchor: right.anchor, width: size.x, height: size.y, depth: size.z }
   }, [gltfs])
 }
 
