@@ -4,17 +4,17 @@
     "glass": {
       "color": "#ffffff",
       "metalness": 0,
-      "roughness": 0.04,
+      "roughness": 0.12000000000000002,
       "transmission": 1,
       "thickness": 0.94,
       "ior": 1.17,
-      "specularColor": "#ff7c00",
+      "specularColor": "#ffffff",
       "specularIntensity": 1,
       "attenuationColor": "#ffffff",
       "attenuationDistance": 1.4,
       "sheen": 0.31,
       "sheenRoughness": 0.1638,
-      "sheenColor": "#3758f4",
+      "sheenColor": "#ffffff",
       "sheenNoise": 0.29,
       "sheenNoiseScale": 3.8,
       "roughnessNoise": 0.33,
@@ -47,24 +47,18 @@
     },
     "materials": {
       "petals": [
-        "dark",
-        "light",
         "purple",
         "red",
         "orange",
         "yellow",
-        "green",
         "teal",
         "blue"
       ],
       "flowers": [
-        "dark",
-        "light",
         "purple",
         "red",
         "orange",
         "yellow",
-        "green",
         "teal",
         "blue"
       ],
@@ -83,12 +77,12 @@
     "lights": {
       "debug": false,
       "roam": {
-        "intensity": 30,
-        "mode": "solid",
-        "color": "#caf543",
-        "rainbowRate": 0.35,
+        "intensity": 3.1999999999999993,
+        "mode": "rainbow",
+        "color": "#ffffff",
+        "rainbowRate": 0.02,
         "speed": 0.07,
-        "size": 1,
+        "size": 11,
         "z": 1,
         "follow": true,
         "hover": true,
@@ -97,13 +91,13 @@
       },
       "ray": {
         "enabled": true,
-        "intensity": 12,
+        "intensity": 60,
         "color": "#ffffff",
-        "cone": 18,
-        "softness": 0.6,
-        "speed": 0.05
+        "cone": 15,
+        "softness": 0.35,
+        "speed": 0.29
       },
-      "luminanceScale": 0.75,
+      "luminanceScale": 0.20999999999999996,
       "emitters": true,
       "stripsInGlass": false,
       "emitterScale": 0.21,
@@ -111,7 +105,7 @@
       "sweepRange": 40,
       "overhead": {
         "color": "#ffffff",
-        "intensity": 0,
+        "intensity": 80,
         "position": {
           "x": 0,
           "y": 120,
@@ -129,17 +123,17 @@
         {
           "name": "overhead",
           "color": "#ffffff",
-          "luminance": 10,
-          "width": 700,
-          "height": 822,
+          "luminance": 19,
+          "width": 1473,
+          "height": 703,
           "position": {
             "x": 0,
             "y": 500,
             "z": 0
           },
           "rotation": {
-            "x": -80,
-            "y": 0,
+            "x": -160,
+            "y": -45,
             "z": 0
           },
           "followActive": false
@@ -147,7 +141,7 @@
         {
           "name": "45° top",
           "color": "#caf543",
-          "luminance": 100,
+          "luminance": 0,
           "width": 697.12,
           "height": 1.01,
           "position": {
@@ -165,7 +159,7 @@
         {
           "name": "45° middle",
           "color": "#caf543",
-          "luminance": 100,
+          "luminance": 0,
           "width": 624.54,
           "height": 0.76,
           "position": {
@@ -183,7 +177,7 @@
         {
           "name": "45° bottom",
           "color": "#caf543",
-          "luminance": 100,
+          "luminance": 0,
           "width": 707.62,
           "height": 0.53,
           "position": {
@@ -201,87 +195,126 @@
       ]
     },
     "env": {
-      "intensity": 1,
+      "intensity": 0.48,
       "rotation": 0,
-      "background": "#a0a3b0",
+      "background": "#fff6e1",
       "fog": 0,
-      "labelScrim": 0.35,
+      "labelScrim": 0.11599999999999999,
       "ink": "auto",
-      "studio": "studio",
-      "panels": 1
+      "studio": "mono",
+      "panels": 0
     },
     "post": {
-      "bloomIntensity": 0.34,
-      "bloomThreshold": 0.37,
-      "bloomSmoothing": 0.24000000000000002,
-      "bloomRadius": 0.85,
-      "bloomClamp": 6,
-      "aberration": 0.0006000000000000001,
-      "noise": 0.34,
-      "noiseBlend": "multiply",
+      "bloomIntensity": 0.42000000000000004,
+      "bloomThreshold": 0.13999999999999999,
+      "bloomSmoothing": 0.44000000000000006,
+      "bloomRadius": 0.59,
+      "bloomClamp": 18,
+      "aberration": 0,
+      "noise": 0.28,
+      "noiseBlend": "add",
       "noisePremultiply": true
     }
   },
   "light": {
-    "preset": "silverGlass",
+    "preset": "logoCube",
     "glass": {
       "color": "#ffffff",
       "metalness": 0,
-      "roughness": 0.05,
+      "roughness": 0.12000000000000002,
       "transmission": 1,
-      "thickness": 0.5,
-      "ior": 1.45,
+      "thickness": 0.94,
+      "ior": 1.17,
       "specularColor": "#ffffff",
       "specularIntensity": 1,
-      "attenuationColor": "#f2f3f8",
-      "attenuationDistance": 3,
-      "sheen": 0.15,
-      "sheenRoughness": 0.0938,
+      "attenuationColor": "#ffffff",
+      "attenuationDistance": 1.4,
+      "sheen": 0.31,
+      "sheenRoughness": 0.1638,
       "sheenColor": "#ffffff",
-      "sheenNoise": 0.6,
-      "sheenNoiseScale": 6,
-      "roughnessNoise": 0,
-      "iridescence": 1,
-      "iridescenceIOR": 1.7000000000000002,
-      "iridescenceThicknessMin": 520,
-      "iridescenceThicknessMax": 330,
-      "clearcoat": 1,
-      "clearcoatRoughness": 0.05,
-      "chromaticAberration": 0.87,
-      "anisotropicBlur": 0.5700000000000001,
-      "distortion": 0.31,
-      "distortionScale": 0.55,
-      "temporalDistortion": 0.09,
-      "envMapIntensity": 1.3,
+      "sheenNoise": 0.29,
+      "sheenNoiseScale": 3.8,
+      "roughnessNoise": 0.33,
+      "iridescence": 0.07999999999999996,
+      "iridescenceIOR": 1.56,
+      "iridescenceThicknessMin": 150,
+      "iridescenceThicknessMax": 600,
+      "clearcoat": 0.45999999999999996,
+      "clearcoatRoughness": 0.5700000000000001,
+      "chromaticAberration": 0.14,
+      "anisotropicBlur": 0.09000000000000008,
+      "distortion": 0.12,
+      "distortionScale": 0.12000000000000005,
+      "temporalDistortion": 0,
+      "envMapIntensity": 0.62,
       "opacity": 1,
-      "samples": 3,
-      "resolution": 768,
-      "background": "#3c3c3c",
-      "normalScale": 0.2,
-      "normalRepeat": 1.2
+      "samples": 2,
+      "resolution": 4096,
+      "background": "#000000",
+      "normalScale": 0.28,
+      "normalRepeat": 1.28
+    },
+    "motion": {
+      "speed": 0.56,
+      "spin": 1.08,
+      "sway": 0.96,
+      "stir": 0.43999999999999995,
+      "stirRadius": 0.76,
+      "shatter": "petals"
+    },
+    "materials": {
+      "petals": [
+        "purple",
+        "red",
+        "orange",
+        "yellow",
+        "teal",
+        "blue"
+      ],
+      "flowers": [
+        "purple",
+        "red",
+        "orange",
+        "yellow",
+        "teal",
+        "blue"
+      ],
+      "clusters": "live",
+      "loosePetals": "live",
+      "flourishes": "live",
+      "indicator": "indicator",
+      "selection": "chip",
+      "dismiss": "chip",
+      "model": "live",
+      "callout": "live",
+      "calloutLens": "kind",
+      "calloutLeafTop": "kind",
+      "calloutLeafBottom": "kind"
     },
     "lights": {
       "debug": false,
       "roam": {
-        "intensity": 10,
-        "color": "#caf543",
-        "speed": 0,
-        "size": 14.4,
+        "intensity": 3.1999999999999993,
+        "mode": "rainbow",
+        "color": "#ffffff",
+        "rainbowRate": 0.02,
+        "speed": 0.07,
+        "size": 11,
+        "z": 1,
         "follow": true,
         "hover": true,
         "hoverOffset": 0.5,
-        "body": false,
-        "z": 1.2
+        "body": false
       },
       "ray": {
         "enabled": true,
-        "intensity": 12,
+        "intensity": 60,
         "color": "#ffffff",
-        "cone": 18,
-        "softness": 0.6,
-        "speed": 0.05
+        "cone": 15,
+        "softness": 0.35,
+        "speed": 0.29
       },
-      "luminanceScale": 0.75,
+      "luminanceScale": 0.20999999999999996,
       "emitters": true,
       "stripsInGlass": false,
       "emitterScale": 0.21,
@@ -289,7 +322,7 @@
       "sweepRange": 40,
       "overhead": {
         "color": "#ffffff",
-        "intensity": 0,
+        "intensity": 80,
         "position": {
           "x": 0,
           "y": 120,
@@ -307,24 +340,25 @@
         {
           "name": "overhead",
           "color": "#ffffff",
-          "luminance": 10,
-          "width": 700,
-          "height": 822,
+          "luminance": 19,
+          "width": 1473,
+          "height": 703,
           "position": {
             "x": 0,
             "y": 500,
             "z": 0
           },
           "rotation": {
-            "x": -80,
-            "y": 0,
+            "x": -160,
+            "y": -45,
             "z": 0
-          }
+          },
+          "followActive": false
         },
         {
           "name": "45° top",
           "color": "#caf543",
-          "luminance": 100,
+          "luminance": 0,
           "width": 697.12,
           "height": 1.01,
           "position": {
@@ -336,12 +370,13 @@
             "x": -135,
             "y": -180,
             "z": -45
-          }
+          },
+          "followActive": false
         },
         {
           "name": "45° middle",
           "color": "#caf543",
-          "luminance": 100,
+          "luminance": 0,
           "width": 624.54,
           "height": 0.76,
           "position": {
@@ -353,12 +388,13 @@
             "x": -135,
             "y": -180,
             "z": -45
-          }
+          },
+          "followActive": false
         },
         {
           "name": "45° bottom",
           "color": "#caf543",
-          "luminance": 100,
+          "luminance": 0,
           "width": 707.62,
           "height": 0.53,
           "position": {
@@ -370,26 +406,30 @@
             "x": -135,
             "y": -180,
             "z": -45
-          }
+          },
+          "followActive": false
         }
       ]
     },
     "env": {
-      "intensity": 0.36,
+      "intensity": 0.48,
       "rotation": 0,
-      "background": "#000000",
+      "background": "#fff6e1",
       "fog": 0,
-      "labelScrim": 0.35,
-      "ink": "auto"
+      "labelScrim": 0.11599999999999999,
+      "ink": "auto",
+      "studio": "mono",
+      "panels": 0
     },
     "post": {
-      "bloomIntensity": 0.34,
-      "bloomThreshold": 0.37,
-      "bloomSmoothing": 0.24000000000000002,
-      "bloomRadius": 0.85,
-      "aberration": 0.0006000000000000001,
-      "noise": 0,
-      "noiseBlend": "screen",
+      "bloomIntensity": 0.42000000000000004,
+      "bloomThreshold": 0.13999999999999999,
+      "bloomSmoothing": 0.44000000000000006,
+      "bloomRadius": 0.59,
+      "bloomClamp": 18,
+      "aberration": 0,
+      "noise": 0.28,
+      "noiseBlend": "add",
       "noisePremultiply": true
     }
   }
