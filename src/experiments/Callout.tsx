@@ -215,14 +215,16 @@ export function Callout({
                   // Phone widths: the text runs below the lens instead of beside it.
                   padding: callout.padding,
                   paddingTop: callout.iconY + calloutLensRadius + callout.padding,
+                  paddingBottom: callout.paddingBottom,
                 }
               : {
                   padding: callout.padding,
                   // The eyebrow and the title's first line straddle the lens's centre line.
                   paddingTop: Math.max(callout.padding, callout.iconY - calloutHeadHeight / 2),
                   paddingLeft: callout.iconX + calloutLensRadius + callout.padding,
+                  paddingBottom: callout.paddingBottom,
                   // Never shorter than the icon needs, however little content there is.
-                  minHeight: callout.iconY + calloutLensRadius + callout.padding,
+                  minHeight: callout.iconY + calloutLensRadius + callout.paddingBottom,
                 }
           }
         >

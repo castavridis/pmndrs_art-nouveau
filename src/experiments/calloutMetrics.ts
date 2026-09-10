@@ -14,6 +14,8 @@ export const callout = {
   iconX: 59,
   iconY: 54,
   padding: 10,
+  /** Extra breathing room under the copy; the card's other edges keep `padding`. */
+  paddingBottom: 20,
   /**
    * Eyebrow and title type. The head block (eyebrow, its gap, and the title's first line) is
    * centred on the lens, so its height has to be known here rather than left to the font.
