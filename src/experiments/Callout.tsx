@@ -46,8 +46,15 @@ export interface CalloutProps {
   variant: 'surface' | 'plain' | 'svg' | 'shared'
   /** Shared mode: the page scene has drawn `CalloutParts` for this card. */
   sharedReady?: boolean
-  /** Shared mode: reports the card element and its measured size for the page scene. */
-  onSlot?: (el: HTMLDivElement | null, size: { width: number; height: number }) => void
+  /**
+   * Shared mode: reports the card element, its measured size and the rasterised symbol, so the
+   * page scene can draw the same lens this card would have drawn itself.
+   */
+  onSlot?: (
+    el: HTMLDivElement | null,
+    size: { width: number; height: number },
+    glyph: THREE.Texture | null,
+  ) => void
   /** GitHub-style kind: sets the symbol inside the lens, the label and the palette tint. */
   kind?: CalloutKind
   title: string
@@ -105,8 +112,8 @@ export function Callout({
   // like the announcement. The plain card keeps its own light gradient and dark ink.
   const glassInk = variant !== 'plain' && client && !vector ? ink : undefined
   useEffect(() => {
-    if (variant === 'shared') onSlot?.(rootRef.current, size)
-  }, [variant, onSlot, size])
+    if (variant === 'shared') onSlot?.(rootRef.current, size, glyph)
+  }, [variant, onSlot, size, glyph])
   // Dev: outlines over the live 3D as well.
   const overlay = useOutlines((s) => s.overlay)
   const outlines = vector || overlay

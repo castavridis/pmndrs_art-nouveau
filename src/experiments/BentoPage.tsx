@@ -65,7 +65,11 @@ export function BentoPage() {
       setAnnouncement(slot),
     [],
   )
-  const onCalloutSlot = useCallback((el: HTMLDivElement | null, size: { width: number; height: number }) => setCallout({ el, ...size }), [])
+  const onCalloutSlot = useCallback(
+    (el: HTMLDivElement | null, size: { width: number; height: number }, glyph: THREE.Texture | null) =>
+      setCallout({ el, ...size, glyph }),
+    [],
+  )
   // The pill is centred on the DOM nav's padded box (its clusters bleed inside it).
   const setNavWrap = useCallback((node: HTMLDivElement | null) => {
     navWrap.current = node

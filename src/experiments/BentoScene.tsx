@@ -30,6 +30,8 @@ export interface SlotBox {
   /** Announcement: the copy baked into the glass, and the ink it was drawn in. */
   print?: THREE.Texture | null
   ink?: string
+  /** Callout: the kind's symbol, rasterised from the card's own markup, for the lens. */
+  glyph?: THREE.Texture | null
 }
 
 export interface BentoSceneProps {
@@ -66,7 +68,7 @@ export function BentoScene({ eventSource, navEl, announcement, callout, onReady 
           {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} shatter={announcement.shatter ?? null} print={announcement.print ?? null} ink={announcement.ink} />}
         </Slot>
         <Slot el={callout}>
-          {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} />}
+          {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} glyph={callout.glyph ?? null} />}
         </Slot>
         <Ready onReady={onReady} frames={4} />
       </Suspense>
