@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import savedJson from './themes.saved.json'
-import type { SchemeTunings } from './tuning'
+import type { DeepPartial, Tuning } from './tuning'
 
 /**
  * A named theme: the dark scheme and the light one together.
@@ -11,7 +11,14 @@ import type { SchemeTunings } from './tuning'
  * and it removes an ambiguity the single-scheme export had, where a pasted tuning did not say
  * which of the two schemes it belonged to.
  */
-export type Theme = SchemeTunings
+export type Theme = Partial<Record<'dark' | 'light', DeepPartial<Tuning>>>
+
+/*
+ * Typed as partial because that is what storage really holds: a theme saved today is complete,
+ * but one saved before a field existed simply lacks it, and applying a theme merges it over the
+ * code defaults (replaceSchemes), which fills the gap. Requiring completeness here would reject
+ * every theme saved before the next field is added, as it did when `materials.navbar` arrived.
+ */
 
 interface CustomThemesStore {
   themes: Record<string, Theme>

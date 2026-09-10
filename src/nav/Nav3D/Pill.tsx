@@ -3,7 +3,8 @@ import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import type { SpringValue } from '@react-spring/three'
-import { registerTransmissionHost, useGlassProps } from './materials'
+import { registerTransmissionHost, useGlassPropsFor } from './materials'
+import { useNavbarGlass } from './paletteTuning'
 import { PillMorph } from './pillGeometry'
 
 export interface PillProps {
@@ -16,7 +17,8 @@ export interface PillProps {
  * radius (tokens.pillRadius); only the straight middle segment changes with width.
  */
 export function Pill({ width }: PillProps) {
-  const glass = useGlassProps()
+  // The live tuning by default, or the preset chosen for the nav bar (materials.navbar).
+  const glass = useGlassPropsFor(useNavbarGlass())
   const morph = useMemo(() => new PillMorph(), [])
   const mesh = useRef<THREE.Mesh>(null)
   const scene = useThree((s) => s.scene)

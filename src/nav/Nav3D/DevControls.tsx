@@ -221,6 +221,7 @@ export default function DevControls() {
   const [mat, setMatPanel] = useControls(
     'materials',
     () => ({
+      navbar: { value: MAT.navbar, options: choices, label: 'nav bar' },
       clusters: { value: MAT.clusters, options: choices },
       loosePetals: { value: MAT.loosePetals, options: choices, label: 'loose petals' },
       flourishes: { value: MAT.flourishes, options: choices, label: 'announcement flourishes' },
@@ -308,7 +309,7 @@ export default function DevControls() {
   const fillPanel = useRef((t: Tuning) => {
     setGlassPanel(t.glass)
     setMotionPanel(t.motion)
-    setMatPanel({ clusters: t.materials.clusters, loosePetals: t.materials.loosePetals, flourishes: t.materials.flourishes, indicator: t.materials.indicator, selection: t.materials.selection, dismiss: t.materials.dismiss, model: t.materials.model, callout: t.materials.callout, calloutLens: t.materials.calloutLens, calloutLeafTop: t.materials.calloutLeafTop, calloutLeafBottom: t.materials.calloutLeafBottom })
+    setMatPanel({ navbar: t.materials.navbar, clusters: t.materials.clusters, loosePetals: t.materials.loosePetals, flourishes: t.materials.flourishes, indicator: t.materials.indicator, selection: t.materials.selection, dismiss: t.materials.dismiss, model: t.materials.model, callout: t.materials.callout, calloutLens: t.materials.calloutLens, calloutLeafTop: t.materials.calloutLeafTop, calloutLeafBottom: t.materials.calloutLeafBottom })
     setPetalPool(poolSchema(t.materials.petals))
     setFlowerPool(poolSchema(t.materials.flowers))
     // `ink` lives in the view folder, not the environment one.

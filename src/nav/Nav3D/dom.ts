@@ -1,5 +1,6 @@
 import { useResolvedTheme } from '../../theme'
 import { useTuning } from './tuning'
+import { useNavbarGlass } from './paletteTuning'
 
 /** Text colour of the items (3D labels, kbd, logo) per colour scheme. */
 export const INKS = {
@@ -20,8 +21,22 @@ export function luminance(hex: string): number {
  * so a clearly dark or clearly light one decides the ink; in between, the page theme does.
  */
 export function useInk() {
-  const theme = useResolvedTheme()
   const bg = useTuning((s) => s.glass.background)
+  return useInkFor(bg)
+}
+
+/**
+ * Ink for the nav's own labels, logo and keys: decided by the glass the nav bar actually wears
+ * (materials.navbar), which may be a preset rather than the live tuning. Keyed to the live glass
+ * instead, a nav bar given a dark preset on a light-tuned page would ink its words for the wrong
+ * surface.
+ */
+export function useNavInk() {
+  return useInkFor(useNavbarGlass().background)
+}
+
+function useInkFor(bg: string) {
+  const theme = useResolvedTheme()
   const forced = useTuning((s) => s.env.ink)
   if (forced === 'light') return INKS.dark // light ink is the dark-page set
   if (forced === 'dark') return INKS.light

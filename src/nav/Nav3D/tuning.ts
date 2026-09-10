@@ -157,6 +157,8 @@ export interface MaterialsTuning {
   petals: PresetName[]
   /** Presets the flower swarms are spread across (empty = whole palette). */
   flowers: PresetName[]
+  /** The glass behind the nav bar (the pill itself): the live tuning, or a preset. */
+  navbar: MaterialChoice
   /** nav-left / nav-right clusters. */
   clusters: MaterialChoice
   /** The loose petals spilling off the pill. */
@@ -477,6 +479,7 @@ export const baseTuning: Tuning = {
   materials: {
     petals: Object.keys(palette) as PaletteName[],
     flowers: Object.keys(palette) as PaletteName[],
+    navbar: 'live',
     clusters: 'live',
     loosePetals: 'live',
     flourishes: 'live',
@@ -494,7 +497,7 @@ export const baseTuning: Tuning = {
   post: { bloomIntensity: 0.25, bloomThreshold: 0.85, bloomSmoothing: 0.4, bloomRadius: 0.85, bloomClamp: 6, aberration: 0.0004, noise: 0, noiseBlend: 'screen', noisePremultiply: true },
 }
 
-type DeepPartial<T> = { [K in keyof T]?: T[K] extends (infer U)[] ? U[] : T[K] extends object ? DeepPartial<T[K]> : T[K] }
+export type DeepPartial<T> = { [K in keyof T]?: T[K] extends (infer U)[] ? U[] : T[K] extends object ? DeepPartial<T[K]> : T[K] }
 
 /** Merge saved values over defaults: objects recurse, arrays (the rect lights) replace whole. */
 export function mergeTuning(base: Tuning, saved: DeepPartial<Tuning>): Tuning {

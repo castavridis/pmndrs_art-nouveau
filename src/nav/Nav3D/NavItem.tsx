@@ -6,7 +6,7 @@ import { useSpring } from '@react-spring/three'
 import * as THREE from 'three'
 import { useNavStore } from '../store'
 import { tokens } from '../tokens'
-import { triggerDom, useInk } from './dom'
+import { triggerDom, useNavInk } from './dom'
 import { useItemRegistry } from './items'
 import cmdIcon from '../assets/cmd.svg'
 
@@ -33,7 +33,7 @@ export function NavItem({ id, label, kbd }: NavItemProps) {
   // uikit lengths are px; derive the em-based kbd metrics from the current font size.
   const em = tokens.fontSize[mode]
   const registry = useItemRegistry()
-  const { ink, kbd: kbdBg } = useInk()
+  const { ink, kbd: kbdBg } = useNavInk()
   const ref = useRef<VanillaContainer>(null)
   useEffect(() => {
     const el = ref.current
@@ -82,7 +82,7 @@ function Label({ id, label }: { id: string; label: string }) {
   const active = useNavStore((s) => s.active === id)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const spring = useSpring({ t: lit ? 1 : 0, immediate: reducedMotion, config: { tension: 300, friction: 18 } })
-  const { ink, hover } = useInk()
+  const { ink, hover } = useNavInk()
   // The chip sits under the pointer's item, else the focused one, else the current page. The
   // label on it reads against the chip, not the pill: it takes the ink ChipContrast measured,
   // and keeps it when hovered too, since the chip arriving is already the hover feedback and

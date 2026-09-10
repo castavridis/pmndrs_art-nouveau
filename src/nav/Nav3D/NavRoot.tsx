@@ -23,7 +23,7 @@ const LcProbe = import.meta.env.DEV ? lazy(() => import('./LcProbe')) : null
 import { ItemRegistryContext, type ItemRegistry } from './items'
 import { transmissionExcluded } from './materials'
 import { NavItem } from './NavItem'
-import { triggerDom, useInk } from './dom'
+import { triggerDom, useNavInk } from './dom'
 import logoUrl from '../assets/logo.svg'
 
 /**
@@ -40,7 +40,7 @@ export function NavRoot() {
   const [measured, setMeasured] = useState<number | null>(null)
   const [animate, setAnimate] = useState(false)
   const [registry] = useState<ItemRegistry>(() => new Map())
-  const { ink } = useInk()
+  const { ink } = useNavInk()
   // The whole nav can sit away from the canvas origin (shared scenes); items report positions
   // relative to it, so the aim and probe add its world offset.
   const rootRef3d = useRef<Group>(null)

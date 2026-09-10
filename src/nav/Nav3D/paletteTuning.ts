@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import savedJson from './palette.saved.json'
-import { glassPresets, palette, type GlassTuning, type PaletteName } from './tuning'
+import { glassPresets, palette, useTuning, type GlassTuning, type PaletteName } from './tuning'
 import { getPreset, useCustomPresets, type PresetName } from './customPresets'
 
 /** Per-colour edits on top of the code presets (see /dev/palette). */
@@ -50,4 +50,15 @@ export function usePresetGlass(name: PresetName): GlassTuning {
     const base = getPreset(name) ?? custom ?? (glassPresets.silverGlass as GlassTuning)
     return o ? { ...base, ...o } : base
   }, [name, o, custom])
+}
+
+/**
+ * The glass the nav bar wears (materials.navbar): the live tuning by default, or a preset. The
+ * pill and the nav's ink both read this, so the labels are inked for the glass they sit on.
+ */
+export function useNavbarGlass(): GlassTuning {
+  const choice = useTuning((s) => s.materials.navbar)
+  const live = useTuning((s) => s.glass)
+  const preset = usePresetGlass(choice === 'live' ? 'silverGlass' : choice)
+  return choice === 'live' ? live : preset
 }

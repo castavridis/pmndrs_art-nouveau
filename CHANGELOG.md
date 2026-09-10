@@ -236,6 +236,11 @@ something the code taught us. See [References](#references) for the external wor
   shared transmission pass needs a `Backing` behind it — the buffered material clears its own
   buffer to the tuned ground colour, and without that the sampler sees the page and the glass
   comes up pale.
+- **The nav bar's glass is its own material choice** (`materials.navbar`, live by default).
+  The pill and the nav's labels both read it, so the ink is chosen for the glass the words sit on
+  rather than the live tuning. Saved themes are typed as partial, since one saved before a field
+  existed lacks it and applying it merges over the defaults anyway; requiring completeness
+  rejected every existing theme the moment this field arrived.
 - **The label on the selection chip reads the chip as drawn** (`ChipContrast.tsx`). The chip is
   glass, so how light it looks depends on what it transmits far more than on its preset: the same
   chip rendered black under one tuning (page ink Lc 99) and pale grey under another (Lc 29, worst
