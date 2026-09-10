@@ -18,6 +18,7 @@ import {
 import { useOutlines } from '../outlines'
 import { usePrintText } from '../printText'
 import { isBuiltInPreset, presetNames, useCustomPresets } from './customPresets'
+import { NO_THEME, themeNames, useCustomThemes } from './customThemes'
 import { useLcReadings } from './lcStore'
 import { studios, type StudioName } from './studios'
 import { useHitDebug } from './aim'
@@ -41,6 +42,7 @@ const fromV = ([x, y, z]: V): Vec3 => ({ x, y, z })
 export default function DevControls() {
   const set = useTuning((s) => s.set)
   const replace = useTuning((s) => s.replace)
+  const replaceSchemes = useTuning((s) => s.replaceSchemes)
   const applyPreset = useTuning((s) => s.applyPreset)
   const g = defaultTuning.glass
   const L = defaultTuning.lights
@@ -131,6 +133,54 @@ export default function DevControls() {
       }),
     }),
     { order: -20 },
+  )
+
+  /**
+   * Themes: a named dark + light pair. Presets name a glass look and `tuning.saved.json` holds
+   * the one pair that ships; neither lets a whole light/dark set be kept aside and returned to.
+   * Applying one loads both schemes at once, so the active one changes under you and the panel
+   * is refilled from it.
+   */
+  const themes = useCustomThemes((st) => st.themes)
+  const themeList = themeNames(themes)
+  // The buttons are built once per list change, so they reach the selection and its setter
+  // through refs rather than closing over values that go stale (and, for the setter, that the
+  // factory would otherwise reference before it exists).
+  const themeRef = useRef(NO_THEME)
+  const selectTheme = useRef<(name: string) => void>(() => {})
+  const [{ theme }, setThemePanel] = useControls(
+    'themes',
+    () => ({
+      theme: { value: NO_THEME, options: themeList },
+      'save both schemes as…': button(() => {
+        const name = window.prompt('Theme name')?.trim()
+        if (!name || name === NO_THEME) return
+        useCustomThemes.getState().add(name, pickSchemes(useTuning.getState()))
+        selectTheme.current(name)
+      }),
+      'update selected theme': button(() => {
+        const name = themeRef.current
+        if (name === NO_THEME) return window.alert('Pick a theme first, or save the current one as new.')
+        useCustomThemes.getState().add(name, pickSchemes(useTuning.getState()))
+      }),
+      'delete selected theme': button(() => {
+        const name = themeRef.current
+        if (name === NO_THEME) return
+        if (!window.confirm(`Delete theme "${name}"?`)) return
+        useCustomThemes.getState().remove(name)
+        selectTheme.current(NO_THEME)
+      }),
+      'save themes to project': button(() => {
+        fetch('/__nav/themes', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(useCustomThemes.getState().themes),
+        })
+          .then((r) => (r.ok ? console.info('[nav] themes saved to src/nav/Nav3D/themes.saved.json') : console.warn('[nav] save failed', r.status)))
+          .catch((e) => console.warn('[nav] save failed', e))
+      }),
+    }),
+    [themeList.join('|')],
   )
 
   const [glass, setGlassPanel] = useControls('glass', () => ({
@@ -332,6 +382,20 @@ export default function DevControls() {
     fillPanel.current(pickTuning(useTuning.getState()))
     queueMicrotask(() => void (live.current = true))
   }, [scheme])
+
+  useEffect(() => {
+    selectTheme.current = (name) => setThemePanel({ theme: name })
+  }, [setThemePanel])
+
+  // Theme select → both schemes, then refill from whichever is active.
+  useEffect(() => {
+    themeRef.current = theme
+    if (theme === NO_THEME) return
+    const t = useCustomThemes.getState().themes[theme]
+    if (!t) return
+    replaceSchemes(t)
+    fillPanel.current(pickTuning(useTuning.getState()))
+  }, [theme, replaceSchemes])
 
   // Preset select → store and panel (only when the user picked a different one).
   useEffect(() => {

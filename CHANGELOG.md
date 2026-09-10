@@ -160,6 +160,13 @@ something the code taught us. See [References](#references) for the external wor
   the home page even with a correct rewrite.
 - **A separate `app.html` shell + SPA rewrite** for non-prerendered routes, so `/` keeps its
   prerendered DOM nav while `/dev/*` client-renders.
+- **A theme is a named dark + light pair** (`customThemes.ts`, `themes.saved.json`). A preset
+  names a glass look and `tuning.saved.json` holds the one pair that ships; neither could keep a
+  whole light/dark set aside and come back to it. The panel's `themes` folder saves both schemes
+  under a name, applies one (loading both at once and refilling from whichever is active), and
+  writes them to the project through the same dev endpoint the other two use. It also removes an
+  ambiguity in the old single-scheme export, which produced a tuning that did not say which of
+  the two schemes it belonged to.
 - **`base: '/'`, not `'./'`** — relative asset URLs resolved against `/dev/cube/` and returned
   HTML for JavaScript.
 - **`cleanUrls` removed from `vercel.json`** (`2c1d986`): Vercel silently drops a rewrite whose

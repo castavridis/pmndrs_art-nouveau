@@ -341,15 +341,17 @@ export const glassPresets = {
   teal: tinted(palette.teal),
   blue: tinted(palette.blue),
   /**
-   * Clear, dark glass for the "logo cubed" experiment: no milky backdrop, no waviness, a
-   * thicker volume and strong chromatic aberration for the rainbow edges of the reference.
+   * Clear glass for the "logo cubed" experiment: no milky backdrop, no waviness, and strong
+   * chromatic aberration for the rainbow edges of the reference. A black body over a white
+   * buffer ground, so the faces read as dark panels with light behind them rather than the
+   * other way round, and the volume absorbs over a short distance instead of staying clear.
    */
   clearCube: {
     ...roughGlassBase,
-    color: '#ffffff',
+    color: '#000000',
     specularColor: '#ffffff',
     attenuationColor: '#ffffff',
-    attenuationDistance: 100,
+    attenuationDistance: 10,
     roughness: 0,
     // Low IOR + thin volume: the bevelled edges bend the view less, so the dark band at the
     // rim stays narrow; the aberration supplies the rainbow fringe of the reference.
@@ -362,7 +364,7 @@ export const glassPresets = {
     clearcoatRoughness: 0,
     // Faces would otherwise mirror the big panel behind the camera and go grey.
     envMapIntensity: 0.3,
-    background: '#000000',
+    background: '#ffffff',
     normalScale: 0,
     // Sharp glass needs no blur samples; a 1024 buffer keeps the interior crisp at 60fps.
     samples: 2,
@@ -586,6 +588,8 @@ type TuningStore = Tuning & {
   applyPreset: (name: PresetName) => void
   /** Replace the active scheme's values (import / reset). */
   replace: (t: Tuning) => void
+  /** Replace both schemes at once (applying a saved theme). */
+  replaceSchemes: (t: Partial<Record<Scheme, DeepPartial<Tuning>>>) => void
   /** Park the active values and load the other scheme's. */
   setScheme: (scheme: Scheme) => void
   /** Copy the active scheme's values onto the other one. */
@@ -606,6 +610,16 @@ const initStore = (set: (p: Partial<TuningStore> | ((s: TuningStore) => Partial<
   applyPreset: (name) => set({ glass: getPreset(name) ?? glassPresets.silverGlass, preset: name }),
   // Merge so a JSON from before a field existed still yields a complete tuning.
   replace: (t) => set((s) => pickTuning(withPreset(mergeTuning(baseSchemes[s.scheme], t), t.preset))),
+  // Merged over the code defaults for the same reason `replace` is: a theme saved before a
+  // field existed still yields two complete tunings.
+  replaceSchemes: (t) =>
+    set((s) => {
+      const schemes: SchemeTunings = {
+        dark: withPreset(mergeTuning(baseSchemes.dark, t.dark ?? {}), t.dark?.preset),
+        light: withPreset(mergeTuning(baseSchemes.light, t.light ?? {}), t.light?.preset),
+      }
+      return { schemes, ...schemes[s.scheme] }
+    }),
   setScheme: (scheme) =>
     set((s) => {
       if (s.scheme === scheme) return s
