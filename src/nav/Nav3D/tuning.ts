@@ -165,6 +165,8 @@ export interface MaterialsTuning {
   flourishes: MaterialChoice
   /** Current-page indicator petal. */
   indicator: PresetName
+  /** The glass chip behind the current page's nav item. */
+  selection: PresetName
   /** The cube page's logo prisms. */
   model: MaterialChoice
   /** Callout surfaces: the main glass (`live`), the kind's palette tint (`kind`), or a preset. */
@@ -458,6 +460,7 @@ export const baseTuning: Tuning = {
     loosePetals: 'live',
     flourishes: 'live',
     indicator: 'indicator',
+    selection: 'indicator',
     model: 'live',
     callout: 'live',
     calloutLens: 'kind',

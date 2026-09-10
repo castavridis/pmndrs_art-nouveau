@@ -30,9 +30,10 @@ function getGlowTexture(): THREE.CanvasTexture {
 }
 
 /**
- * A soft light behind each item, seen through the glass: full for the hovered or focused
- * item, half for the current page. Sits just behind the pill so the transmission buffer
- * refracts it and the bloom pass lifts it; additive so it reads as light, not paint.
+ * A soft light behind each item, seen through the glass, for the one under the pointer or
+ * holding focus. The current page is not lit: it wears the glass chip (`SelectionPill`)
+ * instead, so the two states stay told apart. Sits just behind the pill so the transmission
+ * buffer refracts it and the bloom pass lifts it; additive so it reads as light, not paint.
  */
 export function Glows() {
   const links = useNavStore((s) => s.links)
@@ -50,7 +51,6 @@ export function Glows() {
 function Glow({ id }: { id: string }) {
   const registry = useItemRegistry()
   const lit = useNavStore((s) => s.hovered === id || s.focused === id)
-  const active = useNavStore((s) => s.active === id)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const mesh = useRef<THREE.Mesh>(null!)
   const material = useRef<THREE.MeshBasicMaterial>(null!)
@@ -65,7 +65,7 @@ function Glow({ id }: { id: string }) {
     if (!m || !mat || !rc || !size) return
     m.position.x = px(rc[0])
     m.scale.set(px(size[0] + 56), px(tokens.pillHeight * 2), 1)
-    const target = (lit ? 1 : active ? 0.45 : 0) * MAX_OPACITY
+    const target = (lit ? 1 : 0) * MAX_OPACITY
     if (reducedMotion) mat.opacity = target
     else damp(mat, 'opacity', target, 0.12, dt)
     m.visible = mat.opacity > 0.005

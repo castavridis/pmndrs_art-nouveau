@@ -163,6 +163,12 @@ something the code taught us. See [References](#references) for the external wor
 
 ## 9. Interaction and motion
 
+- **The current page wears a glass chip, not a light.** A glow reads as an effect applied to
+  the nav; a second piece of glass reads as part of it, and it carries the same per-part
+  material tuning as every other surface. The chip is rebuilt at the item's width rather than
+  scaled, since scaling a rounded rectangle stretches its caps, and it grows out of the nav's
+  face rather than fading, an opaque material having no opacity to animate. The soft light is
+  now hover and focus only, so the two states stay told apart.
 - **Traced outlines draw themselves in, curve by curve** (`009bbd1`). Each closed loop of the
   trace becomes its own path with a stroke-dash sweep, staggered; rendered inline in
   `currentColor` so no image inversion is needed per theme.
