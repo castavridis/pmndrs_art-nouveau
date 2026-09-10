@@ -10,6 +10,8 @@ import { fractureRect, shardGeometry } from './shatter'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { tokens } from '../nav/tokens'
 import type { PresetName } from '../nav/Nav3D/customPresets'
+import { slabUv } from './announcementPrint'
+import { PrintLayer, usePrintMaterial } from './PrintLayer'
 
 interface Shard {
   /** Voronoi cells own their geometry; petals share the nav's petal mesh. */
@@ -34,6 +36,11 @@ export interface ShardsProps {
   onDone?: () => void
   /** Corner radius of the slab (px) for its falling backing. */
   radius?: number
+  /**
+   * Text printed into the slab. Each piece is UV-mapped back onto the whole slab, so it
+   * carries the part of the text it covered and the words break apart with the glass.
+   */
+  print?: { texture: THREE.Texture; ink: string }
 }
 
 const GRAVITY = -9
@@ -43,9 +50,9 @@ const GRAVITY = -9
  * tumbles, falls under gravity and shrinks away. One draw per shard with the shared
  * transmission pass, so a few dozen shards cost about what the slab did.
  */
-export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, radius = 8 }: ShardsProps) {
+export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, radius = 8, print }: ShardsProps) {
   const mode = useTuning((s) => s.motion.shatter)
-  const { petal } = useNavAssets()
+  const { petalLo } = useNavAssets()
 
   const shards = useMemo<Shard[]>(() => {
     const rng = new Generator(Math.round(hit[0] * 1000 + hit[1] * 7))
@@ -78,18 +85,21 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, 
           ? THREE.MathUtils.clamp(hit[1] + Math.sin(a) * r, -height / 2, height / 2)
           : (rng.value() - 0.5) * height
         const { v, spin } = launch(x, y, 1.4)
+        const scale = (1.4 + rng.value() * 1.6) * Math.min(1, height / 0.9)
         return {
+          geometry: print ? (slabUv(petalLo.clone(), width, height, [x, y], scale) as THREE.ExtrudeGeometry) : undefined,
           p: new THREE.Vector3(x, y, 0),
           v,
           rot: new THREE.Euler(rng.value() * Math.PI * 2, rng.value() * Math.PI * 2, rng.value() * Math.PI * 2),
           spin,
-          scale: (1.4 + rng.value() * 1.6) * Math.min(1, height / 0.9),
+          scale,
         }
       })
     }
 
     return fractureRect(width, height, hit).map((cell) => {
       const { geometry, centroid } = shardGeometry(cell, depth)
+      if (print) slabUv(geometry, width, height, centroid)
       const { v, spin } = launch(centroid[0], centroid[1], 1.8)
       return {
         geometry,
@@ -100,7 +110,7 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, 
         scale: 1,
       }
     })
-  }, [width, height, depth, hit, mode])
+  }, [width, height, depth, hit, mode, print, petalLo])
 
   useEffect(() => () => shards.forEach((s) => s.geometry?.dispose()), [shards])
 
@@ -115,6 +125,7 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, 
   )
   useEffect(() => () => backingGeometry.dispose(), [backingGeometry])
   const backingMesh = useRef<THREE.Mesh>(null)
+  const printMaterial = usePrintMaterial(print?.texture ?? null, print?.ink ?? '#ffffff')
   // The shards fade out in place (opacity, no shrinking or regrouping) once they have flown apart.
   const refs = useRef<(THREE.Mesh | null)[]>([])
   // Wall clock, so the fade keeps pace with the banner's DOM timers even on a slow frame rate.
@@ -162,8 +173,9 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, 
         <meshBasicMaterial color={backing} transparent opacity={1} />
       </mesh>
       {shards.map((s, i) => (
-        <mesh key={i} ref={(el) => void (refs.current[i] = el)} geometry={s.geometry ?? petal} raycast={() => null}>
+        <mesh key={i} ref={(el) => void (refs.current[i] = el)} geometry={s.geometry ?? petalLo} raycast={() => null}>
           <Glass sampler preset={preset} />
+          {s.geometry && <PrintLayer geometry={s.geometry} material={printMaterial} />}
         </mesh>
       ))}
     </>

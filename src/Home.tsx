@@ -32,7 +32,11 @@ export function Home() {
         }}
       >
         <section aria-label="Announcement" style={{ display: 'grid', justifyItems: 'center' }}>
-          <Announcement width={652} variant={client ? '3d' : 'svg'}>
+          <Announcement
+            width={652}
+            variant={client ? '3d' : 'svg'}
+            print={{ lead: 'v10 is out.', body: 'Petals, glass and the growing pill, in one package.', link: 'Read more' }}
+          >
             <span>
               <strong>v10 is out.</strong> Petals, glass and the growing pill, in one package.
             </span>

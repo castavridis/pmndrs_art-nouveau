@@ -22,8 +22,10 @@ import { useInk } from '../nav/Nav3D/dom'
 import { useTuning } from '../nav/Nav3D/tuning'
 import { Backing } from '../nav/Nav3D/Backing'
 import { Shards } from './Shards'
+import { printAnnouncement, slabUv, type PrintedText } from './announcementPrint'
+import { PrintLayer, usePrintMaterial } from './PrintLayer'
 import { useFrame } from '@react-three/fiber'
-import type * as THREE from 'three'
+import * as THREE from 'three'
 import { useIsClient } from '../isClient'
 
 /** A strike on the banner: where (slab-local x/y, world units) and the slab size at that moment. */
@@ -50,6 +52,12 @@ export interface AnnouncementProps {
    */
   onSlot?: (el: HTMLDivElement | null, size: { width: number; height: number }, shatter?: Shatter | null) => void
   postprocessing?: boolean
+  /**
+   * Print the text into the glass itself instead of laying DOM text over it. The DOM copy
+   * stays in the markup for SSR, search and screen readers, and its links stay focusable and
+   * clickable; only its paint is hidden. Printed text breaks apart with the glass.
+   */
+  print?: PrintedText
   /** Clicking the banner shatters the glass under the pointer and the banner falls away. */
   dismissible?: boolean
   /** After the fall: the banner has unmounted its content. */
@@ -70,6 +78,7 @@ export function Announcement({
   postprocessing = true,
   dismissible = true,
   onDismiss,
+  print,
 }: AnnouncementProps) {
   const bleedX = tokens.clusterBleedX
   const bleedY = tokens.clusterBleedY + 20
@@ -180,7 +189,7 @@ export function Announcement({
         >
           <NavCanvas postprocessing={postprocessing}>
             <Suspense fallback={null}>
-              <Scene width={size.width} height={size.height} shatter={shatter} />
+              <Scene width={size.width} height={size.height} shatter={shatter} print={print} ink={ink} />
               <Ready onReady={() => setReady(true)} />
               {LcProbe && <LcProbe ink={ink} regions={probeRegions} />}
             </Suspense>
@@ -194,7 +203,7 @@ export function Announcement({
       )}
       <div
         ref={contentRef}
-        className={styles.content}
+        className={`${styles.content} ${print && !vector ? styles.printed : ''}`}
         style={{
           minHeight: announcement.height,
           padding: `16px ${announcement.paddingX}px`,
@@ -207,8 +216,20 @@ export function Announcement({
   )
 }
 
-function Scene({ width, height, shatter }: { width: number; height: number; shatter: Shatter | null }) {
-  return <AnnouncementParts width={width} height={height} shatter={shatter} />
+function Scene({
+  width,
+  height,
+  shatter,
+  print,
+  ink,
+}: {
+  width: number
+  height: number
+  shatter: Shatter | null
+  print?: PrintedText
+  ink?: string
+}) {
+  return <AnnouncementParts width={width} height={height} shatter={shatter} print={print} ink={ink} />
 }
 
 /**
@@ -221,21 +242,51 @@ export function AnnouncementParts({
   height,
   sampler = false,
   shatter = null,
+  print,
+  ink = '#f2f2ef',
 }: {
   width: number
   height: number
   sampler?: boolean
   /** Struck: the slab becomes shards (built from the size at the strike) and the flourishes drop. */
   shatter?: Shatter | null
+  /** Text printed into the glass itself, so it breaks with it. */
+  print?: PrintedText
+  /** Ink for the printed text. */
+  ink?: string
 }) {
   const { left, right } = useAnnouncementAssets()
   const choice = useTuning((s) => s.materials.flourishes)
   const preset = choice === 'live' ? undefined : choice
-  const geometry = useMemo(
-    () => makeRoundedRectGeometry(width, height, announcement.radius, announcement.depth),
-    [width, height],
-  )
+  const geometry = useMemo(() => {
+    const g = makeRoundedRectGeometry(width, height, announcement.radius, announcement.depth)
+    // UVs across the whole slab, so the printed raster lands where the DOM copy would.
+    return print ? slabUv(g, px(width), px(height)) : g
+  }, [width, height, print])
   useEffect(() => () => geometry.dispose(), [geometry])
+
+  // The raster is baked once the page font is in, else the glyphs fall back to system sans.
+  const [printed, setPrinted] = useState<THREE.Texture | null>(null)
+  useEffect(() => {
+    let alive = true
+    if (!print) {
+      // Async so the effect never sets state synchronously in its own commit.
+      queueMicrotask(() => alive && setPrinted(null))
+      return () => {
+        alive = false
+      }
+    }
+    const bake = () => {
+      if (!alive) return
+      const tex = printAnnouncement({ ...print, width, height, color: '#ffffff' })
+      setPrinted((old) => (old?.dispose(), tex))
+    }
+    document.fonts?.ready.then(bake).catch(bake)
+    return () => {
+      alive = false
+    }
+  }, [print, width, height, ink])
+  const printMaterial = usePrintMaterial(printed, ink)
   const end = px(width) / 2 - px(announcement.height / 2)
   // The flourishes fall away with the banner once it is struck.
   const fall = useRef<THREE.Group>(null)
@@ -253,10 +304,17 @@ export function AnnouncementParts({
     <group ref={fall}>
       {sampler && !shatter && <Backing width={width} height={height} depth={announcement.depth} />}
       {shatter ? (
-        <Shards width={px(shatter.width)} height={px(shatter.height)} depth={px(announcement.depth)} hit={shatter.hit} />
+        <Shards
+          width={px(shatter.width)}
+          height={px(shatter.height)}
+          depth={px(announcement.depth)}
+          hit={shatter.hit}
+          print={printed ? { texture: printed, ink } : undefined}
+        />
       ) : (
         <mesh geometry={geometry}>
           <Glass sampler={sampler} />
+          <PrintLayer geometry={geometry} material={printMaterial} />
         </mesh>
       )}
       <group position-x={-end}>

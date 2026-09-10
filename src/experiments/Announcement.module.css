@@ -92,3 +92,18 @@
     animation-duration: 400ms;
   }
 }
+
+/* The text is printed into the glass (see announcementPrint.ts). The DOM copy stays for SSR,
+   search and screen readers, and its link keeps working — only its paint is hidden, the way
+   the nav hides its DOM visuals once the 3D layer is up. */
+.printed {
+  color: transparent;
+}
+.printed a {
+  color: transparent;
+  text-decoration-color: transparent;
+}
+.printed a:focus-visible {
+  color: var(--page-ink, #f2f2ef);
+  text-decoration-color: currentColor;
+}

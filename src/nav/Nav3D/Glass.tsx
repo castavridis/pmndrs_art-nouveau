@@ -22,10 +22,15 @@ export interface GlassProps {
   sampler?: boolean
   /** Use a fixed preset (palette tint, indicator) instead of the live-tuned look. */
   preset?: PresetName
+  /**
+   * Merged over the resolved material props. For things that belong to one surface rather
+   * than the look — the announcement printing its text into the slab, say.
+   */
+  overrides?: Record<string, unknown>
 }
 
 /** The one shared glass look (see tuning.ts presets) in its three render forms. */
-export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
+export function Glass({ solid = false, sampler = false, preset, overrides }: GlassProps) {
   const live = useTuning((s) => s.glass)
   const presetGlass = usePresetGlass(preset ?? 'silverGlass')
   const g = preset ? presetGlass : live
@@ -40,7 +45,7 @@ export function Glass({ solid = false, sampler = false, preset }: GlassProps) {
   // Adding or removing a map changes the shader's defines; three only recompiles on
   // needsUpdate, which a prop spread does not set. Remount the material when that flips.
   const mapKey = `${g.sheenNoise > 0 ? 's' : ''}${g.roughnessNoise > 0 ? 'r' : ''}${g.normalScale > 0 ? 'n' : ''}`
-  if (!solid) return <Buffered key={mapKey} sampler={sampler} props={transmissive} />
+  if (!solid) return <Buffered key={mapKey} sampler={sampler} props={{ ...transmissive, ...overrides }} />
   return (
     <meshPhysicalMaterial
       key={mapKey}
