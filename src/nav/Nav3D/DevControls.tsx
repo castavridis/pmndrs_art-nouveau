@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useControls, folder, button, Leva } from 'leva'
 import {
   useTuning,
@@ -15,6 +16,7 @@ import {
   type Vec3,
 } from './tuning'
 import { useOutlines } from '../outlines'
+import { usePrintText } from '../printText'
 import { isBuiltInPreset, presetNames, useCustomPresets } from './customPresets'
 import { useLcReadings } from './lcStore'
 import { studios, type StudioName } from './studios'
@@ -53,11 +55,14 @@ export default function DevControls() {
   const inkChoice = useTuning((s) => s.env.ink)
   const hitDebugOn = useHitDebug((s) => s.enabled)
   const setHitDebug = useHitDebug((s) => s.setEnabled)
-  const [{ outlines, hits: hitsPanel, ink: inkPanel }, setViewPanel] = useControls(
+  const printTextOn = usePrintText((s) => s.enabled)
+  const setPrintText = usePrintText((s) => s.setEnabled)
+  const [{ outlines, hits: hitsPanel, printText: printPanel, ink: inkPanel }, setViewPanel] = useControls(
     'view',
     () => ({
       outlines: { value: overlay, label: 'svg outlines' },
       hits: { value: hitDebugOn, label: 'hit debug' },
+      printText: { value: printTextOn, label: 'printed text' },
       ink: { value: inkChoice, options: ['auto', 'light', 'dark'] as const, label: 'text ink' },
       lc: { value: '', editable: false, label: 'Lc (median/worst)' },
       scheme: { value: scheme, editable: false, label: 'tuning for' },
@@ -67,6 +72,7 @@ export default function DevControls() {
   )
   useEffect(() => setViewPanel({ scheme }), [scheme, setViewPanel])
   useEffect(() => setHitDebug(hitsPanel), [hitsPanel, setHitDebug])
+  useEffect(() => setPrintText(printPanel), [printPanel, setPrintText])
   useEffect(() => set('env', { ink: inkPanel }), [inkPanel, set])
   useEffect(() => setViewPanel({ ink: inkChoice }), [inkChoice, setViewPanel])
   // Live legibility readings from the in-canvas probes (LcProbe.tsx), refreshed as they arrive.
@@ -421,12 +427,17 @@ export default function DevControls() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightsSig, set])
 
-  return (
+  // Portalled to the body: on the nav, DevControls is rendered inside the 3D layer, which is
+  // aria-hidden — leaving the panel's inputs focusable inside a hidden subtree (axe's
+  // aria-hidden-focus, which the nav's own accessibility check caught intermittently).
+  // The panel and the overlay are fixed-position, so moving them changes nothing visually.
+  const tree = (
     <>
       <Leva collapsed titleBar={{ title: 'nav 3D' }} />
       <HitDebugOverlay />
     </>
   )
+  return typeof document === 'undefined' ? tree : createPortal(tree, document.body)
 }
 
 type RectPanel = {

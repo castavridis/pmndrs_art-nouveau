@@ -22,7 +22,8 @@ import { useInk } from '../nav/Nav3D/dom'
 import { useTuning } from '../nav/Nav3D/tuning'
 import { Backing } from '../nav/Nav3D/Backing'
 import { Shards } from './Shards'
-import { printAnnouncement, slabUv, type PrintedText } from './announcementPrint'
+import { printSegments, readPrintSegments, slabUv } from './announcementPrint'
+import { usePrintText } from '../nav/printText'
 import { PrintLayer, usePrintMaterial } from './PrintLayer'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -50,14 +51,23 @@ export interface AnnouncementProps {
    * Shared mode: reports the banner element and its measured size for the page scene, and
    * (after a click) where the glass was struck, in the slab's local x/y in world units.
    */
-  onSlot?: (el: HTMLDivElement | null, size: { width: number; height: number }, shatter?: Shatter | null) => void
+  onSlot?: (slot: {
+    el: HTMLDivElement | null
+    width: number
+    height: number
+    shatter: Shatter | null
+    print: THREE.Texture | null
+  }) => void
   postprocessing?: boolean
   /**
-   * Print the text into the glass itself instead of laying DOM text over it. The DOM copy
-   * stays in the markup for SSR, search and screen readers, and its links stay focusable and
-   * clickable; only its paint is hidden. Printed text breaks apart with the glass.
+   * Print the copy into the glass itself instead of laying DOM text over it: it is measured
+   * from this component's own markup, so nothing is repeated at the call site. The DOM copy
+   * stays for SSR, search and screen readers, and its links stay focusable and clickable;
+   * only its paint is hidden. Printed text breaks apart with the glass.
+   *
+   * Defaults to on, and the dev panel can turn it off globally (view → printed text).
    */
-  print?: PrintedText
+  print?: boolean
   /** Clicking the banner shatters the glass under the pointer and the banner falls away. */
   dismissible?: boolean
   /** After the fall: the banner has unmounted its content. */
@@ -93,9 +103,6 @@ export function Announcement({
   const [shatter, setShatter] = useState<Shatter | null>(null)
   const [collapsed, setCollapsed] = useState(false)
   const [gone, setGone] = useState(false)
-  useEffect(() => {
-    if (variant === 'shared') onSlot?.(rootRef.current, size, shatter)
-  }, [variant, onSlot, size, shatter])
   // After the strike: the banner drops (CSS), its space closes once it is out of sight, and
   // the element leaves only after the shards have fallen (own-canvas mode draws them in it).
   useEffect(() => {
@@ -110,6 +117,7 @@ export function Announcement({
       window.clearTimeout(b)
     }
   }, [shatter, onDismiss])
+
   const strike = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dismissible || shatter || vector) return
     if ((e.target as HTMLElement).closest('a, button')) return
@@ -121,6 +129,37 @@ export function Announcement({
   const { ink } = useInk()
   const client = useIsClient()
   const contentRef = useRef<HTMLDivElement>(null)
+  const printAllowed = usePrintText((st) => st.enabled)
+  const printOn = print !== false && printAllowed && !vector
+  // Measured from the rendered copy once the page font is in, so the raster matches the DOM
+  // exactly — including where it wraps. Re-baked when the box, the ink or the switch changes.
+  const [printed, setPrinted] = useState<THREE.Texture | null>(null)
+  useEffect(() => {
+    let alive = true
+    if (!printOn) {
+      queueMicrotask(() => alive && setPrinted((old) => (old?.dispose(), null)))
+      return () => {
+        alive = false
+      }
+    }
+    const bake = () => {
+      const content = contentRef.current
+      const root = rootRef.current
+      if (!alive || !content || !root) return
+      const segments = readPrintSegments(content, root.getBoundingClientRect())
+      if (!segments.length) return
+      const tex = printSegments(segments, { width: size.width, height: size.height, color: ink })
+      setPrinted((old) => (old?.dispose(), tex))
+    }
+    document.fonts?.ready.then(bake).catch(bake)
+    return () => {
+      alive = false
+    }
+  }, [printOn, size.width, size.height, ink])
+
+  useEffect(() => {
+    if (variant === 'shared') onSlot?.({ el: rootRef.current, ...size, shatter, print: printed })
+  }, [variant, onSlot, size, shatter, printed])
   const canvasBox = useRef<HTMLDivElement>(null)
   // Dev legibility probe: the text box in canvas px (the canvas is inset by the bleed).
   const probeRegions = useCallback(() => {
@@ -189,7 +228,7 @@ export function Announcement({
         >
           <NavCanvas postprocessing={postprocessing}>
             <Suspense fallback={null}>
-              <Scene width={size.width} height={size.height} shatter={shatter} print={print} ink={ink} />
+              <Scene width={size.width} height={size.height} shatter={shatter} print={printed} ink={ink} />
               <Ready onReady={() => setReady(true)} />
               {LcProbe && <LcProbe ink={ink} regions={probeRegions} />}
             </Suspense>
@@ -203,7 +242,7 @@ export function Announcement({
       )}
       <div
         ref={contentRef}
-        className={`${styles.content} ${print && !vector ? styles.printed : ''}`}
+        className={`${styles.content} ${printed ? styles.printed : ''}`}
         style={{
           minHeight: announcement.height,
           padding: `16px ${announcement.paddingX}px`,
@@ -226,7 +265,7 @@ function Scene({
   width: number
   height: number
   shatter: Shatter | null
-  print?: PrintedText
+  print?: THREE.Texture | null
   ink?: string
 }) {
   return <AnnouncementParts width={width} height={height} shatter={shatter} print={print} ink={ink} />
@@ -250,8 +289,8 @@ export function AnnouncementParts({
   sampler?: boolean
   /** Struck: the slab becomes shards (built from the size at the strike) and the flourishes drop. */
   shatter?: Shatter | null
-  /** Text printed into the glass itself, so it breaks with it. */
-  print?: PrintedText
+  /** The baked copy, printed into the glass so it breaks with it. */
+  print?: THREE.Texture | null
   /** Ink for the printed text. */
   ink?: string
 }) {
@@ -264,28 +303,7 @@ export function AnnouncementParts({
     return print ? slabUv(g, px(width), px(height)) : g
   }, [width, height, print])
   useEffect(() => () => geometry.dispose(), [geometry])
-
-  // The raster is baked once the page font is in, else the glyphs fall back to system sans.
-  const [printed, setPrinted] = useState<THREE.Texture | null>(null)
-  useEffect(() => {
-    let alive = true
-    if (!print) {
-      // Async so the effect never sets state synchronously in its own commit.
-      queueMicrotask(() => alive && setPrinted(null))
-      return () => {
-        alive = false
-      }
-    }
-    const bake = () => {
-      if (!alive) return
-      const tex = printAnnouncement({ ...print, width, height, color: '#ffffff' })
-      setPrinted((old) => (old?.dispose(), tex))
-    }
-    document.fonts?.ready.then(bake).catch(bake)
-    return () => {
-      alive = false
-    }
-  }, [print, width, height, ink])
+  const printed = print ?? null
   const printMaterial = usePrintMaterial(printed, ink)
   const end = px(width) / 2 - px(announcement.height / 2)
   // The flourishes fall away with the banner once it is struck.
@@ -309,7 +327,7 @@ export function AnnouncementParts({
           height={px(shatter.height)}
           depth={px(announcement.depth)}
           hit={shatter.hit}
-          print={printed ? { texture: printed, ink } : undefined}
+          print={printed ? { texture: printed, ink: ink ?? '#ffffff' } : undefined}
         />
       ) : (
         <mesh geometry={geometry}>

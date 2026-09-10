@@ -27,6 +27,8 @@ export interface SlotBox {
   height: number
   /** Announcement: the strike, once clicked. */
   shatter?: Shatter | null
+  /** Announcement: the copy baked into the glass. */
+  print?: THREE.Texture | null
 }
 
 export interface BentoSceneProps {
@@ -60,7 +62,7 @@ export function BentoScene({ eventSource, navEl, announcement, callout, onReady 
           <NavRoot />
         </Slot>
         <Slot el={announcement}>
-          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} shatter={announcement.shatter ?? null} />}
+          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} shatter={announcement.shatter ?? null} print={announcement.print ?? null} />}
         </Slot>
         <Slot el={callout}>
           {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} />}
