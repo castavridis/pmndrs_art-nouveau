@@ -53,6 +53,11 @@ const GRAVITY = -9
 export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, radius = 8, print }: ShardsProps) {
   const mode = useTuning((s) => s.motion.shatter)
   const { petalLo } = useNavAssets()
+  // Whether the pieces carry printed text, not which raster does it. The banner re-bakes its
+  // print whenever its measured box changes, and it is collapsing to zero for most of this
+  // animation — so depending on the texture rebuilt every piece mid-flight, snapping them back
+  // onto the slab to fly apart again. The map is a material input; only the UVs are baked here.
+  const hasPrint = !!print
 
   const shards = useMemo<Shard[]>(() => {
     const rng = new Generator(Math.round(hit[0] * 1000 + hit[1] * 7))
@@ -87,7 +92,7 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, 
         const { v, spin } = launch(x, y, 1.4)
         const scale = (1.4 + rng.value() * 1.6) * Math.min(1, height / 0.9)
         return {
-          geometry: print ? (slabUv(petalLo.clone(), width, height, [x, y], scale) as THREE.ExtrudeGeometry) : undefined,
+          geometry: hasPrint ? (slabUv(petalLo.clone(), width, height, [x, y], scale) as THREE.ExtrudeGeometry) : undefined,
           p: new THREE.Vector3(x, y, 0),
           v,
           rot: new THREE.Euler(rng.value() * Math.PI * 2, rng.value() * Math.PI * 2, rng.value() * Math.PI * 2),
@@ -99,7 +104,7 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, 
 
     return fractureRect(width, height, hit).map((cell) => {
       const { geometry, centroid } = shardGeometry(cell, depth)
-      if (print) slabUv(geometry, width, height, centroid)
+      if (hasPrint) slabUv(geometry, width, height, centroid)
       const { v, spin } = launch(centroid[0], centroid[1], 1.8)
       return {
         geometry,
@@ -110,7 +115,7 @@ export function Shards({ width, height, depth, hit, preset, life = 2.4, onDone, 
         scale: 1,
       }
     })
-  }, [width, height, depth, hit, mode, print, petalLo])
+  }, [width, height, depth, hit, mode, hasPrint, petalLo])
 
   useEffect(() => () => shards.forEach((s) => s.geometry?.dispose()), [shards])
 

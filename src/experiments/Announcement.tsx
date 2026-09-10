@@ -150,6 +150,9 @@ export function Announcement({
         alive = false
       }
     }
+    // Struck: the copy is frozen with the pieces that carry it. The banner's box is closing to
+    // zero from here, so every re-bake would be a worse raster than the one already in flight.
+    if (shatter) return
     const bake = () => {
       const content = contentRef.current
       const root = rootRef.current
@@ -163,7 +166,7 @@ export function Announcement({
     return () => {
       alive = false
     }
-  }, [printOn, size.width, size.height, printInk])
+  }, [printOn, size.width, size.height, printInk, shatter])
 
   useEffect(() => {
     if (variant === 'shared') onSlot?.({ el: rootRef.current, ...size, shatter, print: printed, ink: printInk })

@@ -244,6 +244,15 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
   hovered flower reached HDR values in the hundreds; at bloom radius 0.85 it survived every mip
   level. Could not be reproduced locally in Chrome or WebKit, so the fix was a guard (the HDR
   clamp) rather than a chase.
+- **The shards re-formed mid-flight because their pieces depended on the printed texture.**
+  `Shards` builds its pieces in a memo, and the printed raster was one of its inputs — but the
+  banner re-bakes that raster whenever its measured box changes, and the box is collapsing to
+  zero for most of the fall. Each re-bake rebuilt every piece, resetting it to its place on the
+  slab with its launch velocity, so the glass flew apart four times over. Measured: piece spread
+  1.29 → 3.51 world units, then straight back to 1.29 at the moment the texture's uuid changed.
+  The memo now depends on *whether* there is printed text, since only the UVs are baked from it;
+  the map itself is a material input and can change freely. The banner also stops re-baking once
+  struck, the copy being frozen with the pieces that carry it.
 - **Transmission renders only opaque objects, and displaces what is behind the surface.** Two
   separate limits, both found while putting a symbol inside the callout's lens. A blended mesh
   never reaches the transmission buffer at all, so it cannot appear inside glass; and what does
