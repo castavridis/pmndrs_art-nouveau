@@ -7,10 +7,10 @@
     "file": "nav-left.svg"
   },
   "nav-right": {
-    "width": 104.1,
-    "height": 108.9,
-    "originX": 79.6,
-    "originY": 38,
+    "width": 95.1,
+    "height": 105,
+    "originX": 68.3,
+    "originY": 34.1,
     "file": "nav-right.svg"
   },
   "petal": {

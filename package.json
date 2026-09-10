@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "apca": "node scripts/dev/apca.mjs",
     "format": "prettier --write .",
-    "gltfjsx": "for f in left right petal navbar logo; do N=$(echo $f | awk '{print toupper(substr($0,1,1)) substr($0,2)}'); gltfjsx src/nav/assets/$f.glb --types --keepnames --transform --resolution 64 -o \"$PWD/src/nav/Nav3D/generated/$N.tsx\"; done; cp src/nav/assets/petal.glb /tmp/petal-lo.glb && gltfjsx /tmp/petal-lo.glb --types --keepnames --transform --resolution 16 --simplify --ratio 0.08 --error 0.001 -o \"$PWD/src/nav/Nav3D/generated/PetalLo.tsx\"",
+    "gltfjsx": "for f in left petal navbar logo; do N=$(echo $f | awk '{print toupper(substr($0,1,1)) substr($0,2)}'); gltfjsx src/nav/assets/$f.glb --types --keepnames --transform --resolution 64 -o \"$PWD/src/nav/Nav3D/generated/$N.tsx\"; done; cp \"src/nav/assets/announcement right flourishes v0.2.glb\" /tmp/right.glb && gltfjsx /tmp/right.glb --types --keepnames --transform --resolution 64 -o \"$PWD/src/nav/Nav3D/generated/Right.tsx\"; cp src/nav/assets/petal.glb /tmp/petal-lo.glb && gltfjsx /tmp/petal-lo.glb --types --keepnames --transform --resolution 16 --simplify --ratio 0.08 --error 0.001 -o \"$PWD/src/nav/Nav3D/generated/PetalLo.tsx\"",
     "test:e2e": "playwright test",
     "postinstall": "node scripts/copy-benchmarks.mjs"
   },

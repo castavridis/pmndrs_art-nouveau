@@ -50,6 +50,11 @@ something the code taught us. See [References](#references) for the external wor
   keeping the exported front-to-back order, then re-origined at the end it decorates.
 - **Two levels of detail per model.** Full meshes where one copy is seen close up; `--simplify`
   variants (roughly a tenth of the triangles) for the instanced swarms.
+- **The export names do not describe their contents, so the geometry decides.** "announcement
+  left flourishes" holds the surface, "surface" holds the left flourishes, and "announcement
+  right flourishes v0.2" is the *navbar's* right cluster — it sits in the nav's absolute space
+  and shares the identical flower component with `right.glb`. Every export lands in one absolute
+  space, so a bounding box says what a file really is; check that before wiring a new one up.
 - **Traced SVG fallbacks are generated, not drawn** (`ff31182`): `/dev/trace` renders each
   component flat and white, `scripts/trace-svgs.mjs` traces the alpha mask and writes an SVG
   plus a manifest of px size and origin, so 2D and 3D place the same shape identically.

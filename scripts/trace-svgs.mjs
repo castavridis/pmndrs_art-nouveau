@@ -1,12 +1,15 @@
 // Renders each component flat on /dev/trace, traces the alpha edge and writes SVG fallbacks
 // to src/nav/assets/fallback/<asset>.svg plus a manifest with px sizes and origins.
 // Usage: dev server on :5173, then `node scripts/trace-svgs.mjs [asset ...]`
+// Set TRACE_ORIGIN to point at another origin (the preview picks a free port, and a
+// server bound to ::1 only is not reachable as `localhost` from headless Chrome).
 import { chromium } from '@playwright/test'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const ASSETS = ['nav-left', 'nav-right', 'petal', 'flower', 'logo-cube', 'callout-icon', 'announcement-left', 'announcement-right']
 const wanted = process.argv.slice(2).length ? process.argv.slice(2) : ASSETS
+const ORIGIN = process.env.TRACE_ORIGIN ?? 'http://localhost:5173'
 const outDir = path.resolve('src/nav/assets/fallback')
 await mkdir(outDir, { recursive: true })
 
@@ -16,7 +19,7 @@ const p = await b.newPage({ viewport: { width: 1700, height: 1700 }, deviceScale
 const manifestPath = path.join(outDir, 'manifest.json')
 const manifest = await readFile(manifestPath, 'utf8').then(JSON.parse).catch(() => ({}))
 for (const asset of wanted) {
-  await p.goto(`http://localhost:5173/dev/trace?asset=${asset}`)
+  await p.goto(`${ORIGIN}/dev/trace?asset=${asset}`)
   await p.waitForFunction((a) => window.__trace?.asset === a, asset, { timeout: 30000 })
   // Wait until the asset has actually been drawn (alpha present in the canvas).
   await p.waitForFunction(() => {
