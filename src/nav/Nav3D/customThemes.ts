@@ -47,8 +47,10 @@ export const useCustomThemes = import.meta.env.DEV
     )
   : create<CustomThemesStore>()(init)
 
-/** Every saved theme name. The panel's select needs at least one entry, hence the placeholder. */
-export const NO_THEME = '—'
-export function themeNames(themes = useCustomThemes.getState().themes): string[] {
-  return [NO_THEME, ...Object.keys(themes)]
+declare global {
+  interface Window {
+    /** Dev-only handle, like `__navTuning`, for headless scripts. */
+    __navThemes?: typeof useCustomThemes
+  }
 }
+if (import.meta.env.DEV && typeof window !== 'undefined') window.__navThemes = useCustomThemes

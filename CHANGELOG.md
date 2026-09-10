@@ -160,6 +160,15 @@ something the code taught us. See [References](#references) for the external wor
   the home page even with a correct rewrite.
 - **A separate `app.html` shell + SPA rewrite** for non-prerendered routes, so `/` keeps its
   prerendered DOM nav while `/dev/*` client-renders.
+- **Panel actions never depend on a browser dialog.** `window.prompt` / `alert` / `confirm` can be
+  refused outright — Chrome's "prevent this page from creating additional dialogs" sticks for the
+  session — and a blocked prompt returns null, so the button appears to do nothing at all. Names
+  are typed into fields, guards and deletions report to the console (a deleted preset is logged
+  first so it can be pasted back), and import reads the clipboard, pairing with export.
+- **A folder's `order` setting does nothing when the folder is made by `useControls(name, …)`.**
+  The panel is thousands of pixels tall and does not scroll, so a folder of its own put the theme
+  controls 4,600px below the visible area, unreachable. They live inside `file` instead, which is
+  at the top.
 - **A theme is a named dark + light pair** (`customThemes.ts`, `themes.saved.json`). A preset
   names a glass look and `tuning.saved.json` holds the one pair that ships; neither could keep a
   whole light/dark set aside and come back to it. The panel's `themes` folder saves both schemes
