@@ -1,6 +1,6 @@
 # Changelog
 
-A decision log for the iridescent 3D nav, 2026-09-07 to 2026-09-09, plus the papers,
+A decision log for the iridescent 3D nav, 2026-09-07 to 2026-09-10, plus the papers,
 algorithms and theories the implementation leans on.
 
 Entries record **what was decided and why**, not every edit; commit hashes are anchors, not a
@@ -348,6 +348,18 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
   enabled and stable": the check compares bounding boxes across animation frames, and the
   WebGL scenes starve `requestAnimationFrame`. Reproduced identically against an older commit
   in a second worktree before blaming any change.
+- **A preset is a snapshot; the live glass is not.** Choosing a preset copies its values into
+  the live glass and keeps its name, and every edit after that lands in the live glass only. So a
+  surface pinned to the preset by name keeps the preset's original values while the live glass
+  drifts away from it. That is why the bento's callout rendered black while the nav and banner,
+  on the edited live glass, rendered pale: both nominally wore `clearCube`. The same drift carried
+  a heavily edited look under the name `clearCube` until it was saved as `logoCube`. Pin a surface
+  to `live` to have it follow the tuning.
+- **Never `git checkout` a file the dev server writes.** `tuning.saved.json`, `presets.saved.json`,
+  `palette.saved.json` and `themes.saved.json` are rewritten by the panel's save buttons at any
+  moment, so a clean status a minute earlier proves nothing. One checkout to tidy a diff destroyed
+  an uncommitted save; the dark scheme was recovered only because it had been pasted into the
+  conversation. The live values survive in the browser's local storage, so a re-save restores them.
 - **Hiding uikit text from outside does nothing; hide its materials.** uikit keeps its own
   meshes' `visible` in step with its layout during the render, so setting it from outside is
   undone before the draw — and the transmission exclusion separately restores excluded groups to
@@ -358,6 +370,26 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
   entirely. Check `document.title` before trusting a headless run; the preview now uses
   `autoPort`.
 
+### Open
+
+Known, diagnosed, not yet done.
+
+- **Text ink is a guess everywhere but the chip.** Labels, the banner's print, the callout and the
+  launcher still pick their ink from the glass's background colour. That is right for buffered
+  glass, which shows that colour through, and wrong for sampler glass and opaque-looking presets:
+  it left a callout dark on dark and a purple nav bar white on pale. Being replaced by one
+  measured-contrast system.
+- **Three systems write the same visibility flags.** uikit, the transmission exclusion and the
+  chip's measurement each toggle `visible`, and each can undo the others. Being replaced by render
+  layers.
+- **The contrast estimate models the grade instead of reading it**, so it errs cautious and
+  over-washes a light chip. Reading the composited frame would remove both the model and the extra
+  render.
+- **The flourishes never fade after a strike.** They ride the banner's slow fall at full opacity
+  while the shards fade and fall fast, so they glide down the page alone until the group unmounts.
+- **The panel clips rather than scrolls**, so folders past its height, `presets` included, cannot
+  be reached.
+
 ---
 
 ## References
@@ -366,11 +398,12 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
 
 | Work | Where it is used |
 | --- | --- |
-| **APCA** — Accessible Perceptual Contrast Algorithm (Somers, `apca-w3`), the contrast method drafted for WCAG 3 | `scripts/dev/apca.mjs`, `src/nav/Nav3D/LcProbe.tsx`. Lc thresholds: ≥ 75 body text, 60 floor. |
+| **APCA** — Accessible Perceptual Contrast Algorithm (Somers, `apca-w3`), the contrast method drafted for WCAG 3 | `scripts/dev/apca.mjs`, `LcProbe.tsx`, `ChipContrast.tsx`. Lc thresholds: ≥ 75 body text, 60 floor. The chip's crossover and target luminances for its two inks are computed offline with `apca-w3`, so the library stays a dev dependency. |
 | **Estevez & Kulla 2017**, *Production Friendly Microfacet Sheen BRDF* | The `D_Charlie` distribution term in three's sheen; patched for underflow in `materials.ts`. |
 | **Neubelt & Pettineo 2013**, *Crafting a Next-Gen Material Pipeline for The Order: 1886* | The `V_Neubelt` visibility term in the same BRDF; the grazing-angle divide-by-zero fixed there. |
 | **Beer–Lambert law** | Volume attenuation standing in for subsurface scattering; sets `attenuationDistance` from Womp's translucency weight (`tuning.ts`). |
-| **ACES filmic tone mapping** (Academy Color Encoding System; Narkowicz's curve fit for the analytic approximation) | The composer's `ToneMapping` pass, and re-implemented in `LcProbe.tsx` to predict displayed pixels from the linear framebuffer. |
+| **ACES filmic tone mapping** (Academy Color Encoding System; Narkowicz's curve fit for the analytic approximation) | The composer's `ToneMapping` pass, and re-implemented in `LcProbe.tsx` and `ChipContrast.tsx` to predict displayed pixels from the linear framebuffer. |
+| **Blend modes** — multiply, screen, add, overlay and the W3C Compositing soft-light formula | `ChipContrast.tsx` models postprocessing's noise effect in all six of the panel's modes, to predict how the film grain moves a pixel the offscreen render never sees. |
 | **MSDF text** — multi-channel signed distance fields (Chlumský) | How `@react-three/uikit` renders the nav labels; contrasted with baked relief on `/dev/glyph`. |
 | **Fresnel reflectance / IOR** | Why the camera is perspective rather than orthographic, and why a too-low IOR made the pill read flat. |
 
@@ -389,6 +422,9 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
 | **Lissajous curve** | `Lights.tsx` — the roaming light's idle path when the pointer is off the page. |
 | **Exponential (frame-rate independent) smoothing**, `1 − e^(−k·dt)`, and maath's critically damped `damp` | Every follow behaviour: light targets, indicator, parallax, scheme swaps. Chosen over a fixed lerp factor so behaviour does not change with frame rate. |
 | **Stroke-dash offset reveal** | `DrawnOutline.tsx` — `pathLength=1` with an animated `stroke-dashoffset` per loop draws each curve in sequence. |
+| **Bisection** | `ChipContrast.tsx` — inverts the monotonic grade (tone mapping then grain) to find the scene value that still shows at a target luminance. |
+| **Hysteresis band** | `ChipContrast.tsx` — the ink holds inside a band either side of the APCA crossover, so a petal drifting behind the chip cannot make the label flicker. |
+| **Perspective projection solve** | Keeping a nearer layer on a farther one's screen position: `x / (camZ − z)` is constant along a ray. Used for the announcement's blossom, the callout glyph, and projecting nav items to canvas pixels. |
 
 ### Upstream behaviour worth remembering
 
@@ -399,7 +435,16 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
 - **`InstancedMesh.boundingSphere` is computed once** and gates raycasting.
 - **Vercel drops `.html` rewrite destinations when `cleanUrls` is on.**
 - **leva collapsed folders alter document tab order.**
+- **leva ignores `order` on a folder made by `useControls(name, …)`**, and its panel clips
+  rather than scrolls.
+- **uikit re-asserts its meshes' `visible` during the render**, so hiding its text from outside
+  fails; its materials' `visible` is left alone.
+- **three's transmission pass renders only opaque objects**, and offsets what it shows by the
+  material's `thickness` along the refracted ray.
+- **A browser can refuse `window.prompt`** for the rest of a session, returning null.
+- **Playwright's stability check compares boxes across animation frames**, so it can wait forever
+  on a page whose WebGL starves `requestAnimationFrame`.
 
 ---
 
-*Written 2026-09-09, covering `8ca4979` through `f8364b8`.*
+*Written 2026-09-09 and updated 2026-09-10, covering `8ca4979` through `c8ea5ee`.*
