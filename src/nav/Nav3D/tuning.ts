@@ -144,6 +144,8 @@ export interface MotionTuning {
   stir: number
   /** Reach of the pointer's push, in world units. */
   stirRadius: number
+  /** How struck glass breaks: into Voronoi shards, or scattering into petals. */
+  shatter: 'shards' | 'petals'
 }
 
 /** `live` = the page's tuned glass (the pill's look); otherwise a preset name. */
@@ -448,7 +450,7 @@ export const defaultLights: LightsTuning = {
 export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
-  motion: { speed: 1, spin: 1, sway: 1, stir: 1, stirRadius: 0.8 },
+  motion: { speed: 1, spin: 1, sway: 1, stir: 1, stirRadius: 0.8, shatter: 'petals' },
   materials: {
     petals: Object.keys(palette) as PaletteName[],
     flowers: Object.keys(palette) as PaletteName[],

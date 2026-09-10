@@ -181,6 +181,7 @@ export default function DevControls() {
     sway: { value: M.sway, min: 0, max: 4 },
     stir: { value: M.stir, min: 0, max: 4, label: 'pointer stir' },
     stirRadius: { value: M.stirRadius, min: 0.1, max: 4, label: 'stir radius' },
+    shatter: { value: M.shatter, options: ['shards', 'petals'] as const, label: 'break into' },
   }), { order: -62 })
   // Materials per GLB part, and the pools the petal / flower swarms draw from. The pools are
   // checkboxes over the palette colours plus any user presets; folders rebuild when that list
