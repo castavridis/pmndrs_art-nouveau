@@ -8,6 +8,7 @@ import { Glass } from './Glass'
 import { makeRoundedRectGeometry } from './roundedRectGeometry'
 import { useItemRegistry } from './items'
 import { useTuning } from './tuning'
+import { INKS } from './dom'
 
 /** Room around the label, and how much shorter than the nav the chip is. */
 const PAD_X = 18
@@ -38,6 +39,13 @@ export function SelectionPill() {
   const preset = useTuning((s) => s.materials.selection)
   const mesh = useRef<THREE.Mesh>(null!)
   const group = useRef<THREE.Group>(null!)
+  // The veil under the label, set by ChipContrast: opposite the ink it chose, as strong as the
+  // chip needs for that ink to read.
+  const veil = useRef<THREE.Mesh>(null!)
+  const veilMaterial = useRef<THREE.MeshBasicMaterial>(null!)
+  const chipInk = useNavStore((s) => s.chipInk)
+  const chipVeil = useNavStore((s) => s.chipVeil)
+  const veilColor = chipInk === INKS.light.ink ? '#ffffff' : '#000000'
   const height = tokens.pillHeight - INSET_Y * 2
 
   // One geometry, rebuilt only when the width has actually moved a pixel.
@@ -80,6 +88,15 @@ export function SelectionPill() {
       const next = makeRoundedRectGeometry(Math.max(built.current, 1), height, height / 2, DEPTH)
       m.geometry.dispose()
       m.geometry = next
+      // The veil is the chip's own shape, so it shares the geometry rather than keeping a copy.
+      if (veil.current) veil.current.geometry = next
+    }
+    // Eased, so a new reading changes the veil over a beat rather than in a jump.
+    const vm = veilMaterial.current
+    if (vm) {
+      if (reducedMotion) vm.opacity = chipVeil
+      else damp(vm, 'opacity', chipVeil, 0.25, dt)
+      if (veil.current) veil.current.visible = vm.opacity > 0.005
     }
     // It grows out of the nav's face rather than fading: an opaque material has no opacity to
     // animate, and a chip that swells into place reads as glass being pushed up from below.
@@ -91,6 +108,20 @@ export function SelectionPill() {
     <group ref={group} position-z={px(tokens.pillDepth / 2)} visible={false}>
       <mesh ref={mesh} geometry={geometry} raycast={() => null}>
         <Glass sampler preset={preset} />
+      </mesh>
+      {/* Flattened to the chip's face and drawn without the depth test, so it lies over the
+          glass; it sorts behind the labels (which sit further forward), so the text stays on
+          top. Transparent, so the chip's own transmission never sees it. */}
+      <mesh ref={veil} name="chip-veil" geometry={geometry} scale-z={0.02} visible={false} raycast={() => null}>
+        <meshBasicMaterial
+          ref={veilMaterial}
+          color={veilColor}
+          transparent
+          opacity={0}
+          depthTest={false}
+          depthWrite={false}
+          toneMapped={false}
+        />
       </mesh>
     </group>
   )

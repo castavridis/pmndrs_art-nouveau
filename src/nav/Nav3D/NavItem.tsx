@@ -83,7 +83,15 @@ function Label({ id, label }: { id: string; label: string }) {
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const spring = useSpring({ t: lit ? 1 : 0, immediate: reducedMotion, config: { tension: 300, friction: 18 } })
   const { ink, hover } = useInk()
-  const anim = useMemo(() => new LabelAnim(ink, hover), [ink, hover])
+  // The chip sits under the pointer's item, else the focused one, else the current page. The
+  // label on it reads against the chip, not the pill: it takes the ink ChipContrast measured,
+  // and keeps it when hovered too, since the chip arriving is already the hover feedback and
+  // the pale hover tint would be the least legible colour on a pale chip.
+  const onChip = useNavStore((s) => (s.hovered ?? s.focused ?? s.active) === id)
+  const chipInk = useNavStore((s) => s.chipInk)
+  const rest = onChip && chipInk ? chipInk : ink
+  const lift = onChip && chipInk ? chipInk : hover
+  const anim = useMemo(() => new LabelAnim(rest, lift), [rest, lift])
   useFrame(() => anim.update(spring.t.get()))
   return (
     <Text transformTranslateY={anim.y} color={anim.color} fontWeight={active ? 'medium' : 'normal'}>

@@ -3,6 +3,7 @@ import { Container, Svg, type VanillaContainer } from '@react-three/uikit'
 import { useSpring, type SpringValue } from '@react-spring/three'
 import { useFrame, useThree } from '@react-three/fiber'
 import type { Group } from 'three'
+import * as THREE from 'three'
 import { useNavStore } from '../store'
 import { px, tokens } from '../tokens'
 import { Pill } from './Pill'
@@ -11,6 +12,7 @@ import { Petals } from './Petals'
 import { PetalField } from './PetalField'
 import { Indicator } from './Indicator'
 import { SelectionPill } from './SelectionPill'
+import { ChipContrast } from './ChipContrast'
 import { PillMorph } from './pillGeometry'
 import { useTuning } from './tuning'
 import type { ProbeRegion } from './LcProbe'
@@ -56,10 +58,28 @@ export function NavRoot() {
     }
     return out
   }, [registry, size.width, size.height])
+  // Hides by material, not object: uikit keeps its own meshes' `visible` in step with its
+  // layout during the render, so an object hidden from outside came straight back and the
+  // "hidden" text was measured anyway. Materials it leaves alone. What each was is kept and put
+  // back, so anything uikit had hidden for its own reasons stays hidden.
+  const hiddenMaterials = useRef(new Map<THREE.Material, boolean>())
   const hideLabels = useCallback((hidden: boolean) => {
     const g = uiRef.current
     if (!g) return
-    for (const c of g.children) if (c.name !== 'label-scrim') c.visible = !hidden
+    const saved = hiddenMaterials.current
+    if (!hidden) {
+      for (const [m, was] of saved) m.visible = was
+      saved.clear()
+      return
+    }
+    g.traverse((o) => {
+      const mesh = o as THREE.Mesh
+      if (!mesh.isMesh || mesh.name === 'label-scrim') return
+      for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+        if (!saved.has(m)) saved.set(m, m.visible)
+        m.visible = false
+      }
+    })
   }, [])
 
   // The text layer sits on the glass; it must not be refracted by it.
@@ -114,6 +134,8 @@ export function NavRoot() {
       <Clusters width={spring.width} />
       <Indicator />
       <SelectionPill />
+      {/* Reads the chip as drawn and picks the ink for the label on it. */}
+      <ChipContrast root={rootRef3d} hideText={hideLabels} />
       <AimTracker root={rootRef3d} />
       {mode === 'full' && <PetalField count={100} />}
       {mode === 'full' && (

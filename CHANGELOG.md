@@ -226,6 +226,17 @@ something the code taught us. See [References](#references) for the external wor
   shared transmission pass needs a `Backing` behind it — the buffered material clears its own
   buffer to the tuned ground colour, and without that the sampler sees the page and the glass
   comes up pale.
+- **The label on the selection chip reads the chip as drawn** (`ChipContrast.tsx`). The chip is
+  glass, so how light it looks depends on what it transmits far more than on its preset: the same
+  chip rendered black under one tuning (page ink Lc 99) and pale grey under another (Lc 29, worst
+  tenth 16). Every few frames it draws the chip's region small and offscreen, with the labels
+  hidden, projects the item's real position so it holds in a page-wide scene, and picks whichever
+  ink APCA favours — the crossover between these two inks computed once offline so the library
+  stays a dev dependency. Where no ink can clear the bar (a mid-grey chip puts both near Lc 50) it
+  lays a veil on the chip in the opposite polarity, sized from a model of the composer's grading
+  and film grain, which the offscreen render never sees and which darkened a light chip by a
+  quarter. Readings are pooled over two seconds, since the lights sweep. Measured on the bento:
+  Lc 29/16 became 78–80 median, 75 worst tenth; a chip that already contrasts gets no veil.
 - **The pill springs on intent, not on measurements.** It animates when its width is *meant* to
   change — a link added or removed, or a resize that moves the nav to another mode, which is the
   only way a resize touches a content-driven width. Everything else that moves the measurement is
@@ -322,6 +333,12 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
   enabled and stable": the check compares bounding boxes across animation frames, and the
   WebGL scenes starve `requestAnimationFrame`. Reproduced identically against an older commit
   in a second worktree before blaming any change.
+- **Hiding uikit text from outside does nothing; hide its materials.** uikit keeps its own
+  meshes' `visible` in step with its layout during the render, so setting it from outside is
+  undone before the draw — and the transmission exclusion separately restores excluded groups to
+  visible after every glass pass. Both defeated "hide the labels while measuring the backdrop",
+  so the legibility probe and the chip contrast were silently measuring the text itself.
+  `material.visible` is left alone by both.
 - **Port 5173 can belong to another project.** A verification run once rendered a different app
   entirely. Check `document.title` before trusting a headless run; the preview now uses
   `autoPort`.

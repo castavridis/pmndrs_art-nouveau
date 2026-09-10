@@ -51,7 +51,7 @@ const page = path.startsWith('/dev/demo') ? (
 )
 const app = (
   <StrictMode>
-    <AppShell>{page}</AppShell>
+    <AppShell themeToggle={!path.startsWith('/dev/bento')}>{page}</AppShell>
   </StrictMode>
 )
 // Production `/` is prerendered (see scripts/prerender.mjs); other routes are served the
