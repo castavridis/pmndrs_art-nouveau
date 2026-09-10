@@ -42,13 +42,20 @@ export interface SlotBox {
   hover?: RefObject<HoverState> | null
 }
 
-/** A DOM control that wants the nav's glass behind it (the article launchers). */
-export interface LauncherSlot {
+/** A DOM control that wants the nav's glass behind it (the article launchers, the copy bar). */
+export interface GlassBackedSlot {
   el: RefObject<HTMLElement | null>
   width: number
   height: number
   /** The disabled control wears a duller glass; live tuning otherwise, like the pill. */
   preset?: PresetName
+  /**
+   * Grow the glass beyond the control's own box, in px. A control that paints its own face —
+   * the copy bar's green — needs the glass to show around it rather than behind it.
+   */
+  pad?: number
+  /** Corner radius before padding; fully rounded when omitted. */
+  radius?: number
 }
 
 export interface BentoSceneProps {
@@ -58,8 +65,8 @@ export interface BentoSceneProps {
   navEl: RefObject<HTMLElement | null>
   announcement: SlotBox
   callout: SlotBox & { kind: CalloutKind }
-  /** Plain DOM buttons that are given the nav's glass as their background. */
-  launchers?: LauncherSlot[]
+  /** DOM controls that are given the nav's glass behind them. */
+  glassBacked?: GlassBackedSlot[]
   onReady: () => void
 }
 
@@ -71,7 +78,7 @@ export interface BentoSceneProps {
 /** `?slabs=buffered` restores one transmission buffer per slab (for comparison). */
 const BUFFERED = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('slabs') === 'buffered'
 
-export function BentoScene({ eventSource, navEl, announcement, callout, launchers = [], onReady }: BentoSceneProps) {
+export function BentoScene({ eventSource, navEl, announcement, callout, glassBacked = [], onReady }: BentoSceneProps) {
   return (
     <NavCanvas
       eventSource={eventSource}
@@ -89,10 +96,16 @@ export function BentoScene({ eventSource, navEl, announcement, callout, launcher
         <Slot el={callout}>
           {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} glyph={callout.glyph ?? null} />}
         </Slot>
-        {launchers.map((l, i) => (
-          <Slot key={i} el={l.el}>
-            {l.width > 0 && (
-              <LauncherCard width={l.width} height={l.height} preset={l.preset} sampler={!BUFFERED} />
+        {glassBacked.map((g, i) => (
+          <Slot key={i} el={g.el}>
+            {g.width > 0 && (
+              <GlassPlate
+                width={g.width + (g.pad ?? 0) * 2}
+                height={g.height + (g.pad ?? 0) * 2}
+                radius={g.radius === undefined ? undefined : g.radius + (g.pad ?? 0)}
+                preset={g.preset}
+                sampler={!BUFFERED}
+              />
             )}
           </Slot>
         ))}
@@ -123,24 +136,27 @@ function Slot({ el, children }: { el: RefObject<HTMLElement | null> | SlotBox; c
 }
 
 /**
- * The glass behind a plain DOM button, sized to it. Fully rounded like the pill it borrows its
- * material from, and the same depth, so a launcher reads as a piece of the nav that wandered
- * down the page rather than a card of its own.
+ * The glass behind a DOM control, sized to it. Fully rounded like the pill it borrows its
+ * material from unless told otherwise, and the same depth, so a control reads as a piece of the
+ * nav that wandered down the page rather than a card of its own.
  */
-function LauncherCard({
+function GlassPlate({
   width,
   height,
+  radius,
   preset,
   sampler,
 }: {
   width: number
   height: number
+  radius?: number
   preset?: PresetName
   sampler: boolean
 }) {
+  const corner = radius ?? height / 2
   const geometry = useMemo(
-    () => makeRoundedRectGeometry(width, height, height / 2, tokens.pillDepth),
-    [width, height],
+    () => makeRoundedRectGeometry(width, height, corner, tokens.pillDepth),
+    [width, height, corner],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
   return (
@@ -148,7 +164,7 @@ function LauncherCard({
       {/* Without the buffered material's own cleared buffer, the sampler sees the page behind
           and the glass comes up pale; this gives it the same dark ground the pill has. */}
       {sampler && (
-        <Backing width={width} height={height} depth={tokens.pillDepth} preset={preset} radius={height / 2} />
+        <Backing width={width} height={height} depth={tokens.pillDepth} preset={preset} radius={corner} />
       )}
       <mesh geometry={geometry} raycast={() => null}>
         <Glass sampler={sampler} preset={preset} />

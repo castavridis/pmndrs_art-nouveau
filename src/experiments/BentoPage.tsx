@@ -67,6 +67,9 @@ export function BentoPage() {
   const launcherOff = useRef<HTMLButtonElement>(null)
   const launcherOnSize = useMeasure(launcherOn, { width: 0, height: 0 })
   const launcherOffSize = useMeasure(launcherOff, { width: 0, height: 0 })
+  // The copy bar paints its own green face, so its glass shows as a tray around it, not behind.
+  const copyBar = useRef<HTMLDivElement>(null)
+  const copyBarSize = useMeasure(copyBar, { width: 0, height: 0 })
   // Real glass on a dark page is dark; the label follows the page's ink, as the banner's does.
   const { ink } = useInk()
   const glassInk = ready ? ink : undefined
@@ -90,10 +93,11 @@ export function BentoPage() {
           navEl={navEl}
           announcement={announcement}
           callout={{ ...callout, kind: 'note' }}
-          launchers={[
+          glassBacked={[
             { el: launcherOn, ...launcherOnSize },
             // Disabled: a dark, inert glass rather than the live tuning.
             { el: launcherOff, ...launcherOffSize, preset: 'dark' },
+            { el: copyBar, ...copyBarSize, pad: 10, radius: 12 },
           ]}
           onReady={() => setReady(true)}
         />
@@ -124,16 +128,18 @@ export function BentoPage() {
             Somewhat Expressive
           </h2>
           <div className={styles.left}>
-            <CopyButton
-              value="pnpm add @react-three/fiber"
-              actions={[
-                { key: 'docs', label: 'Open the docs', icon: <InfoIcon />, href: '/docs' },
-                { key: 'sandbox', label: 'Open a sandbox', icon: <ExternalIcon />, href: '/examples' },
-                { key: 'repo', label: 'View the repository', icon: <GitHubIcon />, href: 'https://github.com/pmndrs' },
-                { key: 'run', label: 'Run it', icon: <BoltIcon /> },
-                { key: 'cli', label: 'Copy the CLI command', icon: <TerminalIcon /> },
-              ]}
-            />
+            <div ref={copyBar} style={{ display: 'inline-flex' }}>
+              <CopyButton
+                value="pnpm add @react-three/fiber"
+                actions={[
+                  { key: 'docs', label: 'Open the docs', icon: <InfoIcon />, href: '/docs' },
+                  { key: 'sandbox', label: 'Open a sandbox', icon: <ExternalIcon />, href: '/examples' },
+                  { key: 'repo', label: 'View the repository', icon: <GitHubIcon />, href: 'https://github.com/pmndrs' },
+                  { key: 'run', label: 'Run it', icon: <BoltIcon /> },
+                  { key: 'cli', label: 'Copy the CLI command', icon: <TerminalIcon /> },
+                ]}
+              />
+            </div>
             <button
               ref={launcherOn}
               type="button"

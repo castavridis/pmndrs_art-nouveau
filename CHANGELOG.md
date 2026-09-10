@@ -198,7 +198,9 @@ something the code taught us. See [References](#references) for the external wor
   it is falling.
 - **A DOM control can borrow the nav's glass.** The bento page's article launchers are plain
   buttons whose background is a slab in the shared scene, tracking their box; the painted
-  gradient stands down once it draws, exactly as the DOM nav's does. Glass drawn through the
+  gradient stands down once it draws, exactly as the DOM nav's does. A control that keeps its own
+  face instead — the copy bar's green is the brand, not a surface — takes the same slab grown a
+  few px past its box, so the glass reads as a tray around it rather than hiding behind it. Glass drawn through the
   shared transmission pass needs a `Backing` behind it — the buffered material clears its own
   buffer to the tuned ground colour, and without that the sampler sees the page and the glass
   comes up pale.
