@@ -115,7 +115,7 @@ export function Shot({ cut, meta }: { cut: Cut; meta: ClipMeta }) {
         style={{ position: 'absolute', left, top, width: vw * s, height: vh * s, maxWidth: 'none' }}
       />
       {cut.cursor !== false && (
-        <Cursor meta={meta} clipFrame={clipFrame} toScreen={toScreen} scale={s} />
+        <Cursor meta={meta} clipFrame={clipFrame} toScreen={toScreen} scale={s} ring={cut.ring !== false} />
       )}
     </AbsoluteFill>
   );

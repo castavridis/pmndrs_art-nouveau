@@ -2,7 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium, type Browser, type CDPSession, type Page } from 'playwright';
+import { chromium, type Browser, type BrowserContext, type CDPSession, type Page } from 'playwright';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const CLIPS_DIR = join(here, '..', 'public', 'clips');
@@ -44,6 +44,11 @@ export interface Shot {
    * a take can then film a tuning, a scene setup or a theme without clicking through a panel.
    */
   storage?: Record<string, string>;
+  /**
+   * Runs on the browser context before the page opens: route requests (hold the 3D's assets
+   * back so a take can film the page before the glass arrives), add init scripts.
+   */
+  prepare?: (context: BrowserContext) => Promise<void> | void;
   /** Where the pointer rests before the first move. Default: bottom-right, out of the way. */
   cursorStart?: Point;
   /**
@@ -395,6 +400,7 @@ export async function runShot(shot: Shot, baseUrl: string, log = console.log) {
       for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
     }, shot.storage);
   }
+  await shot.prepare?.(context);
   const page = await context.newPage();
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

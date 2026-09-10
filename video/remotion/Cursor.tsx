@@ -12,11 +12,13 @@ export function Cursor({
   clipFrame,
   toScreen,
   scale,
+  ring = true,
 }: {
   meta: ClipMeta;
   clipFrame: number;
   toScreen: (x: number, y: number) => [number, number];
   scale: number;
+  ring?: boolean;
 }) {
   const i = Math.min(Math.max(Math.round(clipFrame), 0), meta.cursor.length - 1);
   const c = meta.cursor[i];
@@ -26,7 +28,7 @@ export function Cursor({
   const pressed = c[2] === 1;
 
   const ripples: { x: number; y: number; age: number }[] = [];
-  for (let k = Math.max(1, i - RIPPLE_FRAMES); k <= i; k++) {
+  for (let k = Math.max(1, i - RIPPLE_FRAMES); ring && k <= i; k++) {
     const p = meta.cursor[k]!;
     if (p[2] && !meta.cursor[k - 1]![2]) {
       const [rx, ry] = toScreen(p[0], p[1]);

@@ -73,6 +73,8 @@ export interface Cut {
   punch?: boolean;
   /** Draw the recorded pointer. Default true. */
   cursor?: boolean;
+  /** The green ring the pointer throws where it clicks. Default true. */
+  ring?: boolean;
   /** Fade up from a flat colour at the start of the cut. */
   fadeIn?: Fade;
   /** Fade down to a flat colour at the end of the cut. */
