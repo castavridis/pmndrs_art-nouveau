@@ -11,7 +11,7 @@ import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { Backing } from '../nav/Nav3D/Backing'
 import { useInk } from '../nav/Nav3D/dom'
 import { px, tokens } from '../nav/tokens'
-import { bakeRelief, uvFromBounds } from './textRelief'
+import { bakeTextRelief, uvFromBounds } from './textRelief'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
 
@@ -66,7 +66,7 @@ function Slab() {
     let alive = true
     const bake = () => {
       if (!alive) return
-      const tex = bakeRelief({
+      const tex = bakeTextRelief({
         lines: [c.text, c.line2].filter(Boolean),
         width: SLAB.width * 2,
         height: SLAB.height * 2,

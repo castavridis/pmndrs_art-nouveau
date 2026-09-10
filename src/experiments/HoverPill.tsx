@@ -6,7 +6,9 @@ import { Glass } from '../nav/Nav3D/Glass'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { px } from '../nav/tokens'
 import type { PresetName } from '../nav/Nav3D/customPresets'
-import { bakeRelief, uvFromBounds } from './textRelief'
+import { Container, Text } from '@react-three/uikit'
+import { transmissionExcluded } from '../nav/Nav3D/materials'
+import { tokens } from '../nav/tokens'
 
 /**
  * Where the pointer is over a surface, in CSS px from that surface's centre (y up, matching
@@ -95,10 +97,11 @@ export interface HoverPillProps {
   surfaceDepth: number
   /** Which glass the chip wears (materials.dismiss); the live tuning when omitted. */
   preset?: PresetName
-  /** Paint a height field to etch into the chip's face; white is high. */
-  mark?: (ctx: CanvasRenderingContext2D, size: number) => void
-  /** How deep the etched mark cuts. */
-  markDepth?: number
+  /** A mark set on the chip's face, in uikit's text renderer — the nav's, so it stays crisp. */
+  label?: string
+  labelColor?: string
+  /** Degrees to turn the mark by. A cross is a plus at 45°; see the note at the call site. */
+  labelRotate?: number
   /** Struck: the chip stops following and drops away from wherever it was standing. */
   falling?: boolean
 }
@@ -109,7 +112,8 @@ export interface HoverPillProps {
  * the words, and swells back where the pointer left off.
  *
  * Struck, it stops following and drops away from wherever it was standing, with the same gravity
- * the shards fall under.
+ * the shards fall under. Its mark is set on the face in uikit's text renderer — the nav's, so it
+ * stays crisp at any size — and rides along as a child of the chip.
  *
  * Half in, half out of the surface's face, like the nav's chip. It writes no depth, so the copy
  * printed on that face still draws over it and the chip glides behind the words rather than
@@ -118,9 +122,6 @@ export interface HoverPillProps {
  * Scale carries the appearing and disappearing because the glass is opaque: a transmission
  * material has no opacity to animate without dropping out of the transmission pass entirely.
  */
-/** Bake the mark this many times larger than the chip, so its edges survive the Sobel pass. */
-const RELIEF_SCALE = 8
-
 /** World units per second squared, matching the shards the banner breaks into. */
 const GRAVITY = -9
 
@@ -131,45 +132,28 @@ export function HoverPill({
   depth = 5,
   surfaceDepth,
   preset,
-  mark,
-  markDepth = 3,
+  label,
+  labelColor = '#1a1c10',
+  labelRotate = 0,
   falling = false,
 }: HoverPillProps) {
   const group = useRef<THREE.Group>(null!)
-  // UVs across the chip's own bounds, so a baked map spans its face (see textRelief).
-  const geometry = useMemo(() => {
-    const base = makeRoundedRectGeometry(size, size, size / 2, depth)
-    const g = uvFromBounds(base)
-    base.dispose()
-    return g
-  }, [size, depth])
-  useEffect(() => () => geometry.dispose(), [geometry])
-
-  /**
-   * The mark is etched into the chip rather than laid over it, so it travels with the glass
-   * instead of staying where the DOM drew it, and refracts and catches highlights like the rest
-   * of the surface. Strokes need no font, so this bakes on first render — a map appearing later
-   * would change the shader's defines and force a recompile.
-   */
-  const relief = useMemo(() => {
-    if (!mark) return null
-    const px = size * RELIEF_SCALE
-    return bakeRelief({
-      width: px,
-      height: px,
-      draw: (ctx) => mark(ctx, px),
-      soften: RELIEF_SCALE * 0.7,
-      strength: markDepth,
-    })
-  }, [mark, size, markDepth])
-  useEffect(() => () => relief?.dispose(), [relief])
-  const overrides = useMemo(
-    () =>
-      relief
-        ? { depthWrite: false, normalMap: relief, normalScale: new THREE.Vector2(1, 1) }
-        : { depthWrite: false },
-    [relief],
+  const geometry = useMemo(
+    () => makeRoundedRectGeometry(size, size, size / 2, depth),
+    [size, depth],
   )
+  useEffect(() => () => geometry.dispose(), [geometry])
+  const overrides = useMemo(() => ({ depthWrite: false }), [])
+
+  // The mark rides the chip as a child, so it travels, scales and tumbles with it. It must stay
+  // out of the glass's transmission buffer or the chip would refract its own face.
+  const ui = useRef<THREE.Group>(null)
+  useEffect(() => {
+    const g = ui.current
+    if (!g) return
+    transmissionExcluded.add(g)
+    return () => void transmissionExcluded.delete(g)
+  }, [])
   const target = useMemo(() => new THREE.Vector3(), [])
   const shown = useRef({ v: 0 })
   const drop = useRef({ vy: 0, vx: 0, spin: 0 })
@@ -210,6 +194,24 @@ export function HoverPill({
       <mesh geometry={geometry} raycast={() => null}>
         <Glass sampler preset={preset} overrides={overrides} />
       </mesh>
+      {label && (
+        <group ref={ui} position-z={px(depth) / 2 + 0.004}>
+          <Container
+            pixelSize={1 / tokens.pxPerUnit}
+            anchorX="center"
+            anchorY="center"
+            width={size}
+            height={size}
+            alignItems="center"
+            justifyContent="center"
+            depthTest={false}
+          >
+            <Text fontSize={size * 0.62} color={labelColor} transformRotateZ={labelRotate}>
+              {label}
+            </Text>
+          </Container>
+        </group>
+      )}
     </group>
   )
 }

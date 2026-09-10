@@ -1,17 +1,12 @@
 import * as THREE from 'three'
 
 export interface ReliefOptions {
-  /** Lines of text, drawn left-aligned from the top-left inset. Ignored when `draw` is given. */
-  lines?: string[]
-  /**
-   * Paint the height field directly instead: white is high, black is the flat surface. For
-   * marks that are not type — the announcement's dismiss cross is stroked, not set.
-   */
-  draw?: (ctx: CanvasRenderingContext2D, width: number, height: number) => void
+  /** Lines of text, drawn left-aligned from the top-left inset. */
+  lines: string[]
   /** Canvas size in px (match the slab's aspect). */
   width: number
   height: number
-  fontPx?: number
+  fontPx: number
   fontFamily?: string
   weight?: number | string
   /** Inset from the left / top edge, px. */
@@ -26,11 +21,11 @@ export interface ReliefOptions {
 }
 
 /**
- * Bakes a mark into a normal map: it is drawn as a height field on a canvas, softened, and
- * converted to tangent-space normals with a Sobel filter. On a glass material the mark then
- * reads as etched (or raised) relief, refracting and catching highlights like the surface.
+ * Bakes text into a normal map: the glyphs are drawn as a height field on a canvas, softened,
+ * and converted to tangent-space normals with a Sobel filter. On a glass material the text
+ * then reads as etched (or raised) relief, refracting and catching highlights like the surface.
  */
-export function bakeRelief(o: ReliefOptions): THREE.DataTexture {
+export function bakeTextRelief(o: ReliefOptions): THREE.DataTexture {
   const { width, height } = o
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -40,18 +35,13 @@ export function bakeRelief(o: ReliefOptions): THREE.DataTexture {
   ctx.fillRect(0, 0, width, height)
   ctx.filter = o.soften ? `blur(${o.soften}px)` : 'none'
   ctx.fillStyle = '#fff'
-  ctx.strokeStyle = '#fff'
-  if (o.draw) {
-    o.draw(ctx, width, height)
-  } else {
-    ctx.font = `${o.weight ?? 500} ${o.fontPx}px ${o.fontFamily ?? "'Inter Variable', Inter, system-ui, sans-serif"}`
-    ctx.textBaseline = 'top'
-    const x = o.insetX ?? 40
-    let y = o.insetY ?? 40
-    for (const line of o.lines ?? []) {
-      ctx.fillText(line, x, y)
-      y += (o.fontPx ?? 40) * 1.3
-    }
+  ctx.font = `${o.weight ?? 500} ${o.fontPx}px ${o.fontFamily ?? "'Inter Variable', Inter, system-ui, sans-serif"}`
+  ctx.textBaseline = 'top'
+  const x = o.insetX ?? 40
+  let y = o.insetY ?? 40
+  for (const line of o.lines) {
+    ctx.fillText(line, x, y)
+    y += o.fontPx * 1.3
   }
   const img = ctx.getImageData(0, 0, width, height).data
   const h = (px: number, py: number) => {

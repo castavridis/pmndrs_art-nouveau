@@ -368,6 +368,23 @@ export const glassPresets = {
     samples: 2,
     resolution: 1024,
   },
+  /**
+   * The travelling chips (the nav's selection, the announcement's dismissal): Silver Glass's
+   * optics — low roughness, few blur samples, clearcoated, lightly aberrated — carrying the
+   * indicator's green body. Rough Glass makes a small chip read as a soft blob next to the GLB
+   * flourishes, which wear the live silver tuning; this keeps the edge and the green.
+   */
+  chip: {
+    ...silverGlass,
+    color: '#dcff9a',
+    specularColor: palette.green,
+    attenuationColor: palette.green,
+    attenuationDistance: silverGlass.thickness / 0.7,
+    sheenColor: palette.green,
+    sheen: 0.3,
+    // Full iridescence over a tint this strong muddies it; a quarter leaves the rim its sheen.
+    iridescence: 0.25,
+  },
   /** Current-page indicator petal: Rough Glass with a stronger green body. */
   indicator: {
     ...roughGlassBase,
@@ -462,8 +479,8 @@ export const baseTuning: Tuning = {
     loosePetals: 'live',
     flourishes: 'live',
     indicator: 'indicator',
-    selection: 'indicator',
-    dismiss: 'indicator',
+    selection: 'chip',
+    dismiss: 'chip',
     model: 'live',
     callout: 'live',
     calloutLens: 'kind',

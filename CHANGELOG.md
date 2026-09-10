@@ -186,16 +186,22 @@ something the code taught us. See [References](#references) for the external wor
   banner gives up no room for it. And it is centred on the slab's face writing no depth, the way
   the nav's chip sits behind its labels, because proud of the face it slid over the printed copy
   and sunk inside a 6px slab it disappeared altogether.
-- **The dismiss cross is etched into the chip, not laid over it.** Baked to a normal map the way
-  `/dev/glyph` etches text (`textRelief.ts`, generalised to take a paint callback so a stroked
-  mark can use it), so the cross travels with the glass instead of staying where the DOM drew it,
-  and refracts and catches highlights like the rest of the surface. It is baked on first render
-  rather than after a font load: a map arriving later changes the shader's defines. The DOM copy
+- **The dismiss cross is set on the chip, not laid over it.** It is uikit text on the chip's face
+  — the nav's own renderer, crisp at any size — parented to the chip, so it travels, scales and
+  tumbles with the glass instead of staying where the DOM drew it. Etched relief was tried first
+  (`/dev/glyph`'s treatment, a normal map baked from the mark) and reverted: a mark that reads
+  only by the light it bends is faint at 32px. The character is a plus turned 45°, because uikit's
+  atlas has no multiplication sign and draws the missing glyph as a box. The DOM copy
   keeps the hit area, the focus ring and the accessible name, and gives up only its paint. The
   chip has its own material choice (`materials.dismiss`), and on a strike it lets go from wherever
   it was standing — which needed the pointer tracker frozen at the click, since dismissing takes
   the banner's pointer events away and the chip would race home in the frames before it is told
   it is falling.
+- **The travelling chips wear Silver Glass, not Rough Glass.** Rough Glass's roughness, six blur
+  samples and full chromatic aberration are made for a large surface; on a 32px chip they read as
+  a soft green blob beside the GLB flourishes, which wear the live silver tuning. The `chip`
+  preset keeps Silver Glass's optics and takes the indicator's green body, with iridescence at a
+  quarter so it does not muddy a tint that strong.
 - **A DOM control can borrow the nav's glass.** The bento page's article launchers are plain
   buttons whose background is a slab in the shared scene, tracking their box; the painted
   gradient stands down once it draws, exactly as the DOM nav's does. A control that keeps its own

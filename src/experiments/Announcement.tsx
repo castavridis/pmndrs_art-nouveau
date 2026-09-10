@@ -454,30 +454,16 @@ export function AnnouncementParts({
           size={announcement.close.size}
           surfaceDepth={announcement.depth}
           preset={dismissPreset}
-          mark={drawCross}
+          // A plus turned 45°, not "×": uikit's atlas has no multiplication sign and renders
+          // the missing glyph as a box. A plus is in every font and makes a truer cross anyway.
+          label="+"
+          labelRotate={45}
         />
       )}
       <Flourish halves={leftHalves} x={-end} grow={grow} preset={preset} />
       <Flourish halves={rightHalves} x={rightEnd} grow={grow} preset={preset} />
     </group>
   )
-}
-
-/**
- * The dismiss cross as a height field for the chip's relief. Bolder and larger than the DOM mark
- * it replaces: an etch has no ink of its own, so it reads by the light it bends, and a hairline
- * disappears.
- */
-function drawCross(ctx: CanvasRenderingContext2D, size: number) {
-  const m = size * 0.32
-  ctx.lineWidth = size * 0.1
-  ctx.lineCap = 'round'
-  ctx.beginPath()
-  ctx.moveTo(m, m)
-  ctx.lineTo(size - m, size - m)
-  ctx.moveTo(size - m, m)
-  ctx.lineTo(m, size - m)
-  ctx.stroke()
 }
 
 /** One end's flourishes: the upper pieces ride the top edge, the lower ones the bottom edge. */
