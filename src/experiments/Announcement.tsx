@@ -200,11 +200,6 @@ export function Announcement({
   // Dev: outlines over the live 3D as well.
   const overlay = useOutlines((s) => s.overlay)
   const outlines = vector || overlay
-  // The copy stops at the flourish, or at the close chip's near edge when there is one.
-  const padRight = Math.max(
-    announcement.paddingX + 24,
-    dismissible ? announcement.close.insetX + announcement.close.size / 2 + 8 : 0,
-  )
   const L = fallback['announcement-left']
   const R = fallback['announcement-right']
   const end = announcement.height / 2
@@ -296,10 +291,10 @@ export function Announcement({
         className={`${styles.content} ${printed ? styles.printed : ''}`}
         style={{
           minHeight: announcement.height,
-          // Insets that clear both flourishes, so the copy sits centred in the band and still
-          // fits on one line at the banner's full width. On a dismissible banner the right
-          // inset instead stops at the close chip's near edge, whichever is further in.
-          padding: `16px ${padRight}px 16px ${announcement.paddingX + 24}px`,
+          // Symmetric insets that clear both flourishes, so the copy sits centred in the band
+          // and still fits on one line at the banner's full width. The close chip needs no room
+          // of its own: it hangs off the corner, well outside this.
+          padding: `16px ${announcement.paddingX + 24}px`,
         }}
       >
         {children}
@@ -315,8 +310,8 @@ export function Announcement({
           style={{
             width: announcement.close.size,
             height: announcement.close.size,
-            top: announcement.close.insetY - announcement.close.size / 2,
-            right: announcement.close.insetX - announcement.close.size / 2,
+            top: announcement.close.inset - announcement.close.size / 2,
+            right: announcement.close.inset - announcement.close.size / 2,
           }}
           aria-label="Dismiss announcement"
           onClick={(e) => {
@@ -450,7 +445,7 @@ export function AnnouncementParts({
       {hover && !shatter && (
         <HoverPill
           hover={hover}
-          home={[width / 2 - announcement.close.insetX, height / 2 - announcement.close.insetY]}
+          home={[width / 2 - announcement.close.inset, height / 2 - announcement.close.inset]}
           size={announcement.close.size}
           surfaceDepth={announcement.depth}
         />

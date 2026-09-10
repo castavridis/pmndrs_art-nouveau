@@ -8,9 +8,10 @@ export const announcement = {
   /**
    * The dismiss button, and the hover chip that parks under it.
    *
-   * Not in the corner itself: the right flourish's blossom is placed over that corner on
-   * purpose, reaching 120px in along the bottom and to within 16px of the top edge. `insetX`
-   * clears the petals at the button's own height, measured off the scene rather than guessed.
+   * `inset` is the centre's distance from the banner's top and right edges, and it is negative:
+   * the chip straddles the corner and hangs off it, the way the flourishes do. That also puts it
+   * clear of the right blossom, which occupies the corner from 16px below the top edge down, and
+   * clear of the copy, which never reaches the last 64px.
    */
-  close: { size: 32, insetX: 72, insetY: 24 },
+  close: { size: 32, inset: -6 },
 } as const
