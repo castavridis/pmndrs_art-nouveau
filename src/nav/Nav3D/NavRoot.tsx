@@ -10,7 +10,6 @@ import { Clusters } from './Clusters'
 import { Petals } from './Petals'
 import { PetalField } from './PetalField'
 import { Indicator } from './Indicator'
-import { Glows } from './Glows'
 import { SelectionPill } from './SelectionPill'
 import { PillMorph } from './pillGeometry'
 import { useTuning } from './tuning'
@@ -104,7 +103,6 @@ export function NavRoot() {
       <Clusters width={spring.width} />
       <Indicator />
       <SelectionPill />
-      <Glows />
       <AimTracker root={rootRef3d} />
       {mode === 'full' && <PetalField count={100} />}
       {mode === 'full' && (

@@ -163,12 +163,21 @@ something the code taught us. See [References](#references) for the external wor
 
 ## 9. Interaction and motion
 
-- **The current page wears a glass chip, not a light.** A glow reads as an effect applied to
-  the nav; a second piece of glass reads as part of it, and it carries the same per-part
-  material tuning as every other surface. The chip is rebuilt at the item's width rather than
-  scaled, since scaling a rounded rectangle stretches its caps, and it grows out of the nav's
-  face rather than fading, an opaque material having no opacity to animate. The soft light is
-  now hover and focus only, so the two states stay told apart.
+- **One glass chip is the nav's only highlight** (`d7d10c9`). It slides and resizes between
+  items — the pointer's, else the focused one, else the current page — replacing the soft
+  lights that used to sit behind each item. A glow reads as an effect applied to the nav; a
+  second piece of glass reads as part of it, takes the same per-part material tuning as every
+  other surface, and says what a set of independent lights could not: that these are positions
+  in one row. The chip is rebuilt at the item's width rather than scaled, since scaling a
+  rounded rectangle stretches its caps, and it grows out of the nav's face rather than fading,
+  an opaque material having no opacity to animate. The current page keeps its permanent mark
+  in the indicator petal below, which is what frees the chip to wander.
+- **A DOM control can borrow the nav's glass.** The bento page's article launchers are plain
+  buttons whose background is a slab in the shared scene, tracking their box; the painted
+  gradient stands down once it draws, exactly as the DOM nav's does. Glass drawn through the
+  shared transmission pass needs a `Backing` behind it — the buffered material clears its own
+  buffer to the tuned ground colour, and without that the sampler sees the page and the glass
+  comes up pale.
 - **Traced outlines draw themselves in, curve by curve** (`009bbd1`). Each closed loop of the
   trace becomes its own path with a stroke-dash sweep, staggered; rendered inline in
   `currentColor` so no image inversion is needed per theme.

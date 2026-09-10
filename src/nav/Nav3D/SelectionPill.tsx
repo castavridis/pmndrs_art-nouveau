@@ -15,19 +15,25 @@ const INSET_Y = 10
 const DEPTH = 5
 
 /**
- * The current page's item wears a small glass chip, raised off the nav's own face.
+ * One small glass chip, raised off the nav's own face, that slides and resizes between items.
  *
- * It replaces the light that used to sit behind the item: a glow reads as an effect applied to
- * the nav, a second piece of glass reads as part of it, and it carries the same tuning as every
- * other surface here. The labels draw with `depthTest` off, so the chip can stand in front of
- * the nav without covering the word it marks.
+ * It is the nav's only highlight: it rides whatever the pointer is over, falls back to the
+ * focused item, and settles on the current page when neither applies. That replaces the soft
+ * light that used to sit behind each item — a glow reads as an effect applied to the nav, a
+ * second piece of glass reads as part of it, and it takes the same tuning as every other
+ * surface here. One travelling chip also says what a set of independent lights could not: that
+ * these are positions in one row. The current page keeps its own permanent mark in the
+ * indicator petal below, so the chip is free to wander.
  *
- * Width is animated rather than the mesh scaled: scaling a rounded rectangle would stretch its
- * caps, and the whole point is that it is the nav's silhouette in miniature.
+ * The labels draw with `depthTest` off, so the chip can stand in front of the nav without
+ * covering the word it marks. Width is animated rather than the mesh scaled: scaling a rounded
+ * rectangle would stretch its caps, and the whole point is that it is the nav's silhouette in
+ * miniature.
  */
 export function SelectionPill() {
   const registry = useItemRegistry()
-  const active = useNavStore((s) => s.active)
+  // Pointer first, then keyboard focus, then the page you are on.
+  const target = useNavStore((s) => s.hovered ?? s.focused ?? s.active)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
   const preset = useTuning((s) => s.materials.selection)
   const mesh = useRef<THREE.Mesh>(null!)
@@ -47,7 +53,7 @@ export function SelectionPill() {
     const g = group.current
     const m = mesh.current
     if (!g || !m) return
-    const el = active ? registry?.get(active) : undefined
+    const el = target ? registry?.get(target) : undefined
     const rc = el?.relativeCenter.peek()
     const size = el?.size.peek()
     if (el && rc && size) {

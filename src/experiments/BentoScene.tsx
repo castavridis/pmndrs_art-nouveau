@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, type ReactNode, type RefObject } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
@@ -11,6 +11,11 @@ import type { CalloutKind } from './calloutKinds'
 import { preloadNavAssets } from '../nav/Nav3D/assets'
 import { preloadAnnouncementAssets } from './announcementAssets'
 import { preloadCalloutIcon } from './calloutAssets'
+import { Glass } from '../nav/Nav3D/Glass'
+import { Backing } from '../nav/Nav3D/Backing'
+import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
+import type { PresetName } from '../nav/Nav3D/customPresets'
+import { tokens } from '../nav/tokens'
 
 // Fetch every GLB the scene needs as soon as this chunk is evaluated.
 if (typeof window !== 'undefined') {
@@ -34,6 +39,15 @@ export interface SlotBox {
   glyph?: THREE.Texture | null
 }
 
+/** A DOM control that wants the nav's glass behind it (the article launchers). */
+export interface LauncherSlot {
+  el: RefObject<HTMLElement | null>
+  width: number
+  height: number
+  /** The disabled control wears a duller glass; live tuning otherwise, like the pill. */
+  preset?: PresetName
+}
+
 export interface BentoSceneProps {
   /** The page element pointer events come from (the canvas itself is inert). */
   eventSource: RefObject<HTMLElement | null>
@@ -41,6 +55,8 @@ export interface BentoSceneProps {
   navEl: RefObject<HTMLElement | null>
   announcement: SlotBox
   callout: SlotBox & { kind: CalloutKind }
+  /** Plain DOM buttons that are given the nav's glass as their background. */
+  launchers?: LauncherSlot[]
   onReady: () => void
 }
 
@@ -52,7 +68,7 @@ export interface BentoSceneProps {
 /** `?slabs=buffered` restores one transmission buffer per slab (for comparison). */
 const BUFFERED = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('slabs') === 'buffered'
 
-export function BentoScene({ eventSource, navEl, announcement, callout, onReady }: BentoSceneProps) {
+export function BentoScene({ eventSource, navEl, announcement, callout, launchers = [], onReady }: BentoSceneProps) {
   return (
     <NavCanvas
       eventSource={eventSource}
@@ -70,6 +86,13 @@ export function BentoScene({ eventSource, navEl, announcement, callout, onReady 
         <Slot el={callout}>
           {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} glyph={callout.glyph ?? null} />}
         </Slot>
+        {launchers.map((l, i) => (
+          <Slot key={i} el={l.el}>
+            {l.width > 0 && (
+              <LauncherCard width={l.width} height={l.height} preset={l.preset} sampler={!BUFFERED} />
+            )}
+          </Slot>
+        ))}
         <Ready onReady={onReady} frames={4} />
       </Suspense>
       {DevHandles && (
@@ -94,4 +117,39 @@ function Slot({ el, children }: { el: RefObject<HTMLElement | null> | SlotBox; c
     g.position.y = px(size.height / 2 - (r.y + r.height / 2))
   })
   return <group ref={group}>{children}</group>
+}
+
+/**
+ * The glass behind a plain DOM button, sized to it. Fully rounded like the pill it borrows its
+ * material from, and the same depth, so a launcher reads as a piece of the nav that wandered
+ * down the page rather than a card of its own.
+ */
+function LauncherCard({
+  width,
+  height,
+  preset,
+  sampler,
+}: {
+  width: number
+  height: number
+  preset?: PresetName
+  sampler: boolean
+}) {
+  const geometry = useMemo(
+    () => makeRoundedRectGeometry(width, height, height / 2, tokens.pillDepth),
+    [width, height],
+  )
+  useEffect(() => () => geometry.dispose(), [geometry])
+  return (
+    <>
+      {/* Without the buffered material's own cleared buffer, the sampler sees the page behind
+          and the glass comes up pale; this gives it the same dark ground the pill has. */}
+      {sampler && (
+        <Backing width={width} height={height} depth={tokens.pillDepth} preset={preset} radius={height / 2} />
+      )}
+      <mesh geometry={geometry} raycast={() => null}>
+        <Glass sampler={sampler} preset={preset} />
+      </mesh>
+    </>
+  )
 }

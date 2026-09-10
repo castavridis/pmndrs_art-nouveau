@@ -200,6 +200,27 @@
   color: rgb(0 0 0 / 0.45);
   transform: none;
 }
+/* Once the scene draws real glass behind the button, the painted one steps aside — the same
+   swap the DOM nav makes. What is left is the label, the hit area and the states, which stay
+   CSS because they are behaviour rather than surface. */
+.launcher[data-3d] {
+  background: none;
+  box-shadow: none;
+}
+.launcher[data-3d]:hover,
+.launcher[data-3d]:focus-visible {
+  box-shadow: none;
+  filter: none;
+}
+.launcher[data-3d]:active {
+  box-shadow: none;
+  filter: none;
+}
+.launcher[data-3d][disabled] {
+  box-shadow: none;
+  filter: none;
+  opacity: 0.45;
+}
 @media (prefers-reduced-motion: reduce) {
   .launcher {
     transition: none;

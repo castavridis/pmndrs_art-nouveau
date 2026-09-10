@@ -11,11 +11,11 @@ import type { PresetName } from './customPresets'
  * that colour; the sampler sees the real scene instead, so this backing gives it the same
  * dark ground (and hides what is behind the slab, as the buffer would) at no per-surface cost.
  */
-export function Backing({ width, height, depth, preset }: { width: number; height: number; depth: number; preset?: PresetName }) {
+export function Backing({ width, height, depth, preset, radius = 8 }: { width: number; height: number; depth: number; preset?: PresetName; radius?: number }) {
   const live = useTuning((s) => s.glass.background)
   const fromPreset = usePresetGlass(preset ?? 'silverGlass').background
   const color = preset ? fromPreset : live
-  const geometry = useMemo(() => makeRoundedRectGeometry(width, height, 8, 1), [width, height])
+  const geometry = useMemo(() => makeRoundedRectGeometry(width, height, radius, 1), [width, height, radius])
   useEffect(() => () => geometry.dispose(), [geometry])
   return (
     <mesh geometry={geometry} position-z={-px(depth / 2) - 0.01} raycast={() => null}>

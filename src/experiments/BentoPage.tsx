@@ -11,6 +11,8 @@ import { BoltIcon, DiscordIcon, ExternalIcon, GitHubIcon, InfoIcon, TerminalIcon
 import type { Shatter } from './Announcement'
 import type * as THREE from 'three'
 import { useIsClient } from '../isClient'
+import { useInk } from '../nav/Nav3D/dom'
+import { useMeasure } from './useMeasure'
 import styles from './Bento.module.css'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
@@ -60,6 +62,15 @@ export function BentoPage() {
   const [announcement, setAnnouncement] = useState<SlotBox>(EMPTY)
   const [callout, setCallout] = useState<SlotBox>(EMPTY)
   const [ready, setReady] = useState(false)
+  // The article launchers are plain buttons; the scene draws the nav's glass behind each one,
+  // so they need to be measured and their DOM background stood down once it is up.
+  const launcherOn = useRef<HTMLButtonElement>(null)
+  const launcherOff = useRef<HTMLButtonElement>(null)
+  const launcherOnSize = useMeasure(launcherOn, { width: 0, height: 0 })
+  const launcherOffSize = useMeasure(launcherOff, { width: 0, height: 0 })
+  // Real glass on a dark page is dark; the label follows the page's ink, as the banner's does.
+  const { ink } = useInk()
+  const glassInk = ready ? ink : undefined
   const onAnnouncementSlot = useCallback(
     (slot: { el: HTMLDivElement | null; width: number; height: number; shatter: Shatter | null; print: THREE.Texture | null; ink: string }) =>
       setAnnouncement(slot),
@@ -84,6 +95,11 @@ export function BentoPage() {
           navEl={navEl}
           announcement={announcement}
           callout={{ ...callout, kind: 'note' }}
+          launchers={[
+            { el: launcherOn, ...launcherOnSize },
+            // Disabled: a dark, inert glass rather than the live tuning.
+            { el: launcherOff, ...launcherOffSize, preset: 'dark' },
+          ]}
           onReady={() => setReady(true)}
         />
       )}
@@ -123,10 +139,23 @@ export function BentoPage() {
                 { key: 'cli', label: 'Copy the CLI command', icon: <TerminalIcon /> },
               ]}
             />
-            <button type="button" className={styles.launcher}>
+            <button
+              ref={launcherOn}
+              type="button"
+              className={styles.launcher}
+              data-3d={ready || undefined}
+              style={{ color: glassInk }}
+            >
               Article Launcher
             </button>
-            <button type="button" className={styles.launcher} disabled>
+            <button
+              ref={launcherOff}
+              type="button"
+              className={styles.launcher}
+              data-3d={ready || undefined}
+              style={{ color: glassInk }}
+              disabled
+            >
               Article Launcher
             </button>
           </div>
