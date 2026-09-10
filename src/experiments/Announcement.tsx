@@ -210,6 +210,7 @@ export function Announcement({
         width={L.width}
         height={L.height}
         play={outlines}
+        scatter={!!shatter}
         style={{ left: end - L.originX, top: end - L.originY, opacity: outlines ? 1 : 0 }}
       />
       <DrawnOutline
@@ -219,6 +220,7 @@ export function Announcement({
         width={R.width}
         height={R.height}
         play={outlines}
+        scatter={!!shatter}
         stagger={200}
         style={{
           right: end - (R.width - R.originX),

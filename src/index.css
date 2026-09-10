@@ -28,6 +28,20 @@ body {
   overflow-x: clip;
 }
 
+/* A traced outline coming apart: each curve drifts off under the same gravity the 3D pieces
+   fall with, so the vector layer breaks with the glass instead of sitting still. */
+@keyframes outline-scatter {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    /* Quadratic fall is approximated by the curve's easing; drift and spin are per-curve. */
+    transform: translate(var(--drift-x, 0), 320px) rotate(var(--drift-r, 0deg));
+    opacity: 0;
+  }
+}
+
 /* Traced outlines drawing themselves in (see src/nav/DrawnOutline.tsx). */
 @keyframes outline-draw {
   to {
