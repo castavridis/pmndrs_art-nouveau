@@ -68,3 +68,26 @@ export function ThemeApplier() {
   }, [resolved])
   return null
 }
+
+/**
+ * `T` switches between dark and light, through the same eased transition as the toggles.
+ * Left alone while typing (inputs, the ⌘K palette, the panel's fields), with a modifier held
+ * (⌘T, Ctrl+T and friends belong to the browser), and on key repeat, so holding it down does
+ * not strobe the page. Render once per page.
+ */
+export function ThemeShortcut() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 't' || e.repeat || e.defaultPrevented) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const el = e.target as HTMLElement | null
+      if (el?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
+      const { theme, setTheme } = useThemeStore.getState()
+      const resolved = theme === 'light' || theme === 'dark' ? theme : DEFAULT_THEME
+      setTheme(resolved === 'dark' ? 'light' : 'dark')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  return null
+}

@@ -166,6 +166,7 @@ export function BentoPage() {
                 // aria-disabled rather than disabled: it stays focusable and announced, so a
                 // keyboard user can find it and hear that it is off rather than lose it.
                 aria-disabled={launcherDisabled || undefined}
+                aria-keyshortcuts="T"
                 onClick={() => {
                   if (!launcherDisabled) setTheme(other)
                 }}

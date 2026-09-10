@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { ThemeApplier } from './theme'
+import { ThemeApplier, ThemeShortcut } from './theme'
 import { ThemeToggle } from './ThemeToggle'
 
 /**
- * Everything around a page: theme handling and the fixed light/dark/system toggle.
+ * Everything around a page: theme handling, the `T` shortcut and the fixed light/dark toggle.
  * Shared by the client entry and the prerender so hydration sees the same tree.
  * The toggle comes after the page in DOM order so the nav keeps the first Tab stop.
  *
@@ -14,6 +14,7 @@ export function AppShell({ children, themeToggle = true }: { children: ReactNode
   return (
     <>
       <ThemeApplier />
+      <ThemeShortcut />
       {children}
       {themeToggle && <ThemeToggle style={{ position: 'fixed', top: 16, left: 16, zIndex: 20 }} />}
     </>

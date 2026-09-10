@@ -343,6 +343,25 @@ something the code taught us. See [References](#references) for the external wor
   new one fully there from the start, so the page never dips through transparency. The scene
   keeps rendering underneath and settles into its new tuning during the fade. Reduced motion,
   and browsers without view transitions, switch at once.
+- **`T` switches the theme on every page** (`ThemeShortcut`, `theme.ts`), through the same
+  fade. It is left alone while typing (inputs, the ⌘K palette, the panel's fields), with a
+  modifier held, since ⌘T and Ctrl+T belong to the browser, and on key repeat, so holding it
+  down does not strobe the page. The toggles declare it with `aria-keyshortcuts`. It works even
+  when the bento's switch is shown disabled: that setting disables the button, not the theme.
+- **A click throws the cube's petals and flowers** (`Inside.tsx`, `motion.burst` and
+  `burstDecay`). Every body in each swarm is shoved straight away from the pointer's ray: full
+  strength at the pointer, a third of it at the far side, since the reach spans the whole
+  volume. Bodies ricochet off their volume's walls, losing a quarter of the shove at each, and
+  settle back into their drift within about a second. The shove sits beside the drift rather
+  than replacing it, so nothing has to be restored afterwards. Only a press that stays put
+  counts; a drag is the orbit controls'. Measured headless, a click at the canvas's far edge
+  moved the least-moved body 0.24–0.5 units in 400ms, against 0.07 at most for drift alone.
+- **The bento's petals fall the full height of the page and fade at its foot.** The petal field
+  lives inside the nav's group, which rides a slot about 200px above the canvas's centre, and it
+  fell through a canvas-sized box around that: petals wrapped a slot's height short of the
+  bottom, and the foot of the page had none. They are now kept in canvas space and moved into
+  the group's space only when drawn, and shrink away over the last 180px (`petalFade`). Glass
+  has no opacity to animate without leaving the transmission pass, so the fade is a shrink.
 - **The callout's head block is centred on the lens.** The eyebrow, its gap and the title's
   first line straddle the lens's centre line, which means their line heights are fixed in
   `calloutMetrics` rather than left to whatever font loads.
@@ -421,6 +440,13 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
   served by another project, and were copied across, with the target's own values backed up
   first. `pnpm apca --settings=<file>` runs the legibility check on such an export instead of the
   shipped tuning.
+- **The cube's swarms went back to their seeds on a theme switch.** Each swarm was memoised on
+  its size range, which every caller wrote as an inline array, so the dependency changed on
+  every render, and a theme switch re-renders every swarm. The swarms were also built per glass
+  preset, each seeded from its place in the list, so a change of pool would have reseeded them
+  as well. Now each volume owns one swarm of bodies, keyed on numbers only, and the pool only
+  decides which instanced mesh draws which body. After a pool change the bodies move exactly as
+  far as their drift takes them in the same time.
 - **On a page-wide canvas, the event target is not the canvas.** The bento's canvas takes its
   pointer events from the page over it, so an event's target is whatever element the pointer
   is over. The roam light matched hovered petals by that target and never found its own, so it
@@ -504,4 +530,4 @@ Known, diagnosed, not yet done.
 
 ---
 
-*Written 2026-09-09 and updated 2026-09-10, covering `8ca4979` through the render-layers and measured-contrast work.*
+*Written 2026-09-09 and updated 2026-09-10, covering `8ca4979` through the theme shortcut and the cube's click burst.*

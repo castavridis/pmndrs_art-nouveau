@@ -15,6 +15,12 @@ export interface PetalFieldProps {
   count?: number
   /** Materials to spread across the petals (one instanced mesh per material). */
   presets?: PresetName[]
+  /**
+   * Height in CSS px of a band at the bottom of the canvas where the petals fade away, rather
+   * than leaving through the canvas edge. They fade by shrinking: glass has no opacity to
+   * animate without dropping out of the transmission pass.
+   */
+  fadeBottom?: number
 }
 
 
@@ -51,7 +57,16 @@ class Field {
     }))
   }
 
-  update(m: THREE.InstancedMesh, t: number, step: number, motion: MotionTuning, stir: THREE.Vector3 | null) {
+  /**
+   * The petals live in canvas space (world units from the canvas's centre), so they fall from
+   * the canvas's top to its bottom wherever the field's own origin is: the nav's group rides a
+   * slot in a page-wide scene, and a field kept in its own space fell through a canvas-sized box
+   * around the nav instead, wrapping petals a slot's height short of the canvas's foot. `offset`
+   * is where that origin sits, taken off only when the instances are written; the pointer
+   * (`stir`, in the field's space) is carried the other way. `fade` is the bottom band, in world
+   * units, over which the petals shrink away to nothing at the canvas's edge.
+   */
+  update(m: THREE.InstancedMesh, t: number, step: number, motion: MotionTuning, stir: THREE.Vector3 | null, offset: THREE.Vector3, fade: number) {
     const { halfW, halfH } = this
     const held = capturedInstance(m)
     for (let i = 0; i < this.petals.length; i++) {
@@ -62,8 +77,8 @@ class Field {
       p.rot.z += p.spin.z * step * motion.spin
       if (stir && motion.stir > 0 && i !== held) {
         // The pointer gently pushes petals within stirRadius away from it (not the one it holds).
-        const dx = p.x - stir.x
-        const dy = p.y - stir.y
+        const dx = p.x - (stir.x + offset.x)
+        const dy = p.y - (stir.y + offset.y)
         const d = Math.hypot(dx, dy)
         if (d < motion.stirRadius && d > 1e-4) {
           const k = (motion.stir * (1 - d / motion.stirRadius) * step) / d
@@ -75,9 +90,10 @@ class Field {
         p.y = halfH + 0.1
         p.x = (Math.random() * 2 - 1) * halfW
       }
-      tmp.position.set(p.x + Math.sin(t * 0.8 + p.phase) * p.sway * motion.sway, p.y, p.z)
+      tmp.position.set(p.x + Math.sin(t * 0.8 + p.phase) * p.sway * motion.sway - offset.x, p.y - offset.y, p.z)
       tmp.rotation.copy(p.rot)
-      tmp.scale.setScalar(p.scale)
+      const shown = fade > 0 ? THREE.MathUtils.smoothstep(p.y, -halfH, -halfH + fade) : 1
+      tmp.scale.setScalar(p.scale * Math.max(shown, 1e-4))
       tmp.updateMatrix()
       m.setMatrixAt(i, tmp.matrix)
     }
@@ -91,7 +107,7 @@ class Field {
  * Each petal falls at its own speed, sways sideways, tumbles, and re-enters from the top.
  * Under reduced motion it holds still.
  */
-export function PetalField({ count = 100, presets: presetsProp }: PetalFieldProps) {
+export function PetalField({ count = 100, presets: presetsProp, fadeBottom = 0 }: PetalFieldProps) {
   // Which materials the petals wear: the tuning's list unless the caller fixes one.
   const tuned = useTuning((s) => s.materials.petals)
   const presets = presetsProp ?? presetPool(tuned)
@@ -99,13 +115,13 @@ export function PetalField({ count = 100, presets: presetsProp }: PetalFieldProp
   return (
     <>
       {presets.map((preset, i) => (
-        <PetalGroup key={preset} preset={preset} count={Math.min(per, count - i * per)} seed={2026 + i * 7919} />
+        <PetalGroup key={preset} preset={preset} count={Math.min(per, count - i * per)} seed={2026 + i * 7919} fadeBottom={fadeBottom} />
       ))}
     </>
   )
 }
 
-function PetalGroup({ preset, count, seed }: { preset: PresetName; count: number; seed: number }) {
+function PetalGroup({ preset, count, seed, fadeBottom }: { preset: PresetName; count: number; seed: number; fadeBottom: number }) {
   const { petalLo } = useNavAssets()
   const mesh = useRef<THREE.InstancedMesh>(null!)
   const size = useThree((s) => s.size)
@@ -127,11 +143,14 @@ function PetalGroup({ preset, count, seed }: { preset: PresetName; count: number
 
   const gl = useThree((s) => s.gl)
   usePagePointer()
+  const offset = useMemo(() => new THREE.Vector3(), [])
   useFrame((state, dt) => {
-    if (!mesh.current) return
+    const m = mesh.current
+    if (!m) return
     const motion = useTuning.getState().motion
-    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt, mesh.current) ? stirAt : null
-    field.update(mesh.current, state.clock.elapsedTime, reducedMotion ? 0 : Math.min(dt, 0.05), motion, stir)
+    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt, m) ? stirAt : null
+    offset.setFromMatrixPosition(m.matrixWorld)
+    field.update(m, state.clock.elapsedTime, reducedMotion ? 0 : Math.min(dt, 0.05), motion, stir, offset, px(fadeBottom))
   })
 
   if (count <= 0) return null

@@ -144,6 +144,14 @@ export interface MotionTuning {
   stir: number
   /** Reach of the pointer's push, in world units. */
   stirRadius: number
+  /**
+   * How hard a click shoves the swarms away from the pointer, in world units per second
+   * (0 = off), at the pointer; it reaches the whole of each swarm, weakening to a third at the
+   * far side. The shove ricochets off the swarm's walls and dies away at `burstDecay`.
+   */
+  burst: number
+  /** How fast a shove dies away, per second: at 4 it is mostly gone within half a second. */
+  burstDecay: number
   /** How struck glass breaks: into Voronoi shards, or scattering into petals. */
   shatter: 'shards' | 'petals'
 }
@@ -480,7 +488,7 @@ export const defaultLights: LightsTuning = {
 export const baseTuning: Tuning = {
   preset: 'silverGlass',
   glass: glassPresets.silverGlass,
-  motion: { speed: 1, spin: 1, sway: 1, stir: 1, stirRadius: 0.8, shatter: 'petals' },
+  motion: { speed: 1, spin: 1, sway: 1, stir: 1, stirRadius: 0.8, burst: 9, burstDecay: 4, shatter: 'petals' },
   materials: {
     petals: Object.keys(palette) as PaletteName[],
     flowers: Object.keys(palette) as PaletteName[],

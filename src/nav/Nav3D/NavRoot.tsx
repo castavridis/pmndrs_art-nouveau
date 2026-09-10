@@ -28,7 +28,12 @@ import logoUrl from '../assets/logo.svg'
  * its measured width drives one spring that the Pill and the Clusters both read.
  * Logo and Cmd are hard-coded here; only the middle links come from the store.
  */
-export function NavRoot() {
+export interface NavRootProps {
+  /** Band at the bottom of the canvas where the drifting petals fade away, in CSS px (PetalField). */
+  petalFade?: number
+}
+
+export function NavRoot({ petalFade = 0 }: NavRootProps = {}) {
   const links = useNavStore((s) => s.links)
   const mode = useNavStore((s) => s.mode)
   const reducedMotion = useNavStore((s) => s.reducedMotion)
@@ -112,7 +117,7 @@ export function NavRoot() {
       ))}
       <ItemContrast id="logo" root={rootRef3d} element={() => logoRef.current} band={LOGO_BAND} />
       <AimTracker root={rootRef3d} />
-      {mode === 'full' && <PetalField count={100} />}
+      {mode === 'full' && <PetalField count={100} fadeBottom={petalFade} />}
       {mode === 'full' && (
         <Petals
           width={spring.width}

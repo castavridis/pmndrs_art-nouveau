@@ -211,6 +211,8 @@ export default function DevControls() {
     sway: { value: M.sway, min: 0, max: 4 },
     stir: { value: M.stir, min: 0, max: 4, label: 'pointer stir' },
     stirRadius: { value: M.stirRadius, min: 0.1, max: 4, label: 'stir radius' },
+    burst: { value: M.burst, min: 0, max: 30, label: 'click burst' },
+    burstDecay: { value: M.burstDecay, min: 0.5, max: 12, label: 'burst decay' },
     shatter: { value: M.shatter, options: ['shards', 'petals'] as const, label: 'break into' },
   }), { order: -62 })
   // Materials per GLB part, and the pools the petal / flower swarms draw from. The pools are

@@ -87,7 +87,8 @@ export function BentoScene({ eventSource, navEl, announcement, callout, glassBac
     >
       <Suspense fallback={null}>
         <Slot el={navEl}>
-          <NavRoot />
+          {/* The petals fall the full height of the page's canvas and fade away at its foot. */}
+          <NavRoot petalFade={180} />
         </Slot>
         <Slot el={announcement}>
           {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} shatter={announcement.shatter ?? null} print={announcement.print ?? null} ink={announcement.ink} hover={announcement.hover ?? null} />}

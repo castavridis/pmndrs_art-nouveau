@@ -20,7 +20,8 @@ export function ThemeToggle({ style }: { style?: React.CSSProperties }) {
       type="button"
       onClick={() => setTheme(NEXT[theme])}
       aria-label={`Theme: ${LABEL[theme]} (${resolved}). Switch to ${LABEL[NEXT[theme]]}`}
-      title={`Theme: ${LABEL[theme]}`}
+      aria-keyshortcuts="T"
+      title={`Theme: ${LABEL[theme]} (press T to switch)`}
       style={{
         font: 'inherit',
         fontSize: 13,
