@@ -151,27 +151,29 @@ export async function emptiestLine(d: Director): Promise<{ y: number; z: number 
 }
 
 /**
- * The opening, Ken Burns across the whole model: through a long lens, down the clearest line
- * across it, nothing but dark glass; then the lens widens and the camera eases back and swings
- * round into the reset view. Every channel eases in and out, and each starts late, so the first
- * second barely moves: first the lens (flowers bloom out of the dark), then the distance and
- * where the camera looks, then the swing, once the field of flowers has filled the frame.
+ * The opening: through a long lens, down the clearest line across the model, nothing but dark
+ * glass — then it goes. The lens snaps wide at once (flowers burst out of the dark), while the
+ * camera pulls back, re-aims and swings round into the reset view, each a beat after the last,
+ * all settling together on the logo. Brisk rather than stately: the lens leaves at full speed,
+ * everything else eases in and out inside its own stretch.
  */
 export async function opening(d: Director, line: { y: number; z: number }, seconds: number) {
   // 0 seconds parks the camera on the opening's first frame
   const n = Math.round(seconds * 60);
-  const ease = (t: number) => (t < 0.5 ? 16 * t ** 5 : 1 - (-2 * t + 2) ** 5 / 2);
-  const span = (u: number, a: number, b: number) => ease(Math.min(1, Math.max(0, (u - a) / (b - a))));
+  const inOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+  const out = (t: number) => 1 - (1 - t) ** 3;
+  const clamp = (u: number, a: number, b: number) => Math.min(1, Math.max(0, (u - a) / (b - a)));
+  const span = (u: number, a: number, b: number) => inOut(clamp(u, a, b));
   const logLerp = (a: number, b: number, t: number) => Math.exp(Math.log(a) + (Math.log(b) - Math.log(a)) * t);
   const R0 = -START_X;
   for (let i = 0; i <= n; i++) {
     const u = n ? i / n : 0;
-    const fov = logLerp(NARROW, FOV, span(u, 0, 0.75));
-    const R = logLerp(R0, HOME.radius, span(u, 0.25, 1));
-    const aim = span(u, 0.25, 0.95);
-    const a = ((-90 + 90 * span(u, 0.45, 1)) * Math.PI) / 180;
+    const fov = logLerp(NARROW, FOV, out(clamp(u, 0, 0.55)));
+    const R = logLerp(R0, HOME.radius, span(u, 0.05, 1));
+    const aim = span(u, 0.1, 0.95);
+    const a = ((-90 + 90 * span(u, 0.2, 1)) * Math.PI) / 180;
     const t = { x: 0, y: line.y * (1 - aim), z: line.z * (1 - aim) };
-    const lift = HOME.y * span(u, 0.45, 1);
+    const lift = HOME.y * span(u, 0.2, 1);
     await d.evaluate(
       ({ t, R, a, lift, fov }: { t: { x: number; y: number; z: number }; R: number; a: number; lift: number; fov: number }) => {
         const r = (window as any).__nav3dRoots[0];

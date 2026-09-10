@@ -3,8 +3,8 @@ import { SQUARE } from './_common';
 import { CUBE_CSS, CUBE_STORAGE, emptiestLine, opening, visit } from './_cube';
 
 /**
- * The pmndrs cube, not yet recognisable: black, then a field of flowers blooming out of it as
- * a long lens looking across the model widens and eases back, swinging round into the logo.
+ * The pmndrs cube, not yet recognisable: black, then a field of flowers bursting out of it as
+ * a long lens looking across the model snaps wide and pulls back, swinging round into the logo.
  * Then the pointer wakes the blossoms with the roaming light, the page switches to dark on T,
  * the ray sweeps after the pointer, and a click throws every petal and flower. Captured with
  * `--dev` (camera and body positions come from the dev handles).
@@ -25,9 +25,10 @@ export default defineShot({
     await d.skip(0.2);
   },
   script: async (d) => {
-    // 1. black, then the field of flowers, then the logo: one slow ease
+    // 1. a beat of black, then the field of flowers bursts out and swings round into the logo
     await d.mark('black');
-    await opening(d, line, 7.2);
+    await d.wait(0.3);
+    await opening(d, line, 3.8);
     await d.mark('logo');
     await d.wait(0.3);
     // 2. the pointer wakes a petal, then a flower
@@ -53,7 +54,7 @@ export default defineShot({
     // 6. a click throws them all
     await d.mark('burst');
     await d.click();
-    await d.wait(2);
+    await d.wait(3.4);
     await d.mark('end');
   },
 });
