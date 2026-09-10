@@ -6,6 +6,7 @@ import { NavRoot } from '../nav/Nav3D/NavRoot'
 import { Ready } from '../nav/Nav3D/Ready'
 import { px } from '../nav/tokens'
 import { AnnouncementParts, type Shatter } from './Announcement'
+import type { HoverState } from './HoverPill'
 import { CalloutParts } from './Callout'
 import type { CalloutKind } from './calloutKinds'
 import { preloadNavAssets } from '../nav/Nav3D/assets'
@@ -37,6 +38,8 @@ export interface SlotBox {
   ink?: string
   /** Callout: the kind's symbol, rasterised from the card's own markup, for the lens. */
   glyph?: THREE.Texture | null
+  /** Announcement: the pointer over the banner, for the chip that follows it. */
+  hover?: RefObject<HoverState> | null
 }
 
 /** A DOM control that wants the nav's glass behind it (the article launchers). */
@@ -81,7 +84,7 @@ export function BentoScene({ eventSource, navEl, announcement, callout, launcher
           <NavRoot />
         </Slot>
         <Slot el={announcement}>
-          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} shatter={announcement.shatter ?? null} print={announcement.print ?? null} ink={announcement.ink} />}
+          {announcement.width > 0 && <AnnouncementParts width={announcement.width} height={announcement.height} sampler={!BUFFERED} shatter={announcement.shatter ?? null} print={announcement.print ?? null} ink={announcement.ink} hover={announcement.hover ?? null} />}
         </Slot>
         <Slot el={callout}>
           {callout.width > 0 && <CalloutParts kind={callout.kind} width={callout.width} height={callout.height} sampler={!BUFFERED} glyph={callout.glyph ?? null} />}

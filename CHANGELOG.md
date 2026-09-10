@@ -177,6 +177,14 @@ something the code taught us. See [References](#references) for the external wor
   rounded rectangle stretches its caps, and it grows out of the nav's face rather than fading,
   an opaque material having no opacity to animate. The current page keeps its permanent mark
   in the indicator petal below, which is what frees the chip to wander.
+- **The announcement's dismiss mark shares the nav's travelling chip.** A glass chip parks under
+  an X in the top right, follows the pointer across the banner, and shrinks away over a link so
+  it never sits on the words you are reaching for. Two placement facts came out of measuring the
+  scene rather than guessing: the right blossom is deliberately over that corner, reaching 120px
+  in along the bottom and to within 16px of the top edge, so the X sits 72px in to clear it; and
+  the chip is centred on the slab's face writing no depth, the way the nav's chip sits behind its
+  labels, because proud of the face it slid over the printed copy and sunk inside a 6px slab it
+  disappeared altogether.
 - **A DOM control can borrow the nav's glass.** The bento page's article launchers are plain
   buttons whose background is a slab in the shared scene, tracking their box; the painted
   gradient stands down once it draws, exactly as the DOM nav's does. Glass drawn through the

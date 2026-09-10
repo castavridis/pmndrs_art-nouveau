@@ -8,7 +8,6 @@ import { Callout } from './Callout'
 import { BentoScene, type SlotBox } from './BentoScene'
 import { Button, ButtonLink, CopyButton, Kbd, Popover } from '../ui'
 import { BoltIcon, DiscordIcon, ExternalIcon, GitHubIcon, InfoIcon, TerminalIcon, TwitterIcon } from '../ui/Icons'
-import type { Shatter } from './Announcement'
 import type * as THREE from 'three'
 import { useIsClient } from '../isClient'
 import { useInk } from '../nav/Nav3D/dom'
@@ -71,11 +70,7 @@ export function BentoPage() {
   // Real glass on a dark page is dark; the label follows the page's ink, as the banner's does.
   const { ink } = useInk()
   const glassInk = ready ? ink : undefined
-  const onAnnouncementSlot = useCallback(
-    (slot: { el: HTMLDivElement | null; width: number; height: number; shatter: Shatter | null; print: THREE.Texture | null; ink: string }) =>
-      setAnnouncement(slot),
-    [],
-  )
+  const onAnnouncementSlot = useCallback((slot: SlotBox) => setAnnouncement(slot), [])
   const onCalloutSlot = useCallback(
     (el: HTMLDivElement | null, size: { width: number; height: number }, glyph: THREE.Texture | null) =>
       setCallout({ el, ...size, glyph }),

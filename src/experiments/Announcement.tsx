@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
 import { Ready } from '../nav/Nav3D/Ready'
@@ -29,6 +29,7 @@ import { PrintLayer, usePrintMaterial } from './PrintLayer'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useIsClient } from '../isClient'
+import { HoverPill, useHoverPointer, type HoverState } from './HoverPill'
 
 /** A strike on the banner: where (slab-local x/y, world units) and the slab size at that moment. */
 export interface Shatter {
@@ -59,6 +60,8 @@ export interface AnnouncementProps {
     shatter: Shatter | null
     print: THREE.Texture | null
     ink: string
+    /** Pointer over the banner, for the chip the page scene draws (see HoverPill). */
+    hover: RefObject<HoverState> | null
   }) => void
   postprocessing?: boolean
   /**
@@ -122,13 +125,26 @@ export function Announcement({
     }
   }, [shatter, onDismiss])
 
+  const strikeAt = useCallback(
+    (clientX: number, clientY: number) => {
+      const r = rootRef.current!.getBoundingClientRect()
+      // The size is captured now: the banner collapses later and the shards must not re-form.
+      setShatter({
+        hit: [px(clientX - r.left - r.width / 2), px(r.height / 2 - (clientY - r.top))],
+        width: r.width,
+        height: r.height,
+      })
+    },
+    [],
+  )
   const strike = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dismissible || shatter || vector) return
+    // Links and the close button handle their own clicks.
     if ((e.target as HTMLElement).closest('a, button')) return
-    const r = rootRef.current!.getBoundingClientRect()
-    // The size is captured now: the banner collapses later and the shards must not re-form.
-    setShatter({ hit: [px(e.clientX - r.left - r.width / 2), px(r.height / 2 - (e.clientY - r.top))], width: r.width, height: r.height })
+    strikeAt(e.clientX, e.clientY)
   }
+  // The chip that follows the pointer across the banner and parks under the close button.
+  const hover = useHoverPointer(rootRef)
   // Ink follows the glass backdrop (see useInk); applied after hydration, CSS covers SSR/vector.
   const { ink } = useInk()
   const client = useIsClient()
@@ -169,8 +185,8 @@ export function Announcement({
   }, [printOn, size.width, size.height, printInk, shatter])
 
   useEffect(() => {
-    if (variant === 'shared') onSlot?.({ el: rootRef.current, ...size, shatter, print: printed, ink: printInk })
-  }, [variant, onSlot, size, shatter, printed, printInk])
+    if (variant === 'shared') onSlot?.({ el: rootRef.current, ...size, shatter, print: printed, ink: printInk, hover })
+  }, [variant, onSlot, size, shatter, printed, printInk, hover])
   const canvasBox = useRef<HTMLDivElement>(null)
   // Dev legibility probe: the text box in canvas px (the canvas is inset by the bleed).
   const probeRegions = useCallback(() => {
@@ -184,6 +200,11 @@ export function Announcement({
   // Dev: outlines over the live 3D as well.
   const overlay = useOutlines((s) => s.overlay)
   const outlines = vector || overlay
+  // The copy stops at the flourish, or at the close chip's near edge when there is one.
+  const padRight = Math.max(
+    announcement.paddingX + 24,
+    dismissible ? announcement.close.insetX + announcement.close.size / 2 + 8 : 0,
+  )
   const L = fallback['announcement-left']
   const R = fallback['announcement-right']
   const end = announcement.height / 2
@@ -258,7 +279,7 @@ export function Announcement({
         >
           <NavCanvas postprocessing={postprocessing}>
             <Suspense fallback={null}>
-              <Scene width={size.width} height={size.height} shatter={shatter} print={printed} ink={printInk} />
+              <Scene width={size.width} height={size.height} shatter={shatter} print={printed} ink={printInk} hover={dismissible ? hover : null} />
               <Ready onReady={() => setReady(true)} />
               {LcProbe && <LcProbe ink={ink} regions={probeRegions} />}
             </Suspense>
@@ -275,13 +296,47 @@ export function Announcement({
         className={`${styles.content} ${printed ? styles.printed : ''}`}
         style={{
           minHeight: announcement.height,
-          // Symmetric insets that clear both flourishes, so the copy sits centred in the band
-          // and still fits on one line at the banner's full width.
-          padding: `16px ${announcement.paddingX + 24}px`,
+          // Insets that clear both flourishes, so the copy sits centred in the band and still
+          // fits on one line at the banner's full width. On a dismissible banner the right
+          // inset instead stops at the close chip's near edge, whichever is further in.
+          padding: `16px ${padRight}px 16px ${announcement.paddingX + 24}px`,
         }}
       >
         {children}
       </div>
+      {dismissible && !gone && (
+        // The chip behind it is 3D (HoverPill), so this carries only the mark and the hit area.
+        // `data-pill-home` tells the tracker this is where the chip lives, so approaching the
+        // button parks it rather than making it retreat the way a link does.
+        <button
+          type="button"
+          data-pill-home=""
+          className={styles.close}
+          style={{
+            width: announcement.close.size,
+            height: announcement.close.size,
+            top: announcement.close.insetY - announcement.close.size / 2,
+            right: announcement.close.insetX - announcement.close.size / 2,
+          }}
+          aria-label="Dismiss announcement"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (shatter) return
+            const r = e.currentTarget.getBoundingClientRect()
+            strikeAt(r.left + r.width / 2, r.top + r.height / 2)
+          }}
+        >
+          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+            <path
+              d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }
@@ -292,14 +347,16 @@ function Scene({
   shatter,
   print,
   ink,
+  hover,
 }: {
   width: number
   height: number
   shatter: Shatter | null
   print?: THREE.Texture | null
   ink?: string
+  hover?: RefObject<HoverState> | null
 }) {
-  return <AnnouncementParts width={width} height={height} shatter={shatter} print={print} ink={ink} />
+  return <AnnouncementParts width={width} height={height} shatter={shatter} print={print} ink={ink} hover={hover} />
 }
 
 /**
@@ -314,6 +371,7 @@ export function AnnouncementParts({
   shatter = null,
   print,
   ink = '#f2f2ef',
+  hover,
 }: {
   width: number
   height: number
@@ -324,6 +382,8 @@ export function AnnouncementParts({
   print?: THREE.Texture | null
   /** Ink for the printed text. */
   ink?: string
+  /** Pointer over the banner; drives the chip under the close button. Omit for no chip. */
+  hover?: RefObject<HoverState> | null
 }) {
   const { leftHalves, rightHalves, rightAnchor } = useAnnouncementAssets()
   const choice = useTuning((s) => s.materials.flourishes)
@@ -386,6 +446,14 @@ export function AnnouncementParts({
       )}
       {!shatter && printed && (
         <PrintLayer geometry={printPlane} material={printMaterial} position={[0, 0, px(announcement.depth) / 2 + 0.002]} />
+      )}
+      {hover && !shatter && (
+        <HoverPill
+          hover={hover}
+          home={[width / 2 - announcement.close.insetX, height / 2 - announcement.close.insetY]}
+          size={announcement.close.size}
+          surfaceDepth={announcement.depth}
+        />
       )}
       <Flourish halves={leftHalves} x={-end} grow={grow} preset={preset} />
       <Flourish halves={rightHalves} x={rightEnd} grow={grow} preset={preset} />
