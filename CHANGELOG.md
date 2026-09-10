@@ -192,6 +192,13 @@ something the code taught us. See [References](#references) for the external wor
   shared transmission pass needs a `Backing` behind it — the buffered material clears its own
   buffer to the tuned ground colour, and without that the sampler sees the page and the glass
   comes up pale.
+- **The pill springs on intent, not on measurements.** It animates when its width is *meant* to
+  change — a link added or removed, or a resize that moves the nav to another mode, which is the
+  only way a resize touches a content-driven width. Everything else that moves the measurement is
+  the nav arriving, and it arrives at its final width. The previous rule, "every measurement after
+  the first animates", could not tell those apart: uikit reports several sizes while it settles
+  its layout and a webfont lands, so the pill grew in over 14 distinct widths. It is one now, with
+  the spring intact for both real cases (22 steps on removing a link, 21 on collapsing).
 - **Traced outlines draw themselves in, curve by curve** (`009bbd1`). Each closed loop of the
   trace becomes its own path with a stroke-dash sweep, staggered; rendered inline in
   `currentColor` so no image inversion is needed per theme.

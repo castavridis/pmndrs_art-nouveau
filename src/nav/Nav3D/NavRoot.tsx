@@ -36,7 +36,6 @@ export function NavRoot() {
   const rootRef = useRef<VanillaContainer>(null)
   const uiRef = useRef<Group>(null)
   const [measured, setMeasured] = useState<number | null>(null)
-  const seen = useRef(false)
   const [animate, setAnimate] = useState(false)
   const [registry] = useState<ItemRegistry>(() => new Map())
   const { ink } = useInk()
@@ -78,16 +77,28 @@ export function NavRoot() {
     return root.size.subscribe((size) => {
       if (!size || size[0] <= 0) return
       setMeasured(size[0])
-      // Only measurements after the first one animate (see `animate` below).
-      if (seen.current) setAnimate(true)
-      seen.current = true
     })
   }, [])
 
+  /**
+   * The pill springs only when its width is *meant* to change: a link added or removed, or a
+   * resize that moves the nav into another mode (which is the only way a resize changes the
+   * pill, its width being content-driven). Everything else that moves the measurement — uikit
+   * settling its layout over the first frames, a webfont arriving — is the nav appearing, and
+   * it should appear at its final width rather than growing into it. Counting measurements
+   * could not tell those apart: settling reports several, so the pill grew in.
+   */
+  const intent = `${links.length}:${mode}`
+  const baseline = useRef<string | null>(null)
+  useEffect(() => {
+    if (baseline.current === null) baseline.current = intent
+    else if (baseline.current !== intent) {
+      baseline.current = intent
+      setAnimate(true)
+    }
+  }, [intent])
+
   const width = measured ?? tokens.pillRadius * 2
-  // The first measurement lands instantly (no pill growing in from a circle as the 3D layer
-  // fades up); `animate` is only set by the second measurement onwards. (`measured === null`
-  // would not do: it flips in the same render that delivers the width, which then animates.)
   const spring = useSpring({
     width,
     immediate: !animate || reducedMotion,
