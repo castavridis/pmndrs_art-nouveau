@@ -179,6 +179,23 @@ something the code taught us. See [References](#references) for the external wor
 - **One shared scene on the bento page** (`541ad37`): the nav, banner and callout are drawn by a
   single fixed canvas whose parts track their DOM slots every frame, sharing petals, lights and
   the composer. Events come from the page element so DOM controls above the canvas stay live.
+- **The callout's kind symbol is a 3D glyph, not a DOM overlay** (`7563285`). The live inline
+  SVG is serialised and rasterised, so the artwork has one source and the symbol rides the
+  parallax with the glass instead of floating over it. Three constraints shaped it: a
+  standalone data-URL SVG has no cascade, so `currentColor` is substituted into the markup;
+  the symbol sits on the lens's *outer* face rather than under the glass, because transmission
+  slides whatever is behind a surface by the material's own thickness and that slide grows
+  with how far off the camera's axis the lens sits; and a per-frame projection solve holds it
+  on the ring's optical axis, since the face is nearer the camera than the ring's widest
+  circle. Blended at a quarter opacity — a watermark in the glass rather than a printed label.
+- **The announcement's flourishes are cut at the band's centre line** (`7563285`). They were
+  drawn against a 94 px band, but a banner is as tall as its copy, so a whole flourish pinned
+  to the middle stranded its upper pieces below the top edge and its lower ones above the
+  bottom. Each half now rides the edge it was drawn against, in the 3D pieces and — by
+  filtering the traced loops by their vertical centre — in the vector fallback too.
+- **The callout's head block is centred on the lens.** The eyebrow, its gap and the title's
+  first line straddle the lens's centre line, which means their line heights are fixed in
+  `calloutMetrics` rather than left to whatever font loads.
 
 ## 10. Diagnoses that changed the design
 
@@ -207,6 +224,17 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
   hovered flower reached HDR values in the hundreds; at bloom radius 0.85 it survived every mip
   level. Could not be reproduced locally in Chrome or WebKit, so the fix was a guard (the HDR
   clamp) rather than a chase.
+- **Transmission renders only opaque objects, and displaces what is behind the surface.** Two
+  separate limits, both found while putting a symbol inside the callout's lens. A blended mesh
+  never reaches the transmission buffer at all, so it cannot appear inside glass; and what does
+  reach it is sampled along a refracted ray offset by the material's `thickness`, which is a
+  fixed slide no depth adjustment can undo. Anything that must read as *inside* glass and stay
+  where it was put has to be printed on the surface, not placed under it.
+- **Playwright's stability check never settles under load.** With a system load average near
+  100, clicks on a completely static element time out with "waiting for element to be visible,
+  enabled and stable": the check compares bounding boxes across animation frames, and the
+  WebGL scenes starve `requestAnimationFrame`. Reproduced identically against an older commit
+  in a second worktree before blaming any change.
 - **Port 5173 can belong to another project.** A verification run once rendered a different app
   entirely. Check `document.title` before trusting a headless run; the preview now uses
   `autoPort`.

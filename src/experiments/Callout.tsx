@@ -18,7 +18,7 @@ import iconOutline from '../nav/assets/fallback/outline/callout-icon.svg?raw'
 import { DrawnOutline } from '../nav/DrawnOutline'
 import fallback from '../nav/assets/fallback/manifest.json'
 import styles from './Callout.module.css'
-import { callout } from './calloutMetrics'
+import { callout, calloutHeadHeight, calloutLensRadius } from './calloutMetrics'
 import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
 import { useTuning, type GlassPreset, type MaterialChoice } from '../nav/Nav3D/tuning'
 import type { PresetName } from '../nav/Nav3D/customPresets'
@@ -213,14 +213,16 @@ export function Callout({
             narrow
               ? {
                   // Phone widths: the text runs below the lens instead of beside it.
-                  padding: callout.padding * 0.7,
-                  paddingTop: callout.iconY + callout.icon / 2 + 12,
+                  padding: callout.padding,
+                  paddingTop: callout.iconY + calloutLensRadius + callout.padding,
                 }
               : {
                   padding: callout.padding,
-                  paddingLeft: callout.iconX + callout.icon * 0.75,
+                  // The eyebrow and the title's first line straddle the lens's centre line.
+                  paddingTop: Math.max(callout.padding, callout.iconY - calloutHeadHeight / 2),
+                  paddingLeft: callout.iconX + calloutLensRadius + callout.padding,
                   // Never shorter than the icon needs, however little content there is.
-                  minHeight: callout.iconY + callout.icon / 2 + callout.padding,
+                  minHeight: callout.iconY + calloutLensRadius + callout.padding,
                 }
           }
         >
@@ -297,8 +299,11 @@ function IconAtCorner({ preset, width, height, glyph }: { preset: GlassPreset; g
  */
 const GLYPH_GAIN = new THREE.Color(1.4, 1.4, 1.4)
 
-/** The ring alone is drawn at three quarters; the leaves stay the size they were traced at. */
-const LENS_SCALE = 0.75
+/** How strongly the symbol sits on the lens: a watermark in the glass, not a printed label. */
+const GLYPH_OPACITY = 0.25
+
+/** The ring alone is drawn smaller; the leaves stay the size they were traced at. */
+const LENS_SCALE = callout.lensScale
 
 /** Lens ring with the two leaves, scaled so the icon is `callout.icon` px across. */
 export function Icon({ preset, glyph }: { preset: GlassPreset; glyph?: THREE.Texture | null }) {
@@ -407,9 +412,17 @@ function GlyphFace({
   return (
     <mesh ref={ref} raycast={() => null}>
       <planeGeometry args={[size, size]} />
-      {/* Alpha cutout rather than blending: three's transmission pass renders only opaque
-          objects, so a blended glyph would vanish from every glass surface that samples it. */}
-      <meshBasicMaterial map={map} color={GLYPH_GAIN} alphaTest={0.35} toneMapped={false} />
+      {/* Blended, which keeps it out of three's transmission pass — that pass renders only
+          opaque objects. Nothing samples it: the glyph rides the lens's outer face, so no glass
+          sits in front of it. Depth stays unwritten so it never occludes what is behind. */}
+      <meshBasicMaterial
+        map={map}
+        color={GLYPH_GAIN}
+        transparent
+        opacity={GLYPH_OPACITY}
+        depthWrite={false}
+        toneMapped={false}
+      />
     </mesh>
   )
 }
