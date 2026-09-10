@@ -1,4 +1,5 @@
 import { Composition } from 'remotion';
+import { cube } from './cuts/cube';
 import { sample } from './cuts/sample';
 import { Reel, reelMetadata } from './Reel';
 
@@ -8,6 +9,16 @@ import { Reel, reelMetadata } from './Reel';
 export function Root() {
   return (
     <>
+      <Composition
+        id="Cube"
+        component={Reel}
+        width={1080}
+        height={1080}
+        fps={60}
+        durationInFrames={1}
+        defaultProps={{ reel: cube }}
+        calculateMetadata={reelMetadata}
+      />
       <Composition
         id="Sample"
         component={Reel}

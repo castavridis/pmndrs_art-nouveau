@@ -1,5 +1,5 @@
 import { loadFont } from '@remotion/google-fonts/Inter';
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { palette, type PaletteName } from './edit';
 
 // the app's own face (src/index.css), at the weights a title needs
@@ -135,4 +135,26 @@ export function Flash() {
   const frame = useCurrentFrame();
   const o = interpolate(frame, [0, 7], [0.85, 0], { extrapolateRight: 'clamp' });
   return <AbsoluteFill style={{ backgroundColor: '#fff', opacity: o, pointerEvents: 'none' }} />;
+}
+
+/** A flat colour fading off the start of a cut (`in`) or over its end (`out`), eased. */
+export function Fade({
+  seconds,
+  color,
+  direction,
+  durationInFrames,
+}: {
+  seconds: number;
+  color: string;
+  direction: 'in' | 'out';
+  durationInFrames: number;
+}) {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const n = Math.max(1, Math.round(seconds * fps));
+  const opacity =
+    direction === 'in'
+      ? interpolate(frame, [0, n], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.quad) })
+      : interpolate(frame, [durationInFrames - n, durationInFrames - 1], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.quad) });
+  return <AbsoluteFill style={{ backgroundColor: color, opacity, pointerEvents: 'none' }} />;
 }

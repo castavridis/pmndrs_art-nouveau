@@ -39,6 +39,11 @@ export interface Shot {
   css?: string;
   /** Let link clicks navigate. Off by default so a stray click cannot end the take. */
   allowNavigation?: boolean;
+  /**
+   * localStorage to start from, key → string value, written before any page script runs:
+   * a take can then film a tuning, a scene setup or a theme without clicking through a panel.
+   */
+  storage?: Record<string, string>;
   /** Where the pointer rests before the first move. Default: bottom-right, out of the way. */
   cursorStart?: Point;
   /**
@@ -385,6 +390,11 @@ export async function runShot(shot: Shot, baseUrl: string, log = console.log) {
   await context.addInitScript({
     content: `window.__VT_CONFIG__ = ${JSON.stringify({ seed: shot.seed ?? 1 })};\n${VT_SCRIPT}`,
   });
+  if (shot.storage) {
+    await context.addInitScript((entries: Record<string, string>) => {
+      for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
+    }, shot.storage);
+  }
   const page = await context.newPage();
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

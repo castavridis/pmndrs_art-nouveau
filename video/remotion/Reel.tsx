@@ -9,7 +9,7 @@ import {
 import { layout, type ClipMeta, type Reel as ReelSpec } from './edit';
 import { CutSfx } from './Sfx';
 import { Shot } from './Shot';
-import { Card, Flash, Word } from './Type';
+import { Card, Fade, Flash, Word } from './Type';
 
 export type ReelProps = { reel: ReelSpec; metas?: Record<string, ClipMeta> };
 
@@ -39,17 +39,21 @@ export function Reel({ reel, metas = {} }: ReelProps) {
             )}
             {cut.card && <Card {...cut.card} />}
             {cut.flash && <Flash />}
+            {cut.fadeIn && <Fade {...cut.fadeIn} direction="in" durationInFrames={to - from} />}
+            {cut.fadeOut && <Fade {...cut.fadeOut} direction="out" durationInFrames={to - from} />}
             {reel.sfx !== false && <CutSfx cut={cut} meta={meta} durationInFrames={to - from} />}
           </Sequence>
         );
       })}
       {/* a soft vignette pulls the eye to the middle, where the action is */}
+      {reel.vignette !== false && (
       <AbsoluteFill
         style={{
           background: 'radial-gradient(ellipse at center, transparent 62%, rgba(0,0,0,0.35) 100%)',
           pointerEvents: 'none',
         }}
       />
+      )}
       {reel.music && (
         <Html5Audio
           src={staticFile(reel.music)}

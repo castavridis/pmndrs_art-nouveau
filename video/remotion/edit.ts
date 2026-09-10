@@ -73,6 +73,16 @@ export interface Cut {
   punch?: boolean;
   /** Draw the recorded pointer. Default true. */
   cursor?: boolean;
+  /** Fade up from a flat colour at the start of the cut. */
+  fadeIn?: Fade;
+  /** Fade down to a flat colour at the end of the cut. */
+  fadeOut?: Fade;
+}
+
+export interface Fade {
+  seconds: number;
+  /** Any CSS colour: black, or the page's own background to fade to the page. */
+  color: string;
 }
 
 export interface Reel {
@@ -84,6 +94,8 @@ export interface Reel {
   musicFrom?: number;
   /** Sound effects from public/sfx: a click on every press, impacts, whooshes. Default true. */
   sfx?: boolean;
+  /** A soft darkening at the frame's corners. Default true; it greys a light page's corners. */
+  vignette?: boolean;
 }
 
 /** What a capture wrote next to its footage (capture/director.ts `ClipMeta`). */
