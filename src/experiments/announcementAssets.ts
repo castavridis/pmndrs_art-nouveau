@@ -61,9 +61,18 @@ export function useAnnouncementAssets(): AnnouncementAsset {
     const frontZ = sb.max.z
 
     const build = (list: THREE.BufferGeometry[], originX: number) => {
-      // Flatten: nearest-to-surface part first, 2 px per layer.
+      // Flatten onto a stack just above the surface, keeping the exported front-to-back order.
+      // Each layer clears the previous part's own thickness: the right flourish's tendril is
+      // 37px deep, so a flat 2px step buried the flower inside it and the tendril read as
+      // passing through the petals.
       const ordered = [...list].sort((a, b) => a.boundingBox!.min.z - b.boundingBox!.min.z)
-      ordered.forEach((g, i) => g.translate(0, 0, frontZ + 1 + i * 2 - g.boundingBox!.min.z))
+      const GAP = 2
+      let cursor = frontZ + GAP
+      for (const g of ordered) {
+        const b = g.boundingBox!
+        g.translate(0, 0, cursor - b.min.z)
+        cursor += b.max.z - b.min.z + GAP
+      }
       const g = ordered.length === 1 ? ordered[0]! : mergeParts(ordered)
       g.translate(-originX, -centre.y, -centre.z)
       g.scale(px(1), px(1), px(1))
