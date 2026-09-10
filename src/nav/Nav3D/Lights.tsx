@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useContext, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js'
@@ -6,7 +6,7 @@ import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHel
 import { Lightformer, useHelper } from '@react-three/drei'
 import { px } from '../tokens'
 import { palette, useTuning, type RectLightTuning, type Vec3 } from './tuning'
-import { transmissionOnly } from './materials'
+import { LAYER, useLayer } from './layers'
 import { StripsContext } from './strips'
 import { hoverAim, navAim, pagePointer, usePagePointer } from './aim'
 
@@ -138,6 +138,7 @@ function Roam({ debug }: { debug: boolean }) {
   const r = useTuning((s) => s.lights.roam)
   const size = useThree((s) => s.size)
   const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
   const group = useRef<THREE.Group>(null!)
   const light = useRef<THREE.PointLight>(null!)
   /** Depth the light is currently holding (see the follow branch below). */
@@ -153,7 +154,7 @@ function Roam({ debug }: { debug: boolean }) {
     const hh = px(size.height) / 2
     // Keep the light (and its light pool) inside the canvas: a margin of a few px.
     const margin = px(Math.max(r.size, 8))
-    if (r.hover && hoverAim.active && hoverAim.canvas === gl.domElement) {
+    if (r.hover && hoverAim.active && hoverAim.scene === scene) {
       // On a hovered petal or flower: the hit point, lifted toward the camera by hoverOffset
       // so the light glints on the surface instead of sitting inside it.
       target.copy(hoverAim.point)
@@ -301,23 +302,11 @@ function Rect({ light, debug }: { light: RectLightTuning; debug: boolean }) {
 
 /**
  * The emissive strip. Like the DCC's light, it is hidden from the camera and only shows up
- * refracted through the pill (transmission buffer) and reflected via the environment map.
- * In debug mode it is simply visible.
+ * refracted through the pill (its layer is in the transmission buffer's mask and not the
+ * viewer's; see layers.ts). In debug mode it sits on the default layer and is simply visible.
  */
 function Emitter({ debug, children }: { debug: boolean; children: React.ReactNode }) {
-  const ref = useRef<THREE.Mesh>(null!)
-  useEffect(() => {
-    const m = ref.current
-    if (debug) {
-      m.visible = true
-      return
-    }
-    m.visible = false
-    transmissionOnly.add(m)
-    return () => {
-      transmissionOnly.delete(m)
-      m.visible = true
-    }
-  }, [debug])
+  const ref = useRef<THREE.Mesh>(null)
+  useLayer(ref, debug ? LAYER.DEFAULT : LAYER.BUFFER_ONLY)
   return <mesh ref={ref}>{children}</mesh>
 }

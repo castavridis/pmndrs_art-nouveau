@@ -8,7 +8,7 @@ import { Glass } from './Glass'
 import { makeRoundedRectGeometry } from './roundedRectGeometry'
 import { useItemRegistry } from './items'
 import { useTuning } from './tuning'
-import { INKS } from './dom'
+import { LAYER, useLayer } from './layers'
 
 /** Room around the label, and how much shorter than the nav the chip is. */
 const PAD_X = 18
@@ -39,13 +39,14 @@ export function SelectionPill() {
   const preset = useTuning((s) => s.materials.selection)
   const mesh = useRef<THREE.Mesh>(null!)
   const group = useRef<THREE.Group>(null!)
-  // The veil under the label, set by ChipContrast: opposite the ink it chose, as strong as the
-  // chip needs for that ink to read.
+  // The veil under the label, sized from the chip as measured behind it (NavContrast.tsx):
+  // opposite the ink chosen, as strong as the chip needs for that ink to read.
   const veil = useRef<THREE.Mesh>(null!)
   const veilMaterial = useRef<THREE.MeshBasicMaterial>(null!)
-  const chipInk = useNavStore((s) => s.chipInk)
-  const chipVeil = useNavStore((s) => s.chipVeil)
-  const veilColor = chipInk === INKS.light.ink ? '#ffffff' : '#000000'
+  useLayer(veil, LAYER.VEIL)
+  const reading = useNavStore((s) => (target ? s.readings[target] : undefined))
+  const chipVeil = reading?.veil ?? 0
+  const veilColor = reading?.scheme === 'light' ? '#ffffff' : '#000000'
   const height = tokens.pillHeight - INSET_Y * 2
 
   // One geometry, rebuilt only when the width has actually moved a pixel.

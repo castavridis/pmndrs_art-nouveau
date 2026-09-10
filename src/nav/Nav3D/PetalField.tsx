@@ -130,7 +130,7 @@ function PetalGroup({ preset, count, seed }: { preset: PresetName; count: number
   useFrame((state, dt) => {
     if (!mesh.current) return
     const motion = useTuning.getState().motion
-    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt) ? stirAt : null
+    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt, mesh.current) ? stirAt : null
     field.update(mesh.current, state.clock.elapsedTime, reducedMotion ? 0 : Math.min(dt, 0.05), motion, stir)
   })
 

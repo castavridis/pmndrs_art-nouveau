@@ -17,8 +17,10 @@ export function luminance(hex: string): number {
 }
 
 /**
- * Ink for text drawn on the glass. The glass's buffer background is what shows through it,
- * so a clearly dark or clearly light one decides the ink; in between, the page theme does.
+ * A first guess at the ink for text on the glass, from the tuning: the glass's buffer
+ * background is what shows through it, so a clearly dark or clearly light one decides; in
+ * between, the page theme does. Text on glass is inked by measurement (contrast.ts); this
+ * stands in until the first reading, on the server, and in the vector fallback.
  */
 export function useInk() {
   const bg = useTuning((s) => s.glass.background)
@@ -26,10 +28,10 @@ export function useInk() {
 }
 
 /**
- * Ink for the nav's own labels, logo and keys: decided by the glass the nav bar actually wears
- * (materials.navbar), which may be a preset rather than the live tuning. Keyed to the live glass
- * instead, a nav bar given a dark preset on a light-tuned page would ink its words for the wrong
- * surface.
+ * The same first guess for the nav's own labels, logo and keys (measured in NavContrast.tsx):
+ * keyed to the glass the nav bar actually wears (materials.navbar), which may be a preset rather
+ * than the live tuning, so a nav bar given a dark preset on a light-tuned page does not start
+ * inked for the wrong surface.
  */
 export function useNavInk() {
   return useInkFor(useNavbarGlass().background)

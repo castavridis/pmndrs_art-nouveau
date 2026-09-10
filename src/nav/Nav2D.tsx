@@ -18,6 +18,9 @@ import styles from './Nav2D.module.css'
 // under their 3D twins: focus rings and hover land on the right item.
 import '@fontsource-variable/inter'
 
+/** The frame's scale (tokens.frameScale): the traced art is sized and pinned like the 3D. */
+const S = tokens.frameScale
+
 /**
  * The DOM nav. Always mounted; it is the SSR / a11y / SEO source of truth.
  * The 3D layer (when present) drives these anchors via `data-id`.
@@ -153,11 +156,11 @@ export function Nav2D({
             key="left-outline"
             className={`${styles.cluster} ${styles.clusterLeft}`}
             src={leftOutline}
-            width={fallback['nav-left'].width}
-            height={fallback['nav-left'].height}
+            width={fallback['nav-left'].width * S}
+            height={fallback['nav-left'].height * S}
             style={{
-              left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX,
-              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY,
+              left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX * S,
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY * S,
             }}
           />
         ) : (
@@ -166,11 +169,11 @@ export function Nav2D({
             src={leftCluster}
             alt=""
             aria-hidden="true"
-            width={fallback['nav-left'].width}
-            height={fallback['nav-left'].height}
+            width={fallback['nav-left'].width * S}
+            height={fallback['nav-left'].height * S}
             style={{
-              left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX,
-              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY,
+              left: tokens.clusterBleedX + tokens.pillRadius - fallback['nav-left'].originX * S,
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-left'].originY * S,
             }}
           />
         )}
@@ -179,15 +182,15 @@ export function Nav2D({
             key="right-outline"
             className={`${styles.cluster} ${styles.clusterRight}`}
             src={rightOutline}
-            width={fallback['nav-right'].width}
-            height={fallback['nav-right'].height}
+            width={fallback['nav-right'].width * S}
+            height={fallback['nav-right'].height * S}
             stagger={220}
             style={{
               right:
                 tokens.clusterBleedX +
                 tokens.pillRadius -
-                (fallback['nav-right'].width - fallback['nav-right'].originX),
-              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY,
+                (fallback['nav-right'].width * S - fallback['nav-right'].originX * S),
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY * S,
             }}
           />
         ) : (
@@ -196,14 +199,14 @@ export function Nav2D({
             src={rightCluster}
             alt=""
             aria-hidden="true"
-            width={fallback['nav-right'].width}
-            height={fallback['nav-right'].height}
+            width={fallback['nav-right'].width * S}
+            height={fallback['nav-right'].height * S}
             style={{
               right:
                 tokens.clusterBleedX +
                 tokens.pillRadius -
-                (fallback['nav-right'].width - fallback['nav-right'].originX),
-              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY,
+                (fallback['nav-right'].width * S - fallback['nav-right'].originX * S),
+              top: tokens.clusterBleedY + tokens.pillHeight / 2 - fallback['nav-right'].originY * S,
             }}
           />
         )}
@@ -212,8 +215,8 @@ export function Nav2D({
           const cx = tokens.clusterBleedX + pillWidth! / 2 + p.fx * middleSegment(pillWidth!)
           const cy = tokens.clusterBleedY + tokens.pillHeight / 2 - p.y
           const style = {
-            left: cx - fallback.petal.originX,
-            top: cy - fallback.petal.originY,
+            left: cx - fallback.petal.originX * S,
+            top: cy - fallback.petal.originY * S,
             // three's +z rotation is counter-clockwise on screen; CSS rotate is clockwise.
             transform: `rotate(${-p.rotation[2]}rad)`,
           }
@@ -222,8 +225,8 @@ export function Nav2D({
               key={`o${i}`}
               className={styles.petal}
               src={petalOutline}
-              width={fallback.petal.width}
-              height={fallback.petal.height}
+              width={fallback.petal.width * S}
+              height={fallback.petal.height * S}
               duration={600}
               delay={600 + i * 120}
               style={style}
@@ -235,8 +238,8 @@ export function Nav2D({
               src={petalSvg}
               alt=""
               aria-hidden="true"
-              width={fallback.petal.width}
-              height={fallback.petal.height}
+              width={fallback.petal.width * S}
+              height={fallback.petal.height * S}
               style={style}
             />
           )

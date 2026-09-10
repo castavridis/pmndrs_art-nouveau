@@ -16,6 +16,7 @@ import { Glass } from '../nav/Nav3D/Glass'
 import { Backing } from '../nav/Nav3D/Backing'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import type { PresetName } from '../nav/Nav3D/customPresets'
+import type { ContrastScope } from '../nav/Nav3D/contrast'
 import { tokens } from '../nav/tokens'
 
 // Fetch every GLB the scene needs as soon as this chunk is evaluated.
@@ -62,6 +63,8 @@ export interface BentoSceneProps {
   callout: SlotBox & { kind: CalloutKind }
   /** DOM controls that are given the nav's glass behind them. */
   glassBacked?: GlassBackedSlot[]
+  /** Where the page's text on this scene's glass registers to be measured. */
+  contrast: ContrastScope
   onReady: () => void
 }
 
@@ -73,9 +76,10 @@ export interface BentoSceneProps {
 /** `?slabs=buffered` restores one transmission buffer per slab (for comparison). */
 const BUFFERED = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('slabs') === 'buffered'
 
-export function BentoScene({ eventSource, navEl, announcement, callout, glassBacked = [], onReady }: BentoSceneProps) {
+export function BentoScene({ eventSource, navEl, announcement, callout, glassBacked = [], contrast, onReady }: BentoSceneProps) {
   return (
     <NavCanvas
+      contrast={contrast}
       eventSource={eventSource}
       style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}
       // A full-viewport canvas at 2x plus the pill's buffer is a lot of pixels; 1.5x is plenty.

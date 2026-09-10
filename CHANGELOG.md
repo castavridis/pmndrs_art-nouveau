@@ -73,7 +73,19 @@ something the code taught us. See [References](#references) for the external wor
   for it to act in).
 - **Two visibility sets**, driven from `scene.onBeforeRender`: `transmissionExcluded` keeps the
   text layer out of the pill's buffer, `transmissionOnly` shows the light emitters *only*
-  inside it — matching how the DCC hides light bodies from camera.
+  inside it — matching how the DCC hides light bodies from camera. *Replaced by render layers;
+  see below.*
+- **Render layers decide what each pass draws** (`layers.ts`), replacing every visibility toggle.
+  Three passes see different subsets of one scene: the viewer's camera (everything but the
+  emitters), a buffered glass's transmission pass (no text, emitters through it), and the
+  contrast probe (the glass and what is behind it, with neither the text nor the contrast aids
+  over it). Before, each pass flipped `visible` on the objects it had to skip and put it back,
+  and three writers — uikit, the transmission exclusion and the chip's measurement — silently
+  undid each other. Now an object's layer is set once (text, emitters, veils), each pass sets its
+  camera's mask, and nothing else writes either. Layers are not inherited, so a subtree is tagged
+  node by node, and uikit subtrees are re-tagged every frame because uikit adds a mesh whenever
+  text changes. The raycaster is told about the text layer, or the nav would have gone deaf to
+  the pointer.
 - **Tint strength depends on mesh scale**, which is why a blossom shrunk to a quarter scale
   reads pale next to a petal at 2×: Beer–Lambert path length is `thickness × world scale`.
   Left as-is; documented rather than normalised.
@@ -138,7 +150,28 @@ something the code taught us. See [References](#references) for the external wor
   followed the OS before hydration was removed so the first paint is never wrong.
 - **Ink follows the glass backdrop's luminance, not the page theme** (`40be389`). Theme only
   decides in the mid range. This is what makes text legible when a dark-tuned glass sits on a
-  light page.
+  light page. *Superseded by measurement; see below.*
+- **Every piece of text on glass is inked by measurement** (`contrast.ts`). The chip had already
+  shown that glass has no colour of its own to key an ink to: how light it looks depends on
+  what it transmits, so a guess from the tuning left a callout dark on dark and a purple nav bar
+  white on pale. Now the nav's labels, logo and key hint, the banner's copy and print, the
+  callout's copy, the bento launcher and the dismiss mark all register the region they sit on
+  with the canvas that draws their glass. Every twelfth frame that canvas renders once more at
+  half resolution through the probe's layer mask, reads each region back, and grades it the way
+  the screen shows it: tone mapping, the film grain, and the page behind wherever the canvas is
+  transparent. Each region keeps two seconds of readings behind a hysteresis band, and the chip
+  still sizes its veil from them. DOM copy is measured behind its text's line boxes, not its
+  padding, which in a callout includes the lens. Text in the page and text in the scene
+  register the same way: whoever owns both a canvas and the DOM over it hands the two one scope.
+  Against the rendered frame (`pnpm apca`, now run on every surface), every region clears the
+  body target of Lc 75 in both themes. The chip reads Lc 82 median, 78 worst tenth, under a
+  0.63–0.65 veil. The exception is the logo's worst tenth, where the larger frame's fronds pass
+  under it (Lc 52–65; median 98).
+- **The panel's "text ink" no longer overrides.** It forced every label light or dark from
+  before there was a measurement, and the saved tuning forced light in both schemes, which
+  would have switched the new system off. Measurement now decides. The setting, renamed "ink
+  until measured", picks only what shows before the first reading and where nothing is
+  measured: the server's HTML and the vector fallback.
 - **Legibility is measured, not eyeballed** (`40be389`, `a72d9a2`): `pnpm apca` samples the
   actual rendered pixels behind each label with the text hidden and scores them with **APCA**;
   an in-canvas probe publishes the same numbers live into the panel. Target Lc ≥ 75 for body
@@ -297,6 +330,19 @@ something the code taught us. See [References](#references) for the external wor
   to the middle stranded its upper pieces below the top edge and its lower ones above the
   bottom. Each half now rides the edge it was drawn against, in the 3D pieces and — by
   filtering the traced loops by their vertical centre — in the vector fallback too.
+- **The frame is a quarter larger than the art as exported** (`tokens.frameScale`). The flower
+  clusters on the caps and the loose petals grow about their anchors, while the pill, logo and
+  type stay as they were. The traced 2D art scales identically, so the cross-fade still lands
+  every shape on its twin. The vertical bleed went from 52 to 70px, making the nav's box 36px
+  taller: at the new size the left cluster reached above the canvas. The banner's canvas had
+  borrowed that token, so it keeps its own 72px.
+- **Theme switches ease out** (`theme.ts`, `index.css`). A switch swaps every glass, light and
+  preset in the scene, some for different materials altogether, so there is nothing to
+  interpolate between. Instead a view transition fades the page as it was off the page as it now
+  is, canvases included, over 900ms on an ease-out curve. Only the old picture animates, over a
+  new one fully there from the start, so the page never dips through transparency. The scene
+  keeps rendering underneath and settles into its new tuning during the fade. Reduced motion,
+  and browsers without view transitions, switch at once.
 - **The callout's head block is centred on the lens.** The eyebrow, its gap and the title's
   first line straddle the lens's centre line, which means their line heights are fixed in
   `calloutMetrics` rather than left to whatever font loads.
@@ -369,22 +415,29 @@ Bugs whose *cause* is worth keeping, because each one constrains future work.
 - **Port 5173 can belong to another project.** A verification run once rendered a different app
   entirely. Check `document.title` before trusting a headless run; the preview now uses
   `autoPort`.
+- **Panel settings belong to an origin, not to the project.** Tuning, presets and themes persist
+  in local storage, which is keyed by host and port, so when the preview moved to an automatic
+  port every unsaved setting seemed to vanish. They were intact under `localhost:5173`, now
+  served by another project, and were copied across, with the target's own values backed up
+  first. `pnpm apca --settings=<file>` runs the legibility check on such an export instead of the
+  shipped tuning.
+- **On a page-wide canvas, the event target is not the canvas.** The bento's canvas takes its
+  pointer events from the page over it, so an event's target is whatever element the pointer
+  is over. The roam light matched hovered petals by that target and never found its own, so it
+  now matches by scene. The petal stir assumed the field sat at the canvas centre, and on the
+  bento it rides a slot about 200px away, so petals parted a slot's width from the pointer. The
+  pointer is now carried into the field's own space.
 
 ### Open
 
 Known, diagnosed, not yet done.
 
-- **Text ink is a guess everywhere but the chip.** Labels, the banner's print, the callout and the
-  launcher still pick their ink from the glass's background colour. That is right for buffered
-  glass, which shows that colour through, and wrong for sampler glass and opaque-looking presets:
-  it left a callout dark on dark and a purple nav bar white on pale. Being replaced by one
-  measured-contrast system.
-- **Three systems write the same visibility flags.** uikit, the transmission exclusion and the
-  chip's measurement each toggle `visible`, and each can undo the others. Being replaced by render
-  layers.
 - **The contrast estimate models the grade instead of reading it**, so it errs cautious and
   over-washes a light chip. Reading the composited frame would remove both the model and the extra
   render.
+- **The logo takes no veil.** At the larger frame, the left cluster's fronds pass under the mark,
+  and its worst tenth falls to Lc 52–65 against a median of 98. It is a bold 28px mark rather
+  than body text, so it has been left as it is.
 - **The flourishes never fade after a strike.** They ride the banner's slow fall at full opacity
   while the shards fade and fall fast, so they glide down the page alone until the group unmounts.
 - **The panel clips rather than scrolls**, so folders past its height, `presets` included, cannot
@@ -398,12 +451,13 @@ Known, diagnosed, not yet done.
 
 | Work | Where it is used |
 | --- | --- |
-| **APCA** — Accessible Perceptual Contrast Algorithm (Somers, `apca-w3`), the contrast method drafted for WCAG 3 | `scripts/dev/apca.mjs`, `LcProbe.tsx`, `ChipContrast.tsx`. Lc thresholds: ≥ 75 body text, 60 floor. The chip's crossover and target luminances for its two inks are computed offline with `apca-w3`, so the library stays a dev dependency. |
+| **APCA** — Accessible Perceptual Contrast Algorithm (Somers, `apca-w3`), the contrast method drafted for WCAG 3 | `scripts/dev/apca.mjs` and `contrast.ts`. Lc thresholds: ≥ 75 body text, 60 floor. The crossover and target luminances for the two inks are computed offline with `apca-w3`, and the panel's live readout carries the 0.0.98G formula itself, so the library stays a dev dependency. |
 | **Estevez & Kulla 2017**, *Production Friendly Microfacet Sheen BRDF* | The `D_Charlie` distribution term in three's sheen; patched for underflow in `materials.ts`. |
 | **Neubelt & Pettineo 2013**, *Crafting a Next-Gen Material Pipeline for The Order: 1886* | The `V_Neubelt` visibility term in the same BRDF; the grazing-angle divide-by-zero fixed there. |
 | **Beer–Lambert law** | Volume attenuation standing in for subsurface scattering; sets `attenuationDistance` from Womp's translucency weight (`tuning.ts`). |
-| **ACES filmic tone mapping** (Academy Color Encoding System; Narkowicz's curve fit for the analytic approximation) | The composer's `ToneMapping` pass, and re-implemented in `LcProbe.tsx` and `ChipContrast.tsx` to predict displayed pixels from the linear framebuffer. |
-| **Blend modes** — multiply, screen, add, overlay and the W3C Compositing soft-light formula | `ChipContrast.tsx` models postprocessing's noise effect in all six of the panel's modes, to predict how the film grain moves a pixel the offscreen render never sees. |
+| **ACES filmic tone mapping** (Academy Color Encoding System; Narkowicz's curve fit for the analytic approximation) | The composer's `ToneMapping` pass, and re-implemented in `contrast.ts` to predict displayed pixels from the linear framebuffer. |
+| **Blend modes** — multiply, screen, add, overlay and the W3C Compositing soft-light formula | `contrast.ts` models postprocessing's noise effect in all six of the panel's modes, to predict how the film grain moves a pixel the offscreen render never sees. |
+| **Porter–Duff "over"** compositing | `contrast.ts` — where the canvas is transparent, a pixel is its premultiplied colour over the page behind it, which is what the viewer sees there. |
 | **MSDF text** — multi-channel signed distance fields (Chlumský) | How `@react-three/uikit` renders the nav labels; contrasted with baked relief on `/dev/glyph`. |
 | **Fresnel reflectance / IOR** | Why the camera is perspective rather than orthographic, and why a too-low IOR made the pill read flat. |
 
@@ -422,8 +476,8 @@ Known, diagnosed, not yet done.
 | **Lissajous curve** | `Lights.tsx` — the roaming light's idle path when the pointer is off the page. |
 | **Exponential (frame-rate independent) smoothing**, `1 − e^(−k·dt)`, and maath's critically damped `damp` | Every follow behaviour: light targets, indicator, parallax, scheme swaps. Chosen over a fixed lerp factor so behaviour does not change with frame rate. |
 | **Stroke-dash offset reveal** | `DrawnOutline.tsx` — `pathLength=1` with an animated `stroke-dashoffset` per loop draws each curve in sequence. |
-| **Bisection** | `ChipContrast.tsx` — inverts the monotonic grade (tone mapping then grain) to find the scene value that still shows at a target luminance. |
-| **Hysteresis band** | `ChipContrast.tsx` — the ink holds inside a band either side of the APCA crossover, so a petal drifting behind the chip cannot make the label flicker. |
+| **Bisection** | `contrast.ts` — inverts the monotonic grade (tone mapping then grain) to find the scene value that still shows at a target luminance, tabulated for the per-pixel case. |
+| **Hysteresis band** | `contrast.ts` — each region's ink holds inside a band either side of the APCA crossover, so a petal drifting behind a word cannot make it flicker. |
 | **Perspective projection solve** | Keeping a nearer layer on a farther one's screen position: `x / (camZ − z)` is constant along a ray. Used for the announcement's blossom, the callout glyph, and projecting nav items to canvas pixels. |
 
 ### Upstream behaviour worth remembering
@@ -444,7 +498,10 @@ Known, diagnosed, not yet done.
 - **A browser can refuse `window.prompt`** for the rest of a session, returning null.
 - **Playwright's stability check compares boxes across animation frames**, so it can wait forever
   on a page whose WebGL starves `requestAnimationFrame`.
+- **three's `Layers` are not inherited**, and `Raycaster.layers` sees only layer 0 unless told.
+- **A view transition suppresses rendering during its update callback**, so the callback cannot
+  wait on animation frames. The canvas can only catch up once the fade has begun.
 
 ---
 
-*Written 2026-09-09 and updated 2026-09-10, covering `8ca4979` through `c8ea5ee`.*
+*Written 2026-09-09 and updated 2026-09-10, covering `8ca4979` through the render-layers and measured-contrast work.*

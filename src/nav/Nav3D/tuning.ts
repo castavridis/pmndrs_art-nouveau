@@ -200,7 +200,12 @@ export interface Tuning {
      * ink, white under dark ink). Evens out what passes behind the text for legibility.
      */
     labelScrim: number
-    /** Text ink on the glass: picked from the backdrop (`auto`), or forced light / dark. */
+    /**
+     * Text ink on the glass before it has been measured, and wherever nothing is measured (the
+     * server's HTML, the vector fallback): guessed from the glass (`auto`), or light / dark.
+     * Once the glass behind a piece of text has been measured, the measurement decides
+     * (contrast.ts); this used to force the ink outright, from before there was one.
+     */
     ink: 'auto' | 'light' | 'dark'
     /** Which set of light panels the glass reflects (see studios.ts). */
     studio: StudioName

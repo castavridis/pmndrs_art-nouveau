@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import { createStore, useStore, type StoreApi } from 'zustand'
-import type { NavLink, NavMode } from './types'
+import type { ContrastReading, NavLink, NavMode } from './types'
 import { tokens } from './tokens'
 
 export interface NavState {
@@ -21,15 +21,11 @@ export interface NavState {
   /** `prefers-reduced-motion: reduce`. Springs go immediate, Float is off. */
   reducedMotion: boolean
   /**
-   * Ink for the label under the selection chip, picked from the chip as drawn (ChipContrast);
-   * null until it has been measured, when the page ink stands in.
+   * The glass behind each item's label (and the logo) as measured (contrast.ts), by id: which
+   * ink reads on it and, for the item under the selection chip, the veil the chip needs. Absent
+   * until measured, when the nav's own ink stands in.
    */
-  chipInk: string | null
-  /**
-   * Opacity of the veil laid on the chip under that label (0 when the chip already contrasts),
-   * in the polarity opposite the ink: just enough to bring the text to APCA's targets.
-   */
-  chipVeil: number
+  readings: Record<string, ContrastReading>
 
   setLinks: (links: NavLink[]) => void
   setMode: (mode: NavMode) => void
@@ -41,8 +37,7 @@ export interface NavState {
   setMenuOpen: (open: boolean) => void
   setPaletteOpen: (open: boolean) => void
   setReducedMotion: (reduced: boolean) => void
-  setChipInk: (ink: string | null) => void
-  setChipVeil: (veil: number) => void
+  setReading: (id: string, reading: ContrastReading) => void
 }
 
 export type NavStoreApi = StoreApi<NavState>
@@ -60,8 +55,7 @@ export function createNavStore(initial?: Partial<Pick<NavState, 'links'>>): NavS
     menuOpen: false,
     paletteOpen: false,
     reducedMotion: false,
-    chipInk: null,
-    chipVeil: 0,
+    readings: {},
 
     setLinks: (links) => set({ links }),
     setMode: (mode) => set((s) => (s.mode === mode ? s : { mode, menuOpen: false })),
@@ -73,8 +67,7 @@ export function createNavStore(initial?: Partial<Pick<NavState, 'links'>>): NavS
     setMenuOpen: (menuOpen) => set({ menuOpen }),
     setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
     setReducedMotion: (reducedMotion) => set({ reducedMotion }),
-    setChipInk: (chipInk) => set((s) => (s.chipInk === chipInk ? s : { chipInk })),
-    setChipVeil: (chipVeil) => set((s) => (Math.abs(s.chipVeil - chipVeil) < 0.01 ? s : { chipVeil })),
+    setReading: (id, reading) => set((s) => (s.readings[id] === reading ? s : { readings: { ...s.readings, [id]: reading } })),
   }))
 }
 

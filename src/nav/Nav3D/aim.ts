@@ -38,13 +38,17 @@ export const useHitDebug = create<HitDebugStore>()((set) => ({
 }))
 
 /**
- * The pointer's hit point on a petal or flower (world units), with the canvas it came from,
- * so that canvas's roaming light can sit on the hovered piece. `active` clears on pointer-out.
+ * The pointer's hit point on a petal or flower (world units), with the scene it is in, so that
+ * scene's roaming light can sit on the hovered piece. `active` clears on pointer-out.
+ *
+ * The scene, not the canvas the event arrived at: a page-wide canvas (the bento) takes its
+ * events from the page over it, so the event's target is whatever element the pointer is over,
+ * never the canvas, and a light matching on the canvas never found its own petals hovered.
  */
 export const hoverAim = {
   point: new THREE.Vector3(),
   active: false,
-  canvas: null as EventTarget | null,
+  scene: null as THREE.Object3D | null,
   /** The hovered mesh and instance: captured by the light, and left alone by the pointer stir. */
   mesh: null as THREE.Object3D | null,
   instanceId: null as number | null,
@@ -55,7 +59,9 @@ export const hoverAimHandlers = {
   onPointerMove: (e: ThreeEvent<PointerEvent>) => {
     hoverAim.point.copy(e.point)
     hoverAim.active = true
-    hoverAim.canvas = e.nativeEvent.target
+    let root: THREE.Object3D = e.object
+    while (root.parent) root = root.parent
+    hoverAim.scene = root
     hoverAim.mesh = e.object
     hoverAim.instanceId = e.instanceId ?? null
     if (useHitDebug.getState().enabled) {
@@ -117,12 +123,26 @@ export function usePagePointer() {
 /**
  * The page pointer in a canvas's world x/y at z = 0 (1 unit = pxPerUnit px, origin at the
  * canvas centre). False when the pointer is off the page.
+ *
+ * `into` carries it into that object's own space. What the pointer stirs lives in its parent's
+ * frame, and a nav riding a slot in a page-wide canvas (the bento) sits well away from the
+ * canvas centre, so a stir left in world space pushed petals a slot's width from the pointer.
  */
-export function pointerWorldXY(canvas: HTMLCanvasElement, width: number, height: number, out: THREE.Vector3): boolean {
+export function pointerWorldXY(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+  out: THREE.Vector3,
+  into?: THREE.Object3D,
+): boolean {
   const p = pagePointer.current
   if (!p) return false
   const rect = canvas.getBoundingClientRect()
   out.set(px(p.x - rect.left) - px(width) / 2, px(height) / 2 - px(p.y - rect.top), 0)
+  if (into) {
+    into.updateWorldMatrix(true, false)
+    into.worldToLocal(out)
+  }
   return true
 }
 

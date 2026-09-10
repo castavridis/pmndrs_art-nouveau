@@ -65,7 +65,7 @@ export default function DevControls() {
       outlines: { value: overlay, label: 'svg outlines' },
       hits: { value: hitDebugOn, label: 'hit debug' },
       printText: { value: printTextOn, label: 'printed text' },
-      ink: { value: inkChoice, options: ['auto', 'light', 'dark'] as const, label: 'text ink' },
+      ink: { value: inkChoice, options: ['auto', 'light', 'dark'] as const, label: 'ink until measured' },
       lc: { value: '', editable: false, label: 'Lc (median/worst)' },
       scheme: { value: scheme, editable: false, label: 'tuning for' },
       'copy to other scheme': button(() => copyToOther()),
@@ -77,7 +77,7 @@ export default function DevControls() {
   useEffect(() => setPrintText(printPanel), [printPanel, setPrintText])
   useEffect(() => set('env', { ink: inkPanel }), [inkPanel, set])
   useEffect(() => setViewPanel({ ink: inkChoice }), [inkChoice, setViewPanel])
-  // Live legibility readings from the in-canvas probes (LcProbe.tsx), refreshed as they arrive.
+  // Live legibility readings from the contrast probes (contrast.ts), refreshed as they arrive.
   const readings = useLcReadings((s) => s.readings)
   useEffect(() => {
     const text = Object.entries(readings)

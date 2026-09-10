@@ -13,7 +13,8 @@ export interface ClustersProps {
 /**
  * Flower clusters from left.glb / right.glb, pinned to the centre of each pill cap.
  * Position-only: they never scale with width. Geometry origins are normalised to the cap
- * centres in assets.ts, so the only maths here is "where is the cap".
+ * centres in assets.ts, so the only maths here is "where is the cap" — and the frame's scale
+ * (tokens.frameScale) grows each one about its cap centre.
  */
 export function Clusters({ width }: ClustersProps) {
   const choice = useTuning((s) => s.materials.clusters)
@@ -25,12 +26,12 @@ export function Clusters({ width }: ClustersProps) {
   return (
     <>
       <animated.group position-x={leftX}>
-        <mesh geometry={left} name="cluster left" {...hoverAimHandlers}>
+        <mesh geometry={left} name="cluster left" scale={tokens.frameScale} {...hoverAimHandlers}>
           <Glass sampler preset={preset} />
         </mesh>
       </animated.group>
       <animated.group position-x={rightX}>
-        <mesh geometry={right} name="cluster right" {...hoverAimHandlers}>
+        <mesh geometry={right} name="cluster right" scale={tokens.frameScale} {...hoverAimHandlers}>
           <Glass sampler preset={preset} />
         </mesh>
       </animated.group>

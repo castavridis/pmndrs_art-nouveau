@@ -20,9 +20,19 @@ export const tokens = {
   logoSize: 28,
   /** Depth of the pill in 3D. */
   pillDepth: 6,
-  /** Extra space reserved outside the pill for the clusters, so they never get clipped. */
+  /**
+   * Size of the frame around the pill — the flower clusters on its caps and the loose petals
+   * along it — against the art as exported. The pill, logo and type are not part of it.
+   */
+  frameScale: 1.25,
+  /**
+   * Extra space reserved outside the pill for the clusters, so they never get clipped. At the
+   * frame's scale the left cluster's traced art reaches 66px above the pill's box, and the 3D
+   * one, standing in front of it, a little more under perspective; 70 leaves it a few px.
+   * Sideways, 56 still clears both.
+   */
   clusterBleedX: 56,
-  clusterBleedY: 52,
+  clusterBleedY: 70,
   /** Hysteresis in px applied when switching modes, to avoid flapping. */
   modeHysteresis: 24,
   /** Cross-fade duration between 2D and 3D, in ms. */

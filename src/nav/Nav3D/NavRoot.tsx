@@ -1,7 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Container, Svg, type VanillaContainer } from '@react-three/uikit'
 import { useSpring, type SpringValue } from '@react-spring/three'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import * as THREE from 'three'
 import { useNavStore } from '../store'
@@ -12,18 +12,15 @@ import { Petals } from './Petals'
 import { PetalField } from './PetalField'
 import { Indicator } from './Indicator'
 import { SelectionPill } from './SelectionPill'
-import { ChipContrast } from './ChipContrast'
+import { ItemContrast } from './NavContrast'
 import { PillMorph } from './pillGeometry'
 import { useTuning } from './tuning'
-import type { ProbeRegion } from './LcProbe'
 import { navAim } from './aim'
-import { useItemRegistry } from './items'
-
-const LcProbe = import.meta.env.DEV ? lazy(() => import('./LcProbe')) : null
+import { useItemInk, useItemRegistry } from './items'
 import { ItemRegistryContext, type ItemRegistry } from './items'
-import { transmissionExcluded } from './materials'
+import { LAYER, useLayer } from './layers'
 import { NavItem } from './NavItem'
-import { triggerDom, useNavInk } from './dom'
+import { INKS, triggerDom, useNavInk } from './dom'
 import logoUrl from '../assets/logo.svg'
 
 /**
@@ -42,53 +39,28 @@ export function NavRoot() {
   const [registry] = useState<ItemRegistry>(() => new Map())
   const { ink } = useNavInk()
   // The whole nav can sit away from the canvas origin (shared scenes); items report positions
-  // relative to it, so the aim and probe add its world offset.
+  // relative to it, so the aim and the contrast regions add its world offset.
   const rootRef3d = useRef<Group>(null)
-  // Dev legibility probe: the label boxes (uikit px → canvas px) and a way to hide the labels.
-  const size = useThree((s) => s.size)
-  const probeRegions = useCallback((): ProbeRegion[] => {
-    const out: ProbeRegion[] = []
-    for (const [id, el] of registry) {
-      const rc = el.relativeCenter.peek()
-      const sz = el.size.peek()
-      if (!rc || !sz) continue
-      const ox = (rootRef3d.current?.position.x ?? 0) * tokens.pxPerUnit
-      const oy = (rootRef3d.current?.position.y ?? 0) * tokens.pxPerUnit
-      out.push({ name: `nav: ${id}`, x: size.width / 2 + ox + rc[0] - sz[0] / 2, y: size.height / 2 - oy - rc[1] - sz[1] / 2, w: sz[0], h: sz[1] })
+  const logoRef = useRef<VanillaContainer>(null)
+  const logoInk = useItemInk('logo').ink
+  // The items whose labels are measured, and the scrim's polarity: the ink most labels on the
+  // pill take (the one under the chip reads against the chip, so it has no say).
+  const itemIds = mode === 'collapsed' ? ['menu', 'cmd'] : [...links.map((l) => l.id), 'cmd']
+  const idsKey = itemIds.join(' ')
+  const scrimForLightInk = useNavStore((s) => {
+    const chip = s.hovered ?? s.focused ?? s.active
+    let light = 0
+    let dark = 0
+    for (const id of idsKey.split(' ')) {
+      const r = id === chip ? undefined : s.readings[id]
+      if (r?.scheme === 'dark') light++
+      else if (r) dark++
     }
-    return out
-  }, [registry, size.width, size.height])
-  // Hides by material, not object: uikit keeps its own meshes' `visible` in step with its
-  // layout during the render, so an object hidden from outside came straight back and the
-  // "hidden" text was measured anyway. Materials it leaves alone. What each was is kept and put
-  // back, so anything uikit had hidden for its own reasons stays hidden.
-  const hiddenMaterials = useRef(new Map<THREE.Material, boolean>())
-  const hideLabels = useCallback((hidden: boolean) => {
-    const g = uiRef.current
-    if (!g) return
-    const saved = hiddenMaterials.current
-    if (!hidden) {
-      for (const [m, was] of saved) m.visible = was
-      saved.clear()
-      return
-    }
-    g.traverse((o) => {
-      const mesh = o as THREE.Mesh
-      if (!mesh.isMesh || mesh.name === 'label-scrim') return
-      for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
-        if (!saved.has(m)) saved.set(m, m.visible)
-        m.visible = false
-      }
-    })
-  }, [])
-
-  // The text layer sits on the glass; it must not be refracted by it.
-  useEffect(() => {
-    const g = uiRef.current
-    if (!g) return
-    transmissionExcluded.add(g)
-    return () => void transmissionExcluded.delete(g)
-  }, [])
+    return light + dark ? light > dark : null
+  })
+  // The labels are text on glass, the scrim under them a contrast aid (layers.ts). Re-tagged
+  // every frame because uikit adds a mesh whenever a label's text changes.
+  useLayer(uiRef, LAYER.TEXT, { live: true, skip: isScrim })
 
   // uikit@1.0: the ref is the vanilla component; `size` is a signal of [w, h] in px.
   useEffect(() => {
@@ -134,8 +106,11 @@ export function NavRoot() {
       <Clusters width={spring.width} />
       <Indicator />
       <SelectionPill />
-      {/* Reads the chip as drawn and picks the ink for the label on it. */}
-      <ChipContrast root={rootRef3d} hideText={hideLabels} />
+      {/* The glass behind each label and the logo, as drawn (contrast.ts). */}
+      {itemIds.map((id) => (
+        <ItemContrast key={id} id={id} root={rootRef3d} element={() => registry.get(id)} band={LABEL_BAND} />
+      ))}
+      <ItemContrast id="logo" root={rootRef3d} element={() => logoRef.current} band={LOGO_BAND} />
       <AimTracker root={rootRef3d} />
       {mode === 'full' && <PetalField count={100} />}
       {mode === 'full' && (
@@ -146,13 +121,8 @@ export function NavRoot() {
           float={!reducedMotion}
         />
       )}
-      {LcProbe && (
-        <Suspense fallback={null}>
-          <LcProbe ink={ink} regions={probeRegions} hideText={hideLabels} />
-        </Suspense>
-      )}
       <group ref={uiRef} position-z={z}>
-        <Scrim width={spring.width} light={ink === '#f2f2ef'} />
+        <Scrim width={spring.width} light={scrimForLightInk ?? ink === INKS.dark.ink} />
         <Suspense fallback={null}>
           <Container
             ref={rootRef}
@@ -170,14 +140,15 @@ export function NavRoot() {
             depthTest={false}
           >
             <Container
+              ref={logoRef}
               cursor="pointer"
               onClick={(e) => {
                 e.stopPropagation()
                 triggerDom('logo')
               }}
             >
-              {/* The mark itself (assets/logo.svg), in the ink colour like the labels. */}
-              <Svg src={logoUrl} width={tokens.logoSize} height={tokens.logoSize} color={ink} />
+              {/* The mark itself (assets/logo.svg), in the ink measured behind it, like the labels. */}
+              <Svg src={logoUrl} width={tokens.logoSize} height={tokens.logoSize} color={logoInk} />
             </Container>
             {mode === 'collapsed' ? (
               // Links live in Nav2D's disclosure; this item opens it.
@@ -199,14 +170,22 @@ export function NavRoot() {
  * ink, white under dark ink. Evens out petals, highlights and the item glow passing behind the
  * text (APCA worst case; see scripts/dev/apca.mjs). Opacity is `env.labelScrim`; 0 removes it.
  */
+const isScrim = (o: THREE.Object3D) => o.name === 'label-scrim'
+
+/** Where a label's glyphs sit in its box, and the logo's mark in its. */
+const LABEL_BAND: [number, number] = [0.7, 0.4]
+const LOGO_BAND: [number, number] = [0.6, 0.6]
+
 function Scrim({ width, light }: { width: SpringValue<number>; light: boolean }) {
   const opacity = useTuning((s) => s.env.labelScrim)
   const morph = useMemo(() => new PillMorph(), [])
+  const ref = useRef<THREE.Mesh>(null)
+  useLayer(ref, LAYER.VEIL)
   useEffect(() => () => morph.dispose(), [morph])
   useFrame(() => morph.setWidth(width.get()))
   if (opacity <= 0) return null
   return (
-    <mesh name="label-scrim" geometry={morph.geometry} scale-z={0.04} position-z={-0.003} raycast={() => null}>
+    <mesh ref={ref} name="label-scrim" geometry={morph.geometry} scale-z={0.04} position-z={-0.003} raycast={() => null}>
       <meshBasicMaterial color={light ? '#000000' : '#ffffff'} transparent opacity={opacity} depthWrite={false} toneMapped={false} />
     </mesh>
   )

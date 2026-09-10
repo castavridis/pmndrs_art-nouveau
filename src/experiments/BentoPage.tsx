@@ -10,6 +10,7 @@ import { BoltIcon, DiscordIcon, ExternalIcon, GitHubIcon, InfoIcon, MoonIcon, Su
 import type * as THREE from 'three'
 import { useIsClient } from '../isClient'
 import { useInk } from '../nav/Nav3D/dom'
+import { ContrastScopeContext, useContrastScope, useMeasuredInk } from '../nav/Nav3D/contrast'
 import { useMeasure } from './useMeasure'
 import { DEFAULT_THEME, useResolvedTheme, useThemeStore } from '../theme'
 import styles from './Bento.module.css'
@@ -80,8 +81,10 @@ export function BentoPage() {
   const scheme = client ? resolved : DEFAULT_THEME
   const other: 'dark' | 'light' = scheme === 'dark' ? 'light' : 'dark'
   const setTheme = useThemeStore((st) => st.setTheme)
-  // Real glass on a dark page is dark; the label follows the page's ink, as the banner's does.
-  const { ink } = useInk()
+  // Text on the scene's glass — the launcher's label here, the banner's and the callout's copy
+  // below — registers with the scene's canvas, which measures the glass behind it (contrast.ts).
+  const contrast = useContrastScope()
+  const { ink } = useMeasuredInk(launcher, useInk(), { scope: contrast, name: 'launcher', enabled: ready })
   const glassInk = ready ? ink : undefined
   const onAnnouncementSlot = useCallback((slot: SlotBox) => setAnnouncement(slot), [])
   const onCalloutSlot = useCallback(
@@ -97,8 +100,10 @@ export function BentoPage() {
 
   return (
     <NavStoreContext.Provider value={store}>
+    <ContrastScopeContext.Provider value={contrast}>
       {client && (
         <BentoScene
+          contrast={contrast}
           eventSource={pageRef}
           navEl={navEl}
           announcement={announcement}
@@ -215,6 +220,7 @@ export function BentoPage() {
           <DevControls />
         </Suspense>
       )}
+    </ContrastScopeContext.Provider>
     </NavStoreContext.Provider>
   )
 }

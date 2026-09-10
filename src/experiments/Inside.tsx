@@ -191,7 +191,7 @@ function InstancedSwarm({
   useFrame((_, dt) => {
     if (!mesh.current) return
     const motion = useTuning.getState().motion
-    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt) ? stirAt : null
+    const stir = pointerWorldXY(gl.domElement, size.width, size.height, stirAt, mesh.current) ? stirAt : null
     swarm.update(mesh.current, reducedMotion ? 0 : Math.min(dt, 0.05), motion, stir)
   })
   if (swarm.bodies.length === 0) return null

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { Glass } from '../nav/Nav3D/Glass'
 import { Ready } from '../nav/Nav3D/Ready'
@@ -13,12 +13,12 @@ import fallback from '../nav/assets/fallback/manifest.json'
 import styles from './Announcement.module.css'
 
 const DevHandles = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevHandles')) : null
-const LcProbe = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/LcProbe')) : null
 
 if (typeof window !== 'undefined') preloadAnnouncementAssets()
 import { useOutlines } from '../nav/outlines'
 import { useMeasure } from './useMeasure'
 import { luminance, useInk } from '../nav/Nav3D/dom'
+import { ContrastScopeContext, useContrastScope, useMeasuredInk } from '../nav/Nav3D/contrast'
 import { useTuning } from '../nav/Nav3D/tuning'
 import type { PresetName } from '../nav/Nav3D/customPresets'
 import { Backing } from '../nav/Nav3D/Backing'
@@ -97,8 +97,10 @@ export function Announcement({
 }: AnnouncementProps) {
   // The flourishes reach ~50px past each end and sit in front of the slab, so perspective
   // pushes them further out again; the canvas needs more room than the nav's cluster bleed.
+  // Vertically a fixed 72px: this grew with the nav's cluster bleed until the nav's frame was
+  // scaled up, which the banner's own flourishes have nothing to do with.
   const bleedX = tokens.clusterBleedX * 2
-  const bleedY = tokens.clusterBleedY + 20
+  const bleedY = 72
   // The banner is sized by its container (up to `width`) and its content (at least
   // announcement.height); the glass slab follows the measured box.
   const rootRef = useRef<HTMLDivElement>(null)
@@ -146,10 +148,18 @@ export function Announcement({
     if ((e.target as HTMLElement).closest('a, button')) return
     strikeAt(e.clientX, e.clientY)
   }
-  // Ink follows the glass backdrop (see useInk); applied after hydration, CSS covers SSR/vector.
-  const { ink } = useInk()
-  const client = useIsClient()
+  // Ink as measured on the glass behind the copy (contrast.ts), by the canvas that draws that
+  // glass: the banner's own, or the page's when it rides a shared scene. The glass-keyed guess
+  // stands in until the first reading; applied after hydration, CSS covers SSR and the vector.
   const contentRef = useRef<HTMLDivElement>(null)
+  const pageScope = useContext(ContrastScopeContext)
+  const ownScope = useContrastScope()
+  const { ink } = useMeasuredInk(contentRef, useInk(), {
+    scope: variant === 'shared' ? pageScope : ownScope,
+    name: 'announcement',
+    enabled: !vector,
+  })
+  const client = useIsClient()
   const printAllowed = usePrintText((st) => st.enabled)
   // The print is drawn by a basic material with tone mapping off, so its colour reaches the
   // frame untouched: snap the page ink to pure white (or near-black) for maximum legibility
@@ -188,16 +198,6 @@ export function Announcement({
   useEffect(() => {
     if (variant === 'shared') onSlot?.({ el: rootRef.current, ...size, shatter, print: printed, ink: printInk, hover })
   }, [variant, onSlot, size, shatter, printed, printInk, hover])
-  const canvasBox = useRef<HTMLDivElement>(null)
-  // Dev legibility probe: the text box in canvas px (the canvas is inset by the bleed).
-  const probeRegions = useCallback(() => {
-    const c = contentRef.current
-    const k = canvasBox.current
-    if (!c || !k) return []
-    const r = c.getBoundingClientRect()
-    const b = k.getBoundingClientRect()
-    return [{ name: 'announcement', x: r.x - b.x, y: r.y - b.y, w: r.width, h: r.height }]
-  }, [])
   // Dev: outlines over the live 3D as well.
   const overlay = useOutlines((s) => s.overlay)
   const outlines = vector || overlay
@@ -268,16 +268,14 @@ export function Announcement({
       ))}
       {variant === '3d' && (
         <div
-          ref={canvasBox}
           className={styles.canvas}
           style={{ inset: `${-bleedY}px ${-bleedX}px`, opacity: ready ? 1 : 0 }}
           aria-hidden="true"
         >
-          <NavCanvas postprocessing={postprocessing}>
+          <NavCanvas postprocessing={postprocessing} contrast={ownScope}>
             <Suspense fallback={null}>
               <Scene width={size.width} height={size.height} shatter={shatter} print={printed} ink={printInk} hover={dismissible ? hover : null} />
               <Ready onReady={() => setReady(true)} />
-              {LcProbe && <LcProbe ink={ink} regions={probeRegions} />}
             </Suspense>
             {DevHandles && (
               <Suspense fallback={null}>

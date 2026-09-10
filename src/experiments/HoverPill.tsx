@@ -1,13 +1,15 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { damp, damp3 } from 'maath/easing'
 import { Glass } from '../nav/Nav3D/Glass'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { px } from '../nav/tokens'
 import type { PresetName } from '../nav/Nav3D/customPresets'
 import { Container, Text } from '@react-three/uikit'
-import { transmissionExcluded } from '../nav/Nav3D/materials'
+import { LAYER, useLayer } from '../nav/Nav3D/layers'
+import { useContrast } from '../nav/Nav3D/contrast'
+import { INKS } from '../nav/Nav3D/dom'
 import { tokens } from '../nav/tokens'
 
 /**
@@ -99,6 +101,7 @@ export interface HoverPillProps {
   preset?: PresetName
   /** A mark set on the chip's face, in uikit's text renderer — the nav's, so it stays crisp. */
   label?: string
+  /** The mark's colour until the chip has been measured. */
   labelColor?: string
   /** Degrees to turn the mark by. A cross is a plus at 45°; see the note at the call site. */
   labelRotate?: number
@@ -148,12 +151,24 @@ export function HoverPill({
   // The mark rides the chip as a child, so it travels, scales and tumbles with it. It must stay
   // out of the glass's transmission buffer or the chip would refract its own face.
   const ui = useRef<THREE.Group>(null)
-  useEffect(() => {
-    const g = ui.current
-    if (!g) return
-    transmissionExcluded.add(g)
-    return () => void transmissionExcluded.delete(g)
-  }, [])
+  useLayer(ui, LAYER.TEXT, { live: true })
+  // The mark takes the ink measured on the chip's own face (contrast.ts): the chip is glass, and
+  // what it shows depends on the banner and the page behind it, not on its preset.
+  const camera = useThree((s) => s.camera)
+  const canvas = useThree((s) => s.size)
+  const at = useMemo(() => new THREE.Vector3(), [])
+  const face = useCallback(() => {
+    const g = group.current
+    if (!g || !g.visible) return null
+    g.getWorldPosition(at).project(camera)
+    // The middle half, where the mark is drawn.
+    const s = size * g.scale.x * 0.5
+    const cx = ((at.x + 1) / 2) * canvas.width
+    const cy = ((1 - at.y) / 2) * canvas.height
+    return { x: cx - s / 2, y: cy - s / 2, w: s, h: s }
+  }, [at, camera, canvas.width, canvas.height, size])
+  const reading = useContrast(face, { name: 'dismiss', enabled: !!label })
+  const markColor = reading ? INKS[reading.scheme].ink : labelColor
   const target = useMemo(() => new THREE.Vector3(), [])
   const shown = useRef({ v: 0 })
   const drop = useRef({ vy: 0, vx: 0, spin: 0 })
@@ -206,7 +221,7 @@ export function HoverPill({
             justifyContent="center"
             depthTest={false}
           >
-            <Text fontSize={size * 0.62} color={labelColor} transformRotateZ={labelRotate}>
+            <Text fontSize={size * 0.62} color={markColor} transformRotateZ={labelRotate}>
               {label}
             </Text>
           </Container>

@@ -1,4 +1,4 @@
-import { Suspense, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
+import { Suspense, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Canvas as R3FCanvas, useFrame, useThree } from '@react-three/fiber'
 import { Uniform, Vector2 } from 'three'
 import { Environment, Lightformer, OrbitControls, Preload } from '@react-three/drei'
@@ -18,6 +18,8 @@ import { Lights, RectLightformers } from './Lights'
 import { StripsContext } from './strips'
 import { studios } from './studios'
 import { Recenter } from './recenter'
+import { CameraLayers } from './layers'
+import { ContrastProbe, ContrastScopeContext, createContrastScope, type ContrastScope } from './contrast'
 
 export interface NavCanvasProps {
   children?: ReactNode
@@ -43,6 +45,11 @@ export interface NavCanvasProps {
   dpr?: [number, number]
   /** Show the environment cubemap itself as the scene background (the /dev/env page). */
   environmentBackground?: boolean
+  /**
+   * Where text on this canvas's glass registers to be measured (contrast.ts). Pass one when DOM
+   * outside the canvas sits on its glass too; otherwise the canvas keeps its own.
+   */
+  contrast?: ContrastScope
 }
 
 /**
@@ -69,7 +76,10 @@ export function NavCanvas({
   style,
   dpr = [1, 2],
   environmentBackground = false,
+  contrast,
 }: NavCanvasProps) {
+  const [ownScope] = useState(createContrastScope)
+  const scope = contrast ?? ownScope
   return (
     <R3FCanvas
       className={className}
@@ -82,7 +92,10 @@ export function NavCanvas({
       resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
     >
       <StripsContext.Provider value={strips}>
+      <ContrastScopeContext.Provider value={scope}>
         <SchemeSync />
+        {/* The viewer's mask, and a raycaster that reaches the labels (layers.ts). */}
+        <CameraLayers />
       <CameraRig orbit={orbit} framePosition={framePosition} />
         <SizeGuard />
         {orbit && (
@@ -99,6 +112,9 @@ export function NavCanvas({
           {postprocessing && <Post />}
           <Preload all />
         </Suspense>
+        {/* Measures the glass behind every piece of text registered with this canvas. */}
+        <ContrastProbe scope={scope} postprocessing={postprocessing} />
+      </ContrastScopeContext.Provider>
       </StripsContext.Provider>
     </R3FCanvas>
   )

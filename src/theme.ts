@@ -20,9 +20,35 @@ const onCube = typeof window !== 'undefined' && window.location.pathname.startsW
 export const DEFAULT_THEME: ResolvedTheme = onCube ? 'light' : 'dark'
 export const THEME_KEY = onCube ? 'theme-cube' : 'theme'
 
-/** The user's choice, remembered per browser; the page's default until they make one. */
+/**
+ * The user's choice, remembered per browser; the page's default until they make one.
+ *
+ * Switching eases out rather than cutting: the page as it was fades off the page as it now is
+ * (a view transition, index.css), quickly at first and settling slowly. A switch changes far
+ * more than colours — every glass, light and preset in the scene swaps its tuning, some of them
+ * for different materials altogether — so there is nothing to interpolate between; the whole
+ * picture, canvases included, cross-fades instead. The scene keeps rendering underneath, so it
+ * settles into its new tuning during the fade rather than after it. Reduced motion, and browsers
+ * without view transitions, switch at once.
+ */
 export const useThemeStore = create<ThemeStore>()(
-  persist((set) => ({ theme: DEFAULT_THEME, setTheme: (theme) => set({ theme }) }), { name: THEME_KEY }),
+  persist(
+    (set) => ({
+      theme: DEFAULT_THEME,
+      setTheme: (theme) => {
+        const apply = () => {
+          set({ theme })
+          // Stamped here as well as by ThemeApplier, so the page's own colours are already the
+          // new ones when the transition takes its picture of where it is going.
+          document.documentElement.dataset.theme = theme === 'light' || theme === 'dark' ? theme : DEFAULT_THEME
+        }
+        const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+        if (still || !document.startViewTransition) apply()
+        else document.startViewTransition(apply)
+      },
+    }),
+    { name: THEME_KEY },
+  ),
 )
 
 /** The scheme in effect. A stored `system` from before resolves to the page default, not the OS. */

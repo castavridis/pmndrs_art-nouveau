@@ -1,15 +1,18 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { MeshTransmissionMaterial } from '@react-three/drei'
-import { Container, Text } from '@react-three/uikit'
+import { Container, Text, type VanillaText } from '@react-three/uikit'
+import { useThree } from '@react-three/fiber'
 import { useControls } from 'leva'
 import { createNavStore, NavStoreContext } from '../nav/store'
 import { NavCanvas } from '../nav/Nav3D/Canvas'
 import { RecenterButton } from '../nav/Nav3D/recenter'
-import { useGlassProps, transmissionExcluded } from '../nav/Nav3D/materials'
+import { useGlassProps } from '../nav/Nav3D/materials'
+import { LAYER, useLayer } from '../nav/Nav3D/layers'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { Backing } from '../nav/Nav3D/Backing'
 import { useInk } from '../nav/Nav3D/dom'
+import { uikitRect, useMeasuredInk } from '../nav/Nav3D/contrast'
 import { px, tokens } from '../nav/tokens'
 import { bakeTextRelief, uvFromBounds } from './textRelief'
 
@@ -47,7 +50,7 @@ export function GlyphPage() {
 
 function Slab() {
   const glass = useGlassProps()
-  const { ink } = useInk()
+  const fallbackInk = useInk()
   const c = useControls('glyph', {
     text: 'v10 is out.',
     line2: 'Petals, glass and the growing pill.',
@@ -88,12 +91,21 @@ function Slab() {
   const etched = c.treatment !== 'msdf' && relief
   // The MSDF layer sits on the front face and must stay out of the slab's own buffer.
   const ui = useRef<THREE.Group>(null)
-  useEffect(() => {
-    const g = ui.current
-    if (!g) return
-    transmissionExcluded.add(g)
-    return () => void transmissionExcluded.delete(g)
-  }, [])
+  useLayer(ui, LAYER.TEXT, { live: true })
+  // The MSDF lines take the ink measured on the slab behind them (contrast.ts).
+  const line1 = useRef<VanillaText>(null)
+  const line2 = useRef<VanillaText>(null)
+  const camera = useThree((s) => s.camera)
+  const canvas = useThree((s) => s.size)
+  const lines = useCallback(() => {
+    const out = []
+    for (const l of [line1, line2]) {
+      const r = uikitRect(l.current, ui.current, 0, camera, canvas, [1, 0.6])
+      if (r) out.push(r)
+    }
+    return out
+  }, [camera, canvas])
+  const { ink } = useMeasuredInk(lines, fallbackInk, { name: 'glyph', enabled: c.treatment !== 'etched' })
   const front = px(SLAB.depth / 2) + 0.004
   return (
     <group>
@@ -121,10 +133,10 @@ function Slab() {
             gap={6}
             depthTest={false}
           >
-            <Text fontSize={c.size} fontWeight="medium" color={ink}>
+            <Text ref={line1} fontSize={c.size} fontWeight="medium" color={ink}>
               {c.text}
             </Text>
-            <Text fontSize={c.size * 0.5} color={ink}>
+            <Text ref={line2} fontSize={c.size * 0.5} color={ink}>
               {c.line2}
             </Text>
           </Container>

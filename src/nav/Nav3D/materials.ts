@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import type { MeshTransmissionMaterialProps } from '@react-three/drei/core/MeshTransmissionMaterial'
 import { useTuning, type Tuning } from './tuning'
 import { makeSheenNoiseMap, makeSurfaceNormalMap } from './surfaceNormals'
+import { BUFFER_MASK } from './layers'
 
 /**
  * three@0.182's sheen BRDF divides by zero at grazing angles under punctual lights
@@ -105,19 +106,6 @@ export function useGlassPropsFor(g: Tuning['glass']): MeshTransmissionMaterialPr
   return useMemo(() => glassProps(g, background, getSurfaceNormals(), normalScale), [g, background, normalScale])
 }
 
-/**
- * Objects that must not appear inside the pill's transmission buffer (e.g. the text layer
- * sitting on the glass, which would otherwise show up as a refracted ghost).
- * drei@10.7 MeshTransmissionMaterial swaps its mesh's material for a DiscardMaterial while
- * rendering the buffer; `installTransmissionExclusion` uses that as the signal.
- */
-export const transmissionExcluded = new Set<THREE.Object3D>()
-/**
- * Objects visible ONLY inside the pill's transmission buffer: light emitters that, as in the
- * DCC, must not be seen by the camera directly but should show through the glass.
- */
-export const transmissionOnly = new Set<THREE.Object3D>()
-
 interface SceneHook {
   hosts: Map<THREE.Mesh, THREE.Material>
   restore: () => void
@@ -126,10 +114,18 @@ const sceneHooks = new Map<THREE.Scene, SceneHook>()
 
 /**
  * Register a mesh whose buffered MeshTransmissionMaterial renders the scene into its own
- * buffer. While any registered host is mid-buffer (drei swaps its material for a
- * DiscardMaterial), `transmissionExcluded` objects are hidden and `transmissionOnly` ones shown.
- * One hook per scene, installed with the first host and removed with the last, so the
- * emitters show through every buffered glass (the pill, the cube, a callout surface).
+ * buffer. That buffer must not refract the text sitting on the glass, and must show the light
+ * emitters that the viewer never sees directly (see layers.ts).
+ *
+ * drei@10.7 renders the buffer with the viewer's own camera, swapping the host's material for a
+ * DiscardMaterial for the duration; the scene's onBeforeRender runs before three builds its draw
+ * lists, so switching the camera's layer mask there changes what that one pass draws, and
+ * onAfterRender puts it back. One hook per scene, installed with the first host and removed with
+ * the last, so the emitters show through every buffered glass (the pill, the cube, a callout).
+ *
+ * This replaced walking every excluded object and flipping its `visible` flag before and after
+ * the pass. uikit re-asserts its own meshes' flags during the render, so that fought uikit, and
+ * any other code hiding an object for its own reasons had its choice undone after each frame.
  */
 export function registerTransmissionHost(scene: THREE.Scene, host: THREE.Mesh, glass: THREE.Material): () => void {
   let hook = sceneHooks.get(scene)
@@ -137,25 +133,32 @@ export function registerTransmissionHost(scene: THREE.Scene, host: THREE.Mesh, g
     const hosts = new Map<THREE.Mesh, THREE.Material>()
     const prevBefore = scene.onBeforeRender
     const prevAfter = scene.onAfterRender
-    scene.onBeforeRender = function (...args) {
+    // The mask a camera had before a buffer pass took it over.
+    const held = new Map<THREE.Camera, number>()
+    scene.onBeforeRender = function (renderer, sc, camera, ...rest) {
       let inBufferPass = false
       for (const [m, g] of hosts) if (m.material !== g) inBufferPass = true
-      for (const o of transmissionExcluded) o.visible = !inBufferPass
-      for (const o of transmissionOnly) o.visible = inBufferPass
-      prevBefore.apply(this, args)
+      if (inBufferPass && !held.has(camera)) {
+        held.set(camera, camera.layers.mask)
+        camera.layers.mask = BUFFER_MASK
+      }
+      prevBefore.call(this, renderer, sc, camera, ...rest)
     }
-    scene.onAfterRender = function (...args) {
-      for (const o of transmissionExcluded) o.visible = true
-      for (const o of transmissionOnly) o.visible = false
-      prevAfter.apply(this, args)
+    scene.onAfterRender = function (renderer, sc, camera, ...rest) {
+      const mask = held.get(camera)
+      if (mask !== undefined) {
+        camera.layers.mask = mask
+        held.delete(camera)
+      }
+      prevAfter.call(this, renderer, sc, camera, ...rest)
     }
     hook = {
       hosts,
       restore: () => {
         scene.onBeforeRender = prevBefore
         scene.onAfterRender = prevAfter
-        for (const o of transmissionExcluded) o.visible = true
-        for (const o of transmissionOnly) o.visible = false
+        for (const [camera, mask] of held) camera.layers.mask = mask
+        held.clear()
       },
     }
     sceneHooks.set(scene, hook)

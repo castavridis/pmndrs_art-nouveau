@@ -1,6 +1,7 @@
 import {
   lazy,
   Suspense,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -23,6 +24,7 @@ import { calloutKinds, kindHex, type CalloutKind } from './calloutKinds'
 import { useTuning, type GlassPreset, type MaterialChoice } from '../nav/Nav3D/tuning'
 import type { PresetName } from '../nav/Nav3D/customPresets'
 import { useInk } from '../nav/Nav3D/dom'
+import { ContrastScopeContext, useContrastScope, useMeasuredInk } from '../nav/Nav3D/contrast'
 import { useIsClient } from '../isClient'
 import { useDomTilt, usePointerParallax } from './parallax'
 import * as THREE from 'three'
@@ -89,13 +91,15 @@ export function Callout({
   const tint = kindHex(kind)
   const preset: GlassPreset = k.colour
   const surfacePreset = useSurfacePreset(kind)
-  const { ink } = useInk()
+  const fallbackInk = useInk()
   const client = useIsClient()
   const symbolRef = useRef<HTMLDivElement>(null)
   // Parallax: the pointer over the card tilts the 3D layers (icon more than surface) and the
   // DOM content; the plain card tilts as a whole in CSS.
   const rootRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const pageScope = useContext(ContrastScopeContext)
+  const ownScope = useContrastScope()
   const pointer = usePointerParallax(rootRef)
   const size = useMeasure(rootRef, { width: callout.width, height: callout.height })
   const narrow = size.width < 440
@@ -108,9 +112,16 @@ export function Callout({
   const vector = variant === 'svg' || !ready
   // The same glyph the DOM draws, rasterised for the scene once the 3D lens is up.
   const glyph = useSvgTexture(symbolRef, tint, 256, [kind, vector])
-  // Glass surfaces carry the main glass: the ink follows its backdrop (light on dark glass),
-  // like the announcement. The plain card keeps its own light gradient and dark ink.
-  const glassInk = variant !== 'plain' && client && !vector ? ink : undefined
+  // Glass surfaces take the ink measured on the glass behind the copy (contrast.ts), by the
+  // card's own canvas or the page's shared one, like the announcement. The plain card keeps its
+  // own light gradient and dark ink.
+  const glassy = variant === 'surface' || variant === 'shared'
+  const { ink } = useMeasuredInk(contentRef, fallbackInk, {
+    scope: variant === 'shared' ? pageScope : ownScope,
+    name: 'callout',
+    enabled: glassy && !vector,
+  })
+  const glassInk = glassy && client && !vector ? ink : undefined
   useEffect(() => {
     if (variant === 'shared') onSlot?.(rootRef.current, size, glyph)
   }, [variant, onSlot, size, glyph])
@@ -146,7 +157,7 @@ export function Callout({
             style={{ inset: -bleed, opacity: ready ? 1 : 0 }}
             aria-hidden="true"
           >
-            <NavCanvas postprocessing={postprocessing} strips={strips}>
+            <NavCanvas postprocessing={postprocessing} strips={strips} contrast={ownScope}>
               <Suspense fallback={null}>
                 <ParallaxRig pointer={pointer} depth={0}>
                   <Surface preset={surfacePreset} width={size.width} height={size.height} />

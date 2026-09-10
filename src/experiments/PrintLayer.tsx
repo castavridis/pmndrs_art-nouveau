@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { transmissionExcluded } from '../nav/Nav3D/materials'
+import { LAYER, useLayer } from '../nav/Nav3D/layers'
 
 /**
  * The printed text painted onto a piece of glass, using that piece's own geometry and its
@@ -40,20 +40,6 @@ export function usePrintMaterial(texture: THREE.Texture | null, ink: string) {
   return material
 }
 
-/**
- * Keeps a mesh out of the glass's transmission buffer. The print sits in front of the slab,
- * but a transmission pass renders every non-transmissive object regardless of depth, so the
- * glass was refracting a second, offset copy of the words behind the real ones.
- */
-export function useExcludedFromTransmission(ref: React.RefObject<THREE.Object3D | null>) {
-  useEffect(() => {
-    const o = ref.current
-    if (!o) return
-    transmissionExcluded.add(o)
-    return () => void transmissionExcluded.delete(o)
-  }, [ref])
-}
-
 export function PrintLayer({
   geometry,
   material,
@@ -64,7 +50,10 @@ export function PrintLayer({
   position?: [number, number, number]
 }) {
   const ref = useRef<THREE.Mesh>(null)
-  useExcludedFromTransmission(ref)
+  // Text: out of the glass's buffer. The print sits in front of the slab, but a transmission
+  // pass renders every non-transmissive object regardless of depth, so the glass was refracting
+  // a second, offset copy of the words behind the real ones.
+  useLayer(ref, LAYER.TEXT)
   if (!material) return null
   return <mesh ref={ref} geometry={geometry} material={material} position={position} raycast={() => null} />
 }
