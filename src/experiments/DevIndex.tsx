@@ -1,8 +1,13 @@
 const pages = [
   {
     href: '/',
-    title: 'Demo',
-    text: 'The nav in a page, with link count, container width and current page controls.',
+    title: 'Bento (front page)',
+    text: 'Every component in one centred column, drawn by one shared scene behind the page.',
+  },
+  {
+    href: '/dev/home',
+    title: 'Previous home',
+    text: 'The nav, an announcement and two callouts, as the front page used to be.',
   },
   {
     href: '/dev/nav',

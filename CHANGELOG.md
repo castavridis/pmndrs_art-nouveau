@@ -176,6 +176,16 @@ something the code taught us. See [References](#references) for the external wor
   writes them to the project through the same dev endpoint the other two use. It also removes an
   ambiguity in the old single-scheme export, which produced a tuning that did not say which of
   the two schemes it belonged to.
+- **The bento is the front page, and the demo never follows the OS theme.** `/` renders and
+  prerenders the bento; the old home lives on at `/dev/home`, and the front page links onward to
+  the cube and to the experiments index the old home carried. Every page opens dark except the
+  cube, which opens light, each on its own remembered choice; a stored `system` from before
+  resolves to the page default. The rule also runs as an inline script before first paint, since
+  until React mounted nothing stamped `data-theme` and the portable UI tokens fell back to
+  `prefers-color-scheme`. The front page's theme switch renders for the default until hydration,
+  so a visitor on light does not hydrate mismatched markup. Verified on the built site with the OS
+  preferring light: the front page paints dark from its first frame and hydrates cleanly, the
+  cube paints light, and the two choices live in separate keys.
 - **`base: '/'`, not `'./'`** — relative asset URLs resolved against `/dev/cube/` and returned
   HTML for JavaScript.
 - **`cleanUrls` removed from `vercel.json`** (`2c1d986`): Vercel silently drops a rewrite whose

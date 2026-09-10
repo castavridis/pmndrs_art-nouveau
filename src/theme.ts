@@ -1,7 +1,8 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+/** `system` survives only so a value stored before it was retired still parses. */
 export type ThemeChoice = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
@@ -10,26 +11,24 @@ interface ThemeStore {
   setTheme: (t: ThemeChoice) => void
 }
 
-/** The user's choice; dark by default, `system` follows prefers-color-scheme. Persisted per browser. */
+/*
+ * The demo never follows the OS preference: every page opens dark, except the cube, which opens
+ * light. Each keeps its own remembered choice, so switching one does not flip the other. The same
+ * rule runs before first paint in index.html, so no stylesheet ever falls back to the OS.
+ */
+const onCube = typeof window !== 'undefined' && window.location.pathname.startsWith('/dev/cube')
+export const DEFAULT_THEME: ResolvedTheme = onCube ? 'light' : 'dark'
+export const THEME_KEY = onCube ? 'theme-cube' : 'theme'
+
+/** The user's choice, remembered per browser; the page's default until they make one. */
 export const useThemeStore = create<ThemeStore>()(
-  persist((set) => ({ theme: 'dark', setTheme: (theme) => set({ theme }) }), { name: 'theme' }),
+  persist((set) => ({ theme: DEFAULT_THEME, setTheme: (theme) => set({ theme }) }), { name: THEME_KEY }),
 )
 
-const query = () =>
-  typeof window !== 'undefined' && 'matchMedia' in window ? window.matchMedia('(prefers-color-scheme: light)') : null
-
-const subscribeSystem = (cb: () => void) => {
-  const q = query()
-  q?.addEventListener('change', cb)
-  return () => q?.removeEventListener('change', cb)
-}
-const systemTheme = (): ResolvedTheme => (query()?.matches ? 'light' : 'dark')
-
-/** The scheme in effect: the stored choice, or the OS preference. Dark during SSR. */
+/** The scheme in effect. A stored `system` from before resolves to the page default, not the OS. */
 export function useResolvedTheme(): ResolvedTheme {
   const choice = useThemeStore((s) => s.theme)
-  const system = useSyncExternalStore(subscribeSystem, systemTheme, () => 'dark' as ResolvedTheme)
-  return choice === 'system' ? system : choice
+  return choice === 'light' || choice === 'dark' ? choice : DEFAULT_THEME
 }
 
 /**

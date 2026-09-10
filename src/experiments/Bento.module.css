@@ -41,6 +41,25 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+/* Onward links at the foot of the front page. */
+.onward {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 28px;
+  padding-top: 24px;
+  font-size: 14px;
+}
+.onward a {
+  color: inherit;
+  opacity: 0.75;
+  text-underline-offset: 3px;
+}
+.onward a:hover,
+.onward a:focus-visible {
+  opacity: 1;
+}
+
 /* The small switch under the launcher that turns it off and on. */
 .textButton {
   font: inherit;

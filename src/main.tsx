@@ -19,6 +19,9 @@ import { AppShell } from './AppShell'
 
 const root = document.getElementById('root')!
 const path = window.location.pathname
+// The bento is the front page as well as /dev/bento, and it carries its own theme switch.
+const isHome = path === '/' || path === '/index.html'
+const isBento = isHome || path.startsWith('/dev/bento')
 // Every route is available in every build; the leva panels and the tuning writer stay dev-only.
 const page = path.startsWith('/dev/demo') ? (
   <Demo />
@@ -46,18 +49,21 @@ const page = path.startsWith('/dev/demo') ? (
   <DevIndex />
 ) : path.startsWith('/dev/nav') ? (
   <DevGallery />
-) : (
+) : path.startsWith('/dev/home') ? (
+  // The previous home page, kept reachable now that the bento is the front page.
   <Home />
+) : (
+  <BentoPage />
 )
 const app = (
   <StrictMode>
-    <AppShell themeToggle={!path.startsWith('/dev/bento')}>{page}</AppShell>
+    <AppShell themeToggle={!isBento}>{page}</AppShell>
   </StrictMode>
 )
 // Production `/` is prerendered (see scripts/prerender.mjs); other routes are served the
 // empty app shell (dist/app.html) and render on the client. Hydrate only when the markup
-// is the home page's, so a prerendered Home is never hydrated with another route's tree.
-if (root.hasChildNodes() && (path === '/' || path === '/index.html')) hydrateRoot(root, app)
+// is the home page's, so a prerendered front page is never hydrated with another route's tree.
+if (root.hasChildNodes() && isHome) hydrateRoot(root, app)
 else {
   root.replaceChildren()
   createRoot(root).render(app)

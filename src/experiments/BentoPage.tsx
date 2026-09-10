@@ -11,7 +11,7 @@ import type * as THREE from 'three'
 import { useIsClient } from '../isClient'
 import { useInk } from '../nav/Nav3D/dom'
 import { useMeasure } from './useMeasure'
-import { useResolvedTheme, useThemeStore } from '../theme'
+import { DEFAULT_THEME, useResolvedTheme, useThemeStore } from '../theme'
 import styles from './Bento.module.css'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
@@ -73,7 +73,11 @@ export function BentoPage() {
   const launcher = useRef<HTMLButtonElement>(null)
   const launcherSize = useMeasure(launcher, { width: 0, height: 0 })
   const [launcherDisabled, setLauncherDisabled] = useState(false)
-  const scheme = useResolvedTheme()
+  // The page is prerendered as the front page, where the stored theme is unknown, so the switch
+  // renders for the default until hydration and only then reads the choice: otherwise a visitor
+  // on light would hydrate "Apply Light Theme" markup with "Apply Dark Theme" and mismatch.
+  const resolved = useResolvedTheme()
+  const scheme = client ? resolved : DEFAULT_THEME
   const other: 'dark' | 'light' = scheme === 'dark' ? 'light' : 'dark'
   const setTheme = useThemeStore((st) => st.setTheme)
   // Real glass on a dark page is dark; the label follows the page's ink, as the banner's does.
@@ -200,6 +204,11 @@ export function BentoPage() {
             </div>
           </div>
         </section>
+        {/* Now that this is the front page, the ways onward the old home carried, plus the cube. */}
+        <nav className={styles.onward} aria-label="More">
+          <a href="/dev/cube">The pmndrs cube →</a>
+          <a href="/dev/">Experiments and tuning pages →</a>
+        </nav>
       </main>
       {DevControls && (
         <Suspense fallback={null}>
