@@ -12,6 +12,7 @@ import type { Director } from '../capture/director';
  * session. Only a dev build reads those stores, so with a look the takes are captured `--dev`;
  * without one they film the shipped tuning (src/nav/Nav3D/*.saved.json). Values may be kept as
  * objects for readability (stringified here); keys starting with `_` are notes.
+ * There is none now: the reel's look was shipped (d026b50) and its file removed; d9a0efe has it.
  */
 const lookFile = join(dirname(fileURLToPath(import.meta.url)), 'nouveau.look.json');
 export const NV_LOOK: Record<string, string> | undefined = existsSync(lookFile)

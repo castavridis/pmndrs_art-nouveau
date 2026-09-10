@@ -11,9 +11,9 @@ import type { Cut, Reel } from '../edit';
  *     chip follows the pointer, and the banner breaks in captured slow motion.
  *  3. nv-switch: the switch off and on, the light over the callout, then the page to light.
  *
- * Takes are filmed 864 px square so the column fills the frame to about 1.5rem; with the
- * reel's look (shots/nouveau.look.json) they are captured --dev. `from` is seconds into the
- * clip; camera `t` is seconds into the cut, which is (clip time − from) / rate.
+ * Takes are filmed 864 px square so the column fills the frame to about 1.5rem, in the shipped
+ * tuning (the "heavily distorted" theme, d026b50). `from` is seconds into the clip; camera `t`
+ * is seconds into the cut, which is (clip time − from) / rate.
  * After the banner breaks the page reflows ~94 px up: nv-switch's column runs ~62–730 px, so
  * its wide frame is zoom 1.2 on y 396 to keep the same margin.
  */
