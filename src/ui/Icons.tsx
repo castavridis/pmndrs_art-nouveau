@@ -131,6 +131,25 @@ export function DiscordIcon(p: IconProps) {
 }
 
 /** The pmndrs rose, used as the leading glyph in popover items. */
+/* Solid, both of them, as in the sister repo: they sit on a slab of glass, where a stroke of
+   this weight thins out against the highlights. */
+export function MoonIcon(p: IconProps) {
+  return (
+    <svg {...solid} {...p}>
+      <path d="M20.2 14.9A8.6 8.6 0 0 1 9.1 3.8a8.7 8.7 0 1 0 11.1 11.1Z" />
+    </svg>
+  )
+}
+
+export function SunIcon(p: IconProps) {
+  return (
+    <svg {...solid} {...p}>
+      <circle cx="12" cy="12" r="4.6" />
+      <path d="M11 1.9h2v3.2h-2zM11 18.9h2v3.2h-2zM1.9 11h3.2v2H1.9zM18.9 11h3.2v2h-3.2zM3.9 5.3l1.4-1.4 2.3 2.3-1.4 1.4zM16.4 17.8l1.4-1.4 2.3 2.3-1.4 1.4zM3.9 18.7l2.3-2.3 1.4 1.4-2.3 2.3zM16.4 6.2l2.3-2.3 1.4 1.4-2.3 2.3z" />
+    </svg>
+  )
+}
+
 export function RoseIcon(p: IconProps) {
   return (
     <svg {...stroke} {...p}>

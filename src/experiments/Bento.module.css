@@ -1,47 +1,60 @@
+/* One centred column in three tiers, as the sister repo (pmndrs_mineral-pearl) lays out its
+   bento: every element on its own line, each as wide as it wants up to its own cap, and nothing
+   to the side of anything. */
 .page {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 72px clamp(16px, 4vw, 32px) 96px;
+  /* 3rem above, so the banner starts near the top rather than adrift in it. */
+  padding: 3rem clamp(16px, 4vw, 40px) 96px;
   font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
 }
 .tier {
+  padding: 40px 0 56px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+/* The first row starts where the page's own top padding leaves off: tier padding on top of
+   that put the banner adrift in empty space. */
+.tier:first-child {
+  padding-top: 0;
+}
+.col {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 2fr;
-  gap: 32px 48px;
-  padding: 48px 0;
-  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  justify-items: center;
+  gap: 32px;
+  width: 100%;
 }
-.tier:first-of-type {
-  border-top: 0;
-  padding-top: 8px;
-  /* Room for the nav in its full mode (logo, three links, Cmd) beside the announcement. */
-  grid-template-columns: minmax(600px, 1fr) 1fr;
-}
-@media (max-width: 960px) {
-  .tier:first-of-type {
-    grid-template-columns: 1fr;
-  }
-}
-.heading {
-  grid-column: 1 / -1;
-  margin: 0 0 8px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.left {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 12px;
-}
-.right {
+.cell {
+  width: 100%;
   min-width: 0;
 }
-@media (max-width: 760px) {
-  .tier {
-    grid-template-columns: 1fr;
-  }
+/* A cell that hugs what is in it. The copy bar is as wide as its actions, and the launcher's
+   glass is drawn to the button's own box, so a cell wider than either would leave it standing
+   off to one side. */
+.cell.fit {
+  width: max-content;
+  max-width: 100%;
+}
+.inline {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+/* The small switch under the launcher that turns it off and on. */
+.textButton {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.textButton:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 
 /* --- glass buttons: the plain callout's look, sized for controls ------------------ */
@@ -101,46 +114,7 @@
   background: rgb(0 0 0 / 0.08);
 }
 
-/* --- utilitarian docs card ---------------------------------------------------------- */
-.docs {
-  max-width: 520px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: color-mix(in srgb, currentColor 4%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent);
-}
-.docsNav {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-}
-.docsNav a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 18px;
-  color: inherit;
-  text-decoration: none;
-  font-size: 15px;
-  border-right: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-}
-.docsNav a[aria-current='page'] {
-  font-weight: 600;
-}
-.docsNav a:last-child {
-  border-right: 0;
-}
-.docsBody {
-  padding: 16px 20px 20px;
-  font-size: 15px;
-  line-height: 1.6;
-}
-.docsBody ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-/* --- Article launcher: the navbar's own pill, with the states a control needs ---------- */
+/* --- Launcher: the theme switch, on the navbar's own glass, with the states a control needs */
 .launcher {
   appearance: none;
   display: inline-flex;
@@ -193,7 +167,7 @@
     inset 0 2px 4px rgb(0 0 0 / 0.16),
     0 0 0 1px rgb(255 255 255 / 0.3);
 }
-.launcher[disabled] {
+.launcher[aria-disabled='true'] {
   cursor: default;
   filter: grayscale(0.85) brightness(0.72);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
@@ -216,7 +190,7 @@
   box-shadow: none;
   filter: none;
 }
-.launcher[data-3d][disabled] {
+.launcher[data-3d][aria-disabled='true'] {
   box-shadow: none;
   filter: none;
   opacity: 0.45;

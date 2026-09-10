@@ -2,16 +2,16 @@ import { lazy, Suspense, useCallback, useRef, useState } from 'react'
 import { Nav2D } from '../nav/Nav2D'
 import { createNavStore, NavStoreContext } from '../nav/store'
 import type { NavLink } from '../nav/types'
-import { Logo } from '../nav/Logo'
 import { Announcement } from './Announcement'
 import { Callout } from './Callout'
 import { BentoScene, type SlotBox } from './BentoScene'
 import { Button, ButtonLink, CopyButton, Kbd, Popover } from '../ui'
-import { BoltIcon, DiscordIcon, ExternalIcon, GitHubIcon, InfoIcon, TerminalIcon, TwitterIcon } from '../ui/Icons'
+import { BoltIcon, DiscordIcon, ExternalIcon, GitHubIcon, InfoIcon, MoonIcon, SunIcon, TerminalIcon, TwitterIcon } from '../ui/Icons'
 import type * as THREE from 'three'
 import { useIsClient } from '../isClient'
 import { useInk } from '../nav/Nav3D/dom'
 import { useMeasure } from './useMeasure'
+import { useResolvedTheme, useThemeStore } from '../theme'
 import styles from './Bento.module.css'
 
 const DevControls = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/DevControls')) : null
@@ -43,10 +43,15 @@ const LINKS: NavLink[] = [
 const EMPTY: SlotBox = { el: null, width: 0, height: 0 }
 
 /**
- * `/dev/bento`: the components laid out by how expressive they are, all drawn by ONE scene
- * (BentoScene) behind the page: the nav, the announcement slab and the callout surface share
- * petals, lights and postprocessing. The DOM stays the source of truth for layout and text;
- * the 3D parts follow their DOM slots.
+ * `/dev/bento`: one centred column in three tiers, laid out as the sister repo lays out its own
+ * bento (pmndrs_mineral-pearl): the banner over the nav, then the things you use — the copy bar,
+ * the callout and the theme switch — then the plain controls. The rows carry no headings: what
+ * the elements are is the point, not what they are called.
+ *
+ * Everything is still drawn by ONE scene (BentoScene) behind the page — the nav, the banner, the
+ * callout and the launcher's glass share petals, lights and postprocessing. The DOM stays the
+ * source of truth for layout and text, and the 3D parts follow their DOM slots, so moving an
+ * element in the markup moves its glass with it.
  */
 export function BentoPage() {
   const client = useIsClient()
@@ -61,12 +66,16 @@ export function BentoPage() {
   const [announcement, setAnnouncement] = useState<SlotBox>(EMPTY)
   const [callout, setCallout] = useState<SlotBox>(EMPTY)
   const [ready, setReady] = useState(false)
-  // The article launchers are plain buttons; the scene draws the nav's glass behind each one,
-  // so they need to be measured and their DOM background stood down once it is up.
-  const launcherOn = useRef<HTMLButtonElement>(null)
-  const launcherOff = useRef<HTMLButtonElement>(null)
-  const launcherOnSize = useMeasure(launcherOn, { width: 0, height: 0 })
-  const launcherOffSize = useMeasure(launcherOff, { width: 0, height: 0 })
+  // The call to action is the theme switch, as in the sister repo: it says which ground it
+  // would take you to and goes there. The scene draws the nav's glass behind it, so it is
+  // measured and its DOM background stands down once that is up. Disabling it swaps that glass
+  // for a dark, inert one, rather than showing a second, permanently disabled copy beside it.
+  const launcher = useRef<HTMLButtonElement>(null)
+  const launcherSize = useMeasure(launcher, { width: 0, height: 0 })
+  const [launcherDisabled, setLauncherDisabled] = useState(false)
+  const scheme = useResolvedTheme()
+  const other: 'dark' | 'light' = scheme === 'dark' ? 'light' : 'dark'
+  const setTheme = useThemeStore((st) => st.setTheme)
   // Real glass on a dark page is dark; the label follows the page's ink, as the banner's does.
   const { ink } = useInk()
   const glassInk = ready ? ink : undefined
@@ -90,126 +99,105 @@ export function BentoPage() {
           navEl={navEl}
           announcement={announcement}
           callout={{ ...callout, kind: 'note' }}
-          glassBacked={[
-            { el: launcherOn, ...launcherOnSize, radius: 4 },
-            // Disabled: a dark, inert glass rather than the live tuning.
-            { el: launcherOff, ...launcherOffSize, preset: 'dark', radius: 4 },
-          ]}
+          glassBacked={[{ el: launcher, ...launcherSize, radius: 4, preset: launcherDisabled ? 'dark' : undefined }]}
           onReady={() => setReady(true)}
         />
       )}
       <main ref={pageRef} className={styles.page} style={{ position: 'relative', zIndex: 1 }}>
-        <section className={styles.tier} aria-labelledby="tier-most">
-          <h2 id="tier-most" className={styles.heading}>
-            Most Expressive
-          </h2>
-          <div className={styles.left} style={{ alignItems: 'center' }}>
-            {/* data-3d hides the DOM nav's visuals once the scene draws the pill; anchors stay. */}
-            <div ref={setNavWrap} data-3d={ready || undefined} style={{ width: '100%' }}>
-              <Nav2D links={LINKS} vector={!ready} />
+        {/* One centred column, in the order a reader meets the elements: the banner over the
+            bar, then the things you use, then the plain controls. */}
+        <section className={styles.tier}>
+          <div className={styles.col}>
+            <div className={styles.cell} style={{ maxWidth: 720 }}>
+              <Announcement variant="shared" sharedReady={ready} onSlot={onAnnouncementSlot} width={720}>
+                <span>
+                  <strong>v10 is out.</strong> Petals, glass and the growing pill, in one package.
+                </span>
+                <a href="/blog/v10">Read more</a>
+              </Announcement>
+            </div>
+            <div className={styles.cell} style={{ maxWidth: 620 }}>
+              {/* data-3d hides the DOM nav's visuals once the scene draws the pill; anchors stay. */}
+              <div ref={setNavWrap} data-3d={ready || undefined} style={{ width: '100%' }}>
+                <Nav2D links={LINKS} vector={!ready} />
+              </div>
             </div>
           </div>
-          <div className={styles.right}>
-            <Announcement variant="shared" sharedReady={ready} onSlot={onAnnouncementSlot} width={720}>
-              <span>
-                <strong>v10 is out.</strong> Petals, glass and the growing pill, in one package.
-              </span>
-              <a href="/blog/v10">Read more</a>
-            </Announcement>
+        </section>
+
+        <section className={styles.tier}>
+          <div className={styles.col}>
+            <div className={`${styles.cell} ${styles.fit}`} style={{ maxWidth: 520 }}>
+              <CopyButton
+                value="pnpm add @react-three/fiber"
+                actions={[
+                  { key: 'docs', label: 'Open the docs', icon: <InfoIcon />, href: '/docs' },
+                  { key: 'sandbox', label: 'Open a sandbox', icon: <ExternalIcon />, href: '/examples' },
+                  { key: 'repo', label: 'View the repository', icon: <GitHubIcon />, href: 'https://github.com/pmndrs' },
+                  { key: 'run', label: 'Run it', icon: <BoltIcon /> },
+                  { key: 'cli', label: 'Copy the CLI command', icon: <TerminalIcon /> },
+                ]}
+              />
+            </div>
+            <div className={styles.cell} style={{ maxWidth: 560 }}>
+              <Callout variant="shared" sharedReady={ready} onSlot={onCalloutSlot} kind="note" title="Callout" maxWidth={560}>
+                <p>
+                  A 3D glass surface behind DOM content: the lens carries the kind's symbol, the text
+                  stays selectable and wraps.
+                </p>
+              </Callout>
+            </div>
+            <div className={`${styles.cell} ${styles.fit}`} style={{ maxWidth: 320 }}>
+              <button
+                ref={launcher}
+                type="button"
+                className={styles.launcher}
+                data-3d={ready || undefined}
+                style={{ color: glassInk }}
+                // aria-disabled rather than disabled: it stays focusable and announced, so a
+                // keyboard user can find it and hear that it is off rather than lose it.
+                aria-disabled={launcherDisabled || undefined}
+                onClick={() => {
+                  if (!launcherDisabled) setTheme(other)
+                }}
+              >
+                {other === 'dark' ? <MoonIcon /> : <SunIcon />}
+                {other === 'dark' ? 'Apply Dark Theme' : 'Apply Light Theme'}
+              </button>
+            </div>
+            <button type="button" className={styles.textButton} onClick={() => setLauncherDisabled((d) => !d)}>
+              {launcherDisabled ? 'Enable Theme Switcher' : 'Disable Theme Switcher'}
+            </button>
           </div>
         </section>
 
-        <section className={styles.tier} aria-labelledby="tier-some">
-          <h2 id="tier-some" className={styles.heading}>
-            Somewhat Expressive
-          </h2>
-          <div className={styles.left}>
-            <CopyButton
-              value="pnpm add @react-three/fiber"
-              actions={[
-                { key: 'docs', label: 'Open the docs', icon: <InfoIcon />, href: '/docs' },
-                { key: 'sandbox', label: 'Open a sandbox', icon: <ExternalIcon />, href: '/examples' },
-                { key: 'repo', label: 'View the repository', icon: <GitHubIcon />, href: 'https://github.com/pmndrs' },
-                { key: 'run', label: 'Run it', icon: <BoltIcon /> },
-                { key: 'cli', label: 'Copy the CLI command', icon: <TerminalIcon /> },
-              ]}
-            />
-            <button
-              ref={launcherOn}
-              type="button"
-              className={styles.launcher}
-              data-3d={ready || undefined}
-              style={{ color: glassInk }}
-            >
-              Article Launcher
-            </button>
-            <button
-              ref={launcherOff}
-              type="button"
-              className={styles.launcher}
-              data-3d={ready || undefined}
-              style={{ color: glassInk }}
-              disabled
-            >
-              Article Launcher
-            </button>
-          </div>
-          <div className={styles.right}>
-            <Callout variant="shared" sharedReady={ready} onSlot={onCalloutSlot} kind="note" title="Callout" maxWidth={720}>
-              <p>
-                A 3D glass surface behind DOM content: the lens carries the kind's symbol, the text
-                stays selectable and wraps.
-              </p>
-            </Callout>
-          </div>
-        </section>
-
-        <section className={styles.tier} aria-labelledby="tier-util">
-          <h2 id="tier-util" className={styles.heading}>
-            Utilitarian
-          </h2>
-          <div className={styles.left}>
-            <Button onClick={() => document.querySelector<HTMLElement>('[data-id="cmd"]')?.click()}>
-              Cmd <Kbd>K</Kbd>
-            </Button>
-            <ButtonLink icon href="https://twitter.com/pmndrs" aria-label="Twitter">
-              <TwitterIcon />
-            </ButtonLink>
-            <ButtonLink icon href="https://discord.gg/poimandres" aria-label="Discord">
-              <DiscordIcon />
-            </ButtonLink>
-            <ButtonLink icon href="https://github.com/pmndrs" aria-label="GitHub">
-              <GitHubIcon />
-            </ButtonLink>
-            <Popover
-              label="Open"
-              items={[
-                { key: 'github', label: 'Open in GitHub', href: 'https://github.com/pmndrs' },
-                { key: 'chatgpt', label: 'Open in ChatGPT', href: 'https://chat.openai.com' },
-                { key: 'claude', label: 'Open in Claude', href: 'https://claude.ai' },
-                { key: 'cursor', label: 'Open in Cursor', href: 'https://cursor.com' },
-              ]}
-            />
-          </div>
-          <div className={styles.right}>
-            <nav className={styles.docs} aria-label="Docs">
-              <div className={styles.docsNav}>
-                <a href="/" aria-label="pmndrs home">
-                  <Logo width={20} height={20} />
-                </a>
-                <a href="/docs/fiber">React Three Fiber</a>
-                <a href="/docs/fiber/introduction" aria-current="page">
-                  Introduction
-                </a>
-              </div>
-              <div className={styles.docsBody}>
-                <ul>
-                  <li>Does it have limitations?</li>
-                  <li>Point 2</li>
-                  <li>Point 3</li>
-                </ul>
-              </div>
-            </nav>
+        <section className={styles.tier}>
+          <div className={styles.col}>
+            <div className={styles.inline}>
+              <Button onClick={() => document.querySelector<HTMLElement>('[data-id="cmd"]')?.click()}>
+                Cmd <Kbd>K</Kbd>
+              </Button>
+              <Popover
+                label="Open"
+                items={[
+                  { key: 'github', label: 'Open in GitHub', href: 'https://github.com/pmndrs' },
+                  { key: 'chatgpt', label: 'Open in ChatGPT', href: 'https://chat.openai.com' },
+                  { key: 'claude', label: 'Open in Claude', href: 'https://claude.ai' },
+                  { key: 'cursor', label: 'Open in Cursor', href: 'https://cursor.com' },
+                ]}
+              />
+            </div>
+            <div className={styles.inline}>
+              <ButtonLink icon href="https://twitter.com/pmndrs" aria-label="Twitter">
+                <TwitterIcon />
+              </ButtonLink>
+              <ButtonLink icon href="https://discord.gg/poimandres" aria-label="Discord">
+                <DiscordIcon />
+              </ButtonLink>
+              <ButtonLink icon href="https://github.com/pmndrs" aria-label="GitHub">
+                <GitHubIcon />
+              </ButtonLink>
+            </div>
           </div>
         </section>
       </main>

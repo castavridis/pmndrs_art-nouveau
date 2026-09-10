@@ -246,6 +246,14 @@ something the code taught us. See [References](#references) for the external wor
   rather than sitting static (`9dac22a`, `f8364b8`).
 - **Palette slabs shatter and re-form** (`f8364b8`), because there the break is a material test
   rather than a dismissal.
+- **The bento follows the sister repo's layout** (pmndrs_mineral-pearl, local `ink-splat`): one
+  centred column in three tiers with no headings — banner over nav; copy bar, callout and theme
+  switch; then the plain controls. The two "Article Launcher" buttons, one permanently disabled,
+  became one launcher that applies the other theme, with a switch under it that disables it, so
+  the disabled state is something you do rather than a second copy standing beside it. It uses
+  `aria-disabled` so it stays focusable and announced. The static docs card is gone; the sister
+  layout has no place for it. Because the 3D parts track their DOM slots, moving the markup moved
+  every glass surface with it and nothing in the scene changed.
 - **One shared scene on the bento page** (`541ad37`): the nav, banner and callout are drawn by a
   single fixed canvas whose parts track their DOM slots every frame, sharing petals, lights and
   the composer. Events come from the page element so DOM controls above the canvas stay live.
