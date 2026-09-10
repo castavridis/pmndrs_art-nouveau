@@ -119,7 +119,10 @@ export function BentoPage() {
                 { key: 'cli', label: 'Copy the CLI command', icon: <TerminalIcon /> },
               ]}
             />
-            <button type="button" className={styles.glass} style={{ flexBasis: '100%', maxWidth: 240, justifyContent: 'center' }}>
+            <button type="button" className={styles.launcher}>
+              Article Launcher
+            </button>
+            <button type="button" className={styles.launcher} disabled>
               Article Launcher
             </button>
           </div>

@@ -20,6 +20,13 @@ export interface DrawnOutlineProps {
    * in curve by curve), so the pieces are the shapes the artwork is actually made of.
    */
   scatter?: boolean
+  /**
+   * Draw only the loops on one side of `splitY` (in viewBox units). The announcement's
+   * flourishes are cut this way so each half can be pinned to the banner edge it was drawn
+   * against, instead of the pair drifting into the middle of a tall banner.
+   */
+  half?: 'top' | 'bottom'
+  splitY?: number
 }
 
 const VIEWBOX = /viewBox="([^"]+)"/
@@ -31,17 +38,18 @@ const STROKE_W = /stroke-width="([^"]+)"/
  * path, revealed with a stroke-dash sweep, one after another. Strokes use currentColor, so
  * the ink follows the page (no image inversion needed). Same box as the `<img>` it replaces.
  */
-export function DrawnOutline({ src, width, height, className, style, play = true, duration = 900, stagger = 160, delay = 0, scatter = false }: DrawnOutlineProps) {
+export function DrawnOutline({ src, width, height, className, style, play = true, duration = 900, stagger = 160, delay = 0, scatter = false, half, splitY = 0 }: DrawnOutlineProps) {
   const { viewBox, curves, strokeWidth } = useMemo(() => {
     const viewBox = VIEWBOX.exec(src)?.[1] ?? `0 0 ${width} ${height}`
     const strokeWidth = Number(STROKE_W.exec(src)?.[1] ?? 1.2)
-    const curves: string[] = []
+    let curves: string[] = []
     for (const m of src.matchAll(PATH_D)) {
       // One <path> may hold several closed loops (M … Z M … Z): split so each draws separately.
       for (const part of m[1]!.split(/(?=M)/)) if (part.trim()) curves.push(part.trim())
     }
+    if (half) curves = curves.filter((d) => (loopMidY(d) >= splitY) === (half === 'bottom'))
     return { viewBox, curves, strokeWidth }
-  }, [src, width, height])
+  }, [src, width, height, half, splitY])
   return (
     <svg
       className={className}
@@ -88,4 +96,24 @@ export function DrawnOutline({ src, width, height, className, style, play = true
       })}
     </svg>
   )
+}
+
+const NUMBER = /-?\d*\.?\d+(?:e[-+]?\d+)?/gi
+
+/**
+ * Vertical centre of one traced loop. The trace is absolute coordinate pairs throughout
+ * (potrace emits M/L/C), so every second number is a y.
+ */
+function loopMidY(d: string): number {
+  let min = Infinity
+  let max = -Infinity
+  let i = 0
+  for (const m of d.matchAll(NUMBER)) {
+    if (i++ % 2 === 1) {
+      const y = Number(m[0])
+      if (y < min) min = y
+      if (y > max) max = y
+    }
+  }
+  return min === Infinity ? 0 : (min + max) / 2
 }

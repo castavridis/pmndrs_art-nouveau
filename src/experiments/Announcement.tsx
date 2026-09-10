@@ -4,7 +4,7 @@ import { Glass } from '../nav/Nav3D/Glass'
 import { Ready } from '../nav/Nav3D/Ready'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { px, tokens } from '../nav/tokens'
-import { preloadAnnouncementAssets, useAnnouncementAssets } from './announcementAssets'
+import { preloadAnnouncementAssets, useAnnouncementAssets, type FlourishHalves } from './announcementAssets'
 import { announcement } from './announcementMetrics'
 import leftOutline from '../nav/assets/fallback/outline/announcement-left.svg?raw'
 import rightOutline from '../nav/assets/fallback/outline/announcement-right.svg?raw'
@@ -20,6 +20,7 @@ import { useOutlines } from '../nav/outlines'
 import { useMeasure } from './useMeasure'
 import { luminance, useInk } from '../nav/Nav3D/dom'
 import { useTuning } from '../nav/Nav3D/tuning'
+import type { PresetName } from '../nav/Nav3D/customPresets'
 import { Backing } from '../nav/Nav3D/Backing'
 import { Shards } from './Shards'
 import { printSegments, readPrintSegments, slabUv } from './announcementPrint'
@@ -203,31 +204,48 @@ export function Announcement({
     >
       {/* Vector layer: outlined banner (CSS) and the traced flourishes pinned to the ends. */}
       {/* The flourishes draw themselves in, curve by curve, whenever the outlines show. */}
-      <DrawnOutline
-        key={outlines ? 'left-on' : 'left-off'}
-        className={styles.vectorPart}
-        src={leftOutline}
-        width={L.width}
-        height={L.height}
-        play={outlines}
-        scatter={!!shatter}
-        style={{ left: end - L.originX, top: end - L.originY, opacity: outlines ? 1 : 0 }}
-      />
-      <DrawnOutline
-        key={outlines ? 'right-on' : 'right-off'}
-        className={styles.vectorPart}
-        src={rightOutline}
-        width={R.width}
-        height={R.height}
-        play={outlines}
-        scatter={!!shatter}
-        stagger={200}
-        style={{
-          right: end - (R.width - R.originX),
-          top: end - R.originY,
-          opacity: outlines ? 1 : 0,
-        }}
-      />
+      {/* Each end is cut at the band's centre line and its halves pinned to the banner's own
+          top and bottom edges, so a tall banner keeps its corners decorated (same split as
+          the 3D pieces). The horizontal placement is unchanged. */}
+      {(['top', 'bottom'] as const).map((half) => (
+        <DrawnOutline
+          key={`left-${half}-${outlines ? 'on' : 'off'}`}
+          className={styles.vectorPart}
+          src={leftOutline}
+          width={L.width}
+          height={L.height}
+          play={outlines}
+          scatter={!!shatter}
+          half={half}
+          splitY={L.originY}
+          style={{
+            left: end - L.originX,
+            [half === 'top' ? 'top' : 'bottom']:
+              half === 'top' ? end - L.originY : end - (L.height - L.originY),
+            opacity: outlines ? 1 : 0,
+          }}
+        />
+      ))}
+      {(['top', 'bottom'] as const).map((half) => (
+        <DrawnOutline
+          key={`right-${half}-${outlines ? 'on' : 'off'}`}
+          className={styles.vectorPart}
+          src={rightOutline}
+          width={R.width}
+          height={R.height}
+          play={outlines}
+          scatter={!!shatter}
+          stagger={200}
+          half={half}
+          splitY={R.originY}
+          style={{
+            right: end - (R.width - R.originX),
+            [half === 'top' ? 'top' : 'bottom']:
+              half === 'top' ? end - R.originY : end - (R.height - R.originY),
+            opacity: outlines ? 1 : 0,
+          }}
+        />
+      ))}
       {variant === '3d' && (
         <div
           ref={canvasBox}
@@ -304,7 +322,7 @@ export function AnnouncementParts({
   /** Ink for the printed text. */
   ink?: string
 }) {
-  const { left, right, rightAnchor } = useAnnouncementAssets()
+  const { leftHalves, rightHalves, rightAnchor } = useAnnouncementAssets()
   const choice = useTuning((s) => s.materials.flourishes)
   const preset = choice === 'live' ? undefined : choice
   const geometry = useMemo(() => {
@@ -320,6 +338,10 @@ export function AnnouncementParts({
   const printPlane = useMemo(() => new THREE.PlaneGeometry(px(width), px(height)), [width, height])
   useEffect(() => () => printPlane.dispose(), [printPlane])
   const end = px(width) / 2 - px(announcement.height / 2)
+  // The flourishes were drawn against a 94px band. A banner is as tall as its copy, so the
+  // halves are pushed apart by whatever the banner gained: each stays on the edge it belongs to
+  // instead of both drifting toward the middle of a tall panel.
+  const grow = Math.max(0, (px(height) - px(announcement.height)) / 2)
   // The flourishes sit in front of the slab, and a perspective camera magnifies what is
   // nearer — enough to push the right blossom clear of the end it decorates. Solve for the
   // placement that projects its centre onto the slab's own edge:
@@ -362,16 +384,36 @@ export function AnnouncementParts({
       {!shatter && printed && (
         <PrintLayer geometry={printPlane} material={printMaterial} position={[0, 0, px(announcement.depth) / 2 + 0.002]} />
       )}
-      <group position-x={-end}>
-        <mesh geometry={left}>
-          <Glass sampler preset={preset} />
-        </mesh>
-      </group>
-      <group position-x={rightEnd}>
-        <mesh geometry={right}>
-          <Glass sampler preset={preset} />
-        </mesh>
-      </group>
+      <Flourish halves={leftHalves} x={-end} grow={grow} preset={preset} />
+      <Flourish halves={rightHalves} x={rightEnd} grow={grow} preset={preset} />
     </group>
+  )
+}
+
+/** One end's flourishes: the upper pieces ride the top edge, the lower ones the bottom edge. */
+function Flourish({
+  halves,
+  x,
+  grow,
+  preset,
+}: {
+  halves: FlourishHalves
+  x: number
+  grow: number
+  preset?: PresetName
+}) {
+  return (
+    <>
+      {halves.top && (
+        <mesh geometry={halves.top} position={[x, grow, 0]}>
+          <Glass sampler preset={preset} />
+        </mesh>
+      )}
+      {halves.bottom && (
+        <mesh geometry={halves.bottom} position={[x, -grow, 0]}>
+          <Glass sampler preset={preset} />
+        </mesh>
+      )}
+    </>
   )
 }

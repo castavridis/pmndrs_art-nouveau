@@ -12,11 +12,29 @@ import rightUrl from '../nav/Nav3D/generated/announcement-right-transformed.glb'
 const DRACO = `${import.meta.env.BASE_URL}draco/`
 const URLS = [surfaceUrl, leftUrl, rightUrl] as const
 
+/**
+ * One end's flourishes, cut at the band's centre line. The export is a 94px band, but a banner
+ * is as tall as its copy — so a whole flourish pinned to the middle leaves its upper pieces
+ * stranded well below the top edge and its lower pieces above the bottom one. Each half rides
+ * the edge it was drawn against instead.
+ */
+export interface FlourishHalves {
+  /** Pieces drawn above the band's centre line; they follow the banner's top edge. */
+  top: THREE.BufferGeometry | null
+  /** Pieces below it; they follow the bottom edge. */
+  bottom: THREE.BufferGeometry | null
+  /** All of it in one geometry, for the tracer and the parts gallery. */
+  whole: THREE.BufferGeometry
+}
+
 export interface AnnouncementAsset {
   /** Left flourishes (flower, bird-leaf, petal), origin at the surface's left end centre. */
   left: THREE.BufferGeometry
   /** Right flourishes (flower, tendril, petal), origin at the surface's right end centre. */
   right: THREE.BufferGeometry
+  /** The same two ends, split into the halves that ride the top and bottom edges. */
+  leftHalves: FlourishHalves
+  rightHalves: FlourishHalves
   /**
    * Centre of the right flourish's blossom, in world units relative to that flourish's own
    * origin. It is the end's landmark, so the banner aligns it with the slab's edge.
@@ -96,21 +114,49 @@ export function useAnnouncementAssets(): AnnouncementAsset {
           b.getCenter(anchor)
         }
       }
-      const g = ordered.length === 1 ? ordered[0]! : mergeParts(ordered)
-      g.translate(-originX, -centre.y, -centre.z)
-      g.scale(px(1), px(1), px(1))
-      g.computeVertexNormals()
-      g.computeBoundingBox()
-      g.computeBoundingSphere()
+      // Every geometry this end yields shares one frame: origin at the end's centre, px scaled.
+      const place = (picked: THREE.BufferGeometry[]) => {
+        if (picked.length === 0) return null
+        const g = picked.length === 1 ? picked[0]!.clone() : mergeParts(picked)
+        g.translate(-originX, -centre.y, -centre.z)
+        g.scale(px(1), px(1), px(1))
+        g.computeVertexNormals()
+        g.computeBoundingBox()
+        g.computeBoundingSphere()
+        return g
+      }
+      // Which edge a piece was drawn against: the side of the band's centre line it sits on.
+      const mid = new THREE.Vector3()
+      const above: THREE.BufferGeometry[] = []
+      const below: THREE.BufferGeometry[] = []
+      for (const g of ordered) {
+        g.boundingBox!.getCenter(mid)
+        ;(mid.y >= centre.y ? above : below).push(g)
+      }
+      const halves: FlourishHalves = {
+        top: place(above),
+        bottom: place(below),
+        whole: place(ordered)!,
+      }
+      for (const g of ordered) g.dispose()
       // The anchor rides the same transform.
       anchor.set(px(anchor.x - originX), px(anchor.y - centre.y), px(anchor.z - centre.z))
-      return { geometry: g, anchor }
+      return { halves, anchor }
     }
     const end = size.y / 2
     const left = build(leftParts, sb.min.x + end)
     const right = build(rightParts, sb.max.x - end)
     surface.dispose()
-    return { left: left.geometry, right: right.geometry, rightAnchor: right.anchor, width: size.x, height: size.y, depth: size.z }
+    return {
+      left: left.halves.whole,
+      right: right.halves.whole,
+      leftHalves: left.halves,
+      rightHalves: right.halves,
+      rightAnchor: right.anchor,
+      width: size.x,
+      height: size.y,
+      depth: size.z,
+    }
   }, [gltfs])
 }
 

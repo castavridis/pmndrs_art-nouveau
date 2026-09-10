@@ -9,7 +9,7 @@ export const callout = {
   /** Icon (lens ring) diameter. */
   icon: 96,
   /** Icon centre from the card's top-left corner. */
-  iconX: 64,
-  iconY: 64,
+  iconX: 54,
+  iconY: 49,
   padding: 40,
 } as const

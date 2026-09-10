@@ -89,6 +89,7 @@ export function CmdPalette() {
         placeholder="Where to?"
         inputLabel="Search pages"
         listLabel="Pages"
+        caption={null}
       />
     </dialog>
   )

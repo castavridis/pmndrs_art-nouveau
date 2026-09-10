@@ -96,3 +96,9 @@
   border-radius: 8px;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--page-ink, #f2f2ef) 75%, transparent);
 }
+
+/* The glyph is drawn inside the lens in 3D; this copy is the artwork the texture is made
+   from, so it stays in the document but not on screen. */
+.symbolPrinted {
+  opacity: 0;
+}
