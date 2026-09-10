@@ -186,6 +186,16 @@ something the code taught us. See [References](#references) for the external wor
   banner gives up no room for it. And it is centred on the slab's face writing no depth, the way
   the nav's chip sits behind its labels, because proud of the face it slid over the printed copy
   and sunk inside a 6px slab it disappeared altogether.
+- **The dismiss cross is etched into the chip, not laid over it.** Baked to a normal map the way
+  `/dev/glyph` etches text (`textRelief.ts`, generalised to take a paint callback so a stroked
+  mark can use it), so the cross travels with the glass instead of staying where the DOM drew it,
+  and refracts and catches highlights like the rest of the surface. It is baked on first render
+  rather than after a font load: a map arriving later changes the shader's defines. The DOM copy
+  keeps the hit area, the focus ring and the accessible name, and gives up only its paint. The
+  chip has its own material choice (`materials.dismiss`), and on a strike it lets go from wherever
+  it was standing — which needed the pointer tracker frozen at the click, since dismissing takes
+  the banner's pointer events away and the chip would race home in the frames before it is told
+  it is falling.
 - **A DOM control can borrow the nav's glass.** The bento page's article launchers are plain
   buttons whose background is a slab in the shared scene, tracking their box; the painted
   gradient stands down once it draws, exactly as the DOM nav's does. Glass drawn through the

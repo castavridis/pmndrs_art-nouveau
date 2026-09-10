@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { damp, damp3 } from 'maath/easing'
 import { Glass } from '../nav/Nav3D/Glass'
 import { makeRoundedRectGeometry } from '../nav/Nav3D/roundedRectGeometry'
 import { px } from '../nav/tokens'
-import { useTuning } from '../nav/Nav3D/tuning'
+import type { PresetName } from '../nav/Nav3D/customPresets'
+import { bakeRelief, uvFromBounds } from './textRelief'
 
 /**
  * Where the pointer is over a surface, in CSS px from that surface's centre (y up, matching
@@ -19,6 +20,8 @@ export interface HoverState {
   inside: boolean
   /** Pointer is over something with its own click target, so the pill should get out of the way. */
   onLink: boolean
+  /** Set by `useHoverPointer`; see its `frozen` option. */
+  frozen: boolean
 }
 
 export interface HoverPointerOptions {
@@ -29,6 +32,12 @@ export interface HoverPointerOptions {
   retreatFrom?: string
   /** Elements that count as the pill's home rather than a thing to retreat from. */
   homeSelector?: string
+  /**
+   * Stop taking pointer updates. Set the moment the surface is struck: dismissing it takes its
+   * pointer events away, which fires `pointerleave`, and the pill would race home over the few
+   * frames before it is told it is falling. A layout effect, so it lands in the same commit.
+   */
+  frozen?: boolean
 }
 
 /**
@@ -38,14 +47,18 @@ export interface HoverPointerOptions {
  */
 export function useHoverPointer(
   ref: RefObject<HTMLElement | null>,
-  { retreatFrom = 'a, button', homeSelector = '[data-pill-home]' }: HoverPointerOptions = {},
+  { retreatFrom = 'a, button', homeSelector = '[data-pill-home]', frozen = false }: HoverPointerOptions = {},
 ): RefObject<HoverState> {
-  const hover = useRef<HoverState>({ x: 0, y: 0, inside: false, onLink: false })
+  const hover = useRef<HoverState>({ x: 0, y: 0, inside: false, onLink: false, frozen: false })
+  useLayoutEffect(() => {
+    hover.current.frozen = frozen
+  }, [frozen])
   useEffect(() => {
     const el = ref.current
     if (!el) return
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     const move = (e: PointerEvent) => {
+      if (hover.current.frozen) return
       const r = el.getBoundingClientRect()
       const target = e.target as HTMLElement | null
       const home = !!target?.closest(homeSelector)
@@ -57,6 +70,7 @@ export function useHoverPointer(
       hover.current.onLink = !home && !!target?.closest(retreatFrom)
     }
     const leave = () => {
+      if (hover.current.frozen) return
       hover.current.inside = false
       hover.current.onLink = false
     }
@@ -79,12 +93,23 @@ export interface HoverPillProps {
   depth?: number
   /** Depth of the surface it rides, in CSS px. The chip is centred on that surface's front face. */
   surfaceDepth: number
+  /** Which glass the chip wears (materials.dismiss); the live tuning when omitted. */
+  preset?: PresetName
+  /** Paint a height field to etch into the chip's face; white is high. */
+  mark?: (ctx: CanvasRenderingContext2D, size: number) => void
+  /** How deep the etched mark cuts. */
+  markDepth?: number
+  /** Struck: the chip stops following and drops away from wherever it was standing. */
+  falling?: boolean
 }
 
 /**
  * A small glass chip that parks at `home` and follows the pointer across the surface, the way
  * the nav's chip travels between items. Over a link it shrinks away rather than sitting under
  * the words, and swells back where the pointer left off.
+ *
+ * Struck, it stops following and drops away from wherever it was standing, with the same gravity
+ * the shards fall under.
  *
  * Half in, half out of the surface's face, like the nav's chip. It writes no depth, so the copy
  * printed on that face still draws over it and the chip glides behind the words rather than
@@ -93,22 +118,82 @@ export interface HoverPillProps {
  * Scale carries the appearing and disappearing because the glass is opaque: a transmission
  * material has no opacity to animate without dropping out of the transmission pass entirely.
  */
-export function HoverPill({ hover, home, size, depth = 5, surfaceDepth }: HoverPillProps) {
-  const preset = useTuning((s) => s.materials.selection)
+/** Bake the mark this many times larger than the chip, so its edges survive the Sobel pass. */
+const RELIEF_SCALE = 8
+
+/** World units per second squared, matching the shards the banner breaks into. */
+const GRAVITY = -9
+
+export function HoverPill({
+  hover,
+  home,
+  size,
+  depth = 5,
+  surfaceDepth,
+  preset,
+  mark,
+  markDepth = 3,
+  falling = false,
+}: HoverPillProps) {
   const group = useRef<THREE.Group>(null!)
-  const geometry = useMemo(
-    () => makeRoundedRectGeometry(size, size, size / 2, depth),
-    [size, depth],
-  )
+  // UVs across the chip's own bounds, so a baked map spans its face (see textRelief).
+  const geometry = useMemo(() => {
+    const base = makeRoundedRectGeometry(size, size, size / 2, depth)
+    const g = uvFromBounds(base)
+    base.dispose()
+    return g
+  }, [size, depth])
   useEffect(() => () => geometry.dispose(), [geometry])
+
+  /**
+   * The mark is etched into the chip rather than laid over it, so it travels with the glass
+   * instead of staying where the DOM drew it, and refracts and catches highlights like the rest
+   * of the surface. Strokes need no font, so this bakes on first render — a map appearing later
+   * would change the shader's defines and force a recompile.
+   */
+  const relief = useMemo(() => {
+    if (!mark) return null
+    const px = size * RELIEF_SCALE
+    return bakeRelief({
+      width: px,
+      height: px,
+      draw: (ctx) => mark(ctx, px),
+      soften: RELIEF_SCALE * 0.7,
+      strength: markDepth,
+    })
+  }, [mark, size, markDepth])
+  useEffect(() => () => relief?.dispose(), [relief])
+  const overrides = useMemo(
+    () =>
+      relief
+        ? { depthWrite: false, normalMap: relief, normalScale: new THREE.Vector2(1, 1) }
+        : { depthWrite: false },
+    [relief],
+  )
   const target = useMemo(() => new THREE.Vector3(), [])
   const shown = useRef({ v: 0 })
+  const drop = useRef({ vy: 0, vx: 0, spin: 0 })
 
   useFrame((_, dt) => {
     const g = group.current
     if (!g) return
     const h = hover?.current
     const step = Math.min(dt, 0.05)
+    // Struck: it lets go from wherever it was standing rather than snapping home first.
+    if (falling) {
+      const d = drop.current
+      if (d.vy === 0) {
+        // A small kick and tumble on release, seeded from where it happened to be.
+        d.vy = 0.6
+        d.vx = (g.position.x > 0 ? 1 : -1) * 0.35
+        d.spin = g.position.x > 0 ? -2.2 : 2.2
+      }
+      d.vy += GRAVITY * step
+      g.position.y += d.vy * step
+      g.position.x += d.vx * step
+      g.rotation.z += d.spin * step
+      return
+    }
     target.set(
       px(h?.inside ? h.x : home[0]),
       px(h?.inside ? h.y : home[1]),
@@ -123,7 +208,7 @@ export function HoverPill({ hover, home, size, depth = 5, surfaceDepth }: HoverP
   return (
     <group ref={group} name="hover pill" visible={false}>
       <mesh geometry={geometry} raycast={() => null}>
-        <Glass sampler preset={preset} overrides={{ depthWrite: false }} />
+        <Glass sampler preset={preset} overrides={overrides} />
       </mesh>
     </group>
   )

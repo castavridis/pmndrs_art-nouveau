@@ -59,6 +59,11 @@
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+/* Once the chip carries the cross as relief, this copy is only the hit area and the accessible
+   name; the focus ring stays on the button itself. */
+.close[data-etched] svg {
+  opacity: 0;
+}
 .vector .close,
 .outlined .close {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 55%, transparent);

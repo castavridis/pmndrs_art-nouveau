@@ -125,6 +125,9 @@ export function Announcement({
     }
   }, [shatter, onDismiss])
 
+  // The chip that follows the pointer across the banner and parks under the close button. It
+  // freezes on the strike so it drops from where it was standing rather than gliding home first.
+  const hover = useHoverPointer(rootRef, { frozen: !!shatter })
   const strikeAt = useCallback(
     (clientX: number, clientY: number) => {
       const r = rootRef.current!.getBoundingClientRect()
@@ -143,8 +146,6 @@ export function Announcement({
     if ((e.target as HTMLElement).closest('a, button')) return
     strikeAt(e.clientX, e.clientY)
   }
-  // The chip that follows the pointer across the banner and parks under the close button.
-  const hover = useHoverPointer(rootRef)
   // Ink follows the glass backdrop (see useInk); applied after hydration, CSS covers SSR/vector.
   const { ink } = useInk()
   const client = useIsClient()
@@ -306,6 +307,7 @@ export function Announcement({
         <button
           type="button"
           data-pill-home=""
+          data-etched={!vector || undefined}
           className={styles.close}
           style={{
             width: announcement.close.size,
@@ -383,6 +385,8 @@ export function AnnouncementParts({
   const { leftHalves, rightHalves, rightAnchor } = useAnnouncementAssets()
   const choice = useTuning((s) => s.materials.flourishes)
   const preset = choice === 'live' ? undefined : choice
+  const dismissChoice = useTuning((s) => s.materials.dismiss)
+  const dismissPreset = dismissChoice === 'live' ? undefined : dismissChoice
   const geometry = useMemo(() => {
     const g = makeRoundedRectGeometry(width, height, announcement.radius, announcement.depth)
     // UVs across the whole slab, so the printed raster lands where the DOM copy would.
@@ -442,18 +446,38 @@ export function AnnouncementParts({
       {!shatter && printed && (
         <PrintLayer geometry={printPlane} material={printMaterial} position={[0, 0, px(announcement.depth) / 2 + 0.002]} />
       )}
-      {hover && !shatter && (
+      {hover && (
         <HoverPill
           hover={hover}
+          falling={!!shatter}
           home={[width / 2 - announcement.close.inset, height / 2 - announcement.close.inset]}
           size={announcement.close.size}
           surfaceDepth={announcement.depth}
+          preset={dismissPreset}
+          mark={drawCross}
         />
       )}
       <Flourish halves={leftHalves} x={-end} grow={grow} preset={preset} />
       <Flourish halves={rightHalves} x={rightEnd} grow={grow} preset={preset} />
     </group>
   )
+}
+
+/**
+ * The dismiss cross as a height field for the chip's relief. Bolder and larger than the DOM mark
+ * it replaces: an etch has no ink of its own, so it reads by the light it bends, and a hairline
+ * disappears.
+ */
+function drawCross(ctx: CanvasRenderingContext2D, size: number) {
+  const m = size * 0.32
+  ctx.lineWidth = size * 0.1
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(m, m)
+  ctx.lineTo(size - m, size - m)
+  ctx.moveTo(size - m, m)
+  ctx.lineTo(m, size - m)
+  ctx.stroke()
 }
 
 /** One end's flourishes: the upper pieces ride the top edge, the lower ones the bottom edge. */

@@ -167,6 +167,8 @@ export interface MaterialsTuning {
   indicator: PresetName
   /** The glass chip behind the current page's nav item. */
   selection: PresetName
+  /** The announcement's dismissal chip, the one that follows the pointer. */
+  dismiss: PresetName
   /** The cube page's logo prisms. */
   model: MaterialChoice
   /** Callout surfaces: the main glass (`live`), the kind's palette tint (`kind`), or a preset. */
@@ -461,6 +463,7 @@ export const baseTuning: Tuning = {
     flourishes: 'live',
     indicator: 'indicator',
     selection: 'indicator',
+    dismiss: 'indicator',
     model: 'live',
     callout: 'live',
     calloutLens: 'kind',
