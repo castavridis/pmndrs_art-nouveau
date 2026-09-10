@@ -61,7 +61,7 @@ export function BentoPage() {
   const [callout, setCallout] = useState<SlotBox>(EMPTY)
   const [ready, setReady] = useState(false)
   const onAnnouncementSlot = useCallback(
-    (slot: { el: HTMLDivElement | null; width: number; height: number; shatter: Shatter | null; print: THREE.Texture | null }) =>
+    (slot: { el: HTMLDivElement | null; width: number; height: number; shatter: Shatter | null; print: THREE.Texture | null; ink: string }) =>
       setAnnouncement(slot),
     [],
   )

@@ -18,7 +18,7 @@ const LcProbe = import.meta.env.DEV ? lazy(() => import('../nav/Nav3D/LcProbe'))
 if (typeof window !== 'undefined') preloadAnnouncementAssets()
 import { useOutlines } from '../nav/outlines'
 import { useMeasure } from './useMeasure'
-import { useInk } from '../nav/Nav3D/dom'
+import { luminance, useInk } from '../nav/Nav3D/dom'
 import { useTuning } from '../nav/Nav3D/tuning'
 import { Backing } from '../nav/Nav3D/Backing'
 import { Shards } from './Shards'
@@ -57,6 +57,7 @@ export interface AnnouncementProps {
     height: number
     shatter: Shatter | null
     print: THREE.Texture | null
+    ink: string
   }) => void
   postprocessing?: boolean
   /**
@@ -132,6 +133,10 @@ export function Announcement({
   const client = useIsClient()
   const contentRef = useRef<HTMLDivElement>(null)
   const printAllowed = usePrintText((st) => st.enabled)
+  // The print is drawn by a basic material with tone mapping off, so its colour reaches the
+  // frame untouched: snap the page ink to pure white (or near-black) for maximum legibility
+  // on the glass, without changing any scene-wide setting.
+  const printInk = luminance(ink) > 0.5 ? '#ffffff' : '#0a0a0a'
   const printOn = print !== false && printAllowed && !vector
   // Measured from the rendered copy once the page font is in, so the raster matches the DOM
   // exactly — including where it wraps. Re-baked when the box, the ink or the switch changes.
@@ -150,18 +155,18 @@ export function Announcement({
       if (!alive || !content || !root) return
       const segments = readPrintSegments(content, root.getBoundingClientRect())
       if (!segments.length) return
-      const tex = printSegments(segments, { width: size.width, height: size.height, color: ink })
+      const tex = printSegments(segments, { width: size.width, height: size.height, color: printInk })
       setPrinted((old) => (old?.dispose(), tex))
     }
     document.fonts?.ready.then(bake).catch(bake)
     return () => {
       alive = false
     }
-  }, [printOn, size.width, size.height, ink])
+  }, [printOn, size.width, size.height, printInk])
 
   useEffect(() => {
-    if (variant === 'shared') onSlot?.({ el: rootRef.current, ...size, shatter, print: printed })
-  }, [variant, onSlot, size, shatter, printed])
+    if (variant === 'shared') onSlot?.({ el: rootRef.current, ...size, shatter, print: printed, ink: printInk })
+  }, [variant, onSlot, size, shatter, printed, printInk])
   const canvasBox = useRef<HTMLDivElement>(null)
   // Dev legibility probe: the text box in canvas px (the canvas is inset by the bleed).
   const probeRegions = useCallback(() => {
@@ -230,7 +235,7 @@ export function Announcement({
         >
           <NavCanvas postprocessing={postprocessing}>
             <Suspense fallback={null}>
-              <Scene width={size.width} height={size.height} shatter={shatter} print={printed} ink={ink} />
+              <Scene width={size.width} height={size.height} shatter={shatter} print={printed} ink={printInk} />
               <Ready onReady={() => setReady(true)} />
               {LcProbe && <LcProbe ink={ink} regions={probeRegions} />}
             </Suspense>
@@ -247,8 +252,9 @@ export function Announcement({
         className={`${styles.content} ${printed ? styles.printed : ''}`}
         style={{
           minHeight: announcement.height,
-          padding: `16px ${announcement.paddingX}px`,
-          paddingLeft: announcement.paddingX + 48,
+          // Symmetric insets that clear both flourishes, so the copy sits centred in the band
+          // and still fits on one line at the banner's full width.
+          padding: `16px ${announcement.paddingX + 24}px`,
         }}
       >
         {children}
@@ -307,6 +313,10 @@ export function AnnouncementParts({
   useEffect(() => () => geometry.dispose(), [geometry])
   const printed = print ?? null
   const printMaterial = usePrintMaterial(printed, ink)
+  // A flat plane on the slab's face, rather than the extruded slab itself: the extrusion's
+  // back and bevel faces carry the same UVs, which ghosted and smeared the glyphs.
+  const printPlane = useMemo(() => new THREE.PlaneGeometry(px(width), px(height)), [width, height])
+  useEffect(() => () => printPlane.dispose(), [printPlane])
   const end = px(width) / 2 - px(announcement.height / 2)
   // The flourishes sit in front of the slab, and a perspective camera magnifies what is
   // nearer — enough to push the right blossom clear of the end it decorates. Solve for the
@@ -345,8 +355,10 @@ export function AnnouncementParts({
       ) : (
         <mesh geometry={geometry}>
           <Glass sampler={sampler} />
-          <PrintLayer geometry={geometry} material={printMaterial} />
         </mesh>
+      )}
+      {!shatter && printed && (
+        <PrintLayer geometry={printPlane} material={printMaterial} position={[0, 0, px(announcement.depth) / 2 + 0.002]} />
       )}
       <group position-x={-end}>
         <mesh geometry={left}>

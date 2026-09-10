@@ -71,8 +71,10 @@ export interface PrintOptions {
   height: number
   /** Ink; the glyphs are drawn opaque on a clear ground. */
   color?: string
-  /** Raster scale over CSS px. */
+  /** Raster scale over CSS px; defaults to twice the device pixel ratio. */
   scale?: number
+  /** Renderer's max anisotropy, for the shallow angles the banner is seen at. */
+  anisotropy?: number
 }
 
 /**
@@ -84,7 +86,10 @@ export interface PrintOptions {
  * every canvas here is the WebGL renderer with drei's transmission material.
  */
 export function printSegments(segments: PrintSegment[], o: PrintOptions): THREE.CanvasTexture {
-  const scale = o.scale ?? 3
+  // Match the canvas's own pixel density (capped like NavCanvas's dpr). Supersampling above
+  // it and letting the GPU downsample costs peak coverage, so thin stems never reach full
+  // opacity and the ink reads grey rather than white.
+  const scale = o.scale ?? Math.min(2, Math.max(1, globalThis.devicePixelRatio || 1))
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, Math.round(o.width * scale))
   canvas.height = Math.max(1, Math.round(o.height * scale))
@@ -103,7 +108,11 @@ export function printSegments(segments: PrintSegment[], o: PrintOptions): THREE.
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.flipY = true
-  texture.anisotropy = 4
+  // The raster is already denser than the screen, so mipmaps only cost sharpness.
+  texture.generateMipmaps = false
+  texture.minFilter = THREE.LinearFilter
+  texture.magFilter = THREE.LinearFilter
+  texture.anisotropy = o.anisotropy ?? 8
   texture.needsUpdate = true
   return texture
 }
