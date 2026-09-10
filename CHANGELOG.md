@@ -225,6 +225,16 @@ something the code taught us. See [References](#references) for the external wor
   destination is an `.html` file when clean URLs are on. This was the actual cause of the live
   404s, found by probing the deployment rather than by reasoning about the config.
 
+- **Promo video is made in code** (`video/`, ported from the sister repo ink-splat, with its
+  `make-video` skill). Playwright films a production build of the app in headless Chrome on the
+  real GPU, with every clock in the page — `performance.now`, `Date`, animation frames, timers,
+  CSS animations and `Math.random` — handed to the driver, which steps it one frame at a time.
+  Every frame is fully rendered however long it took, so a take is smooth, repeatable, and can
+  run in true slow motion. A Remotion edit then cuts the clips on a beat grid, with camera moves,
+  punch-ins on presses, the recorded pointer and synthesised sound. It films the shipped look
+  (`tuning.saved.json`) and waits for the 3D layer (`[data-3d]`) before rolling. It is its own
+  package, so the app's lint leaves it to its own typecheck.
+
 ## 9. Interaction and motion
 
 - **One glass chip is the nav's only highlight** (`d7d10c9`). It slides and resizes between

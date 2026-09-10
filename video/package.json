@@ -1,0 +1,30 @@
+{
+  "name": "@pmndrs/3d-2d-nav-video",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Programmatic promo videos of the iridescent 3D nav: deterministic capture + a Remotion edit",
+  "type": "module",
+  "scripts": {
+    "capture": "tsx capture/cli.ts",
+    "audio": "python3 audio/beat.py --bpm 120 --beats 68",
+    "studio": "remotion studio remotion/index.ts",
+    "sample": "remotion render remotion/index.ts Sample out/sample.mp4 --codec=h264 --crf=16",
+    "render": "remotion render remotion/index.ts",
+    "still": "remotion still remotion/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "@types/react": "^19.3.0",
+    "playwright": "1.63.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.523",
+    "@remotion/google-fonts": "4.0.523",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "4.0.523"
+  }
+}
