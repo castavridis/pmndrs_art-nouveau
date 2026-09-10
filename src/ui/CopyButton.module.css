@@ -7,7 +7,7 @@
   align-items: center;
   gap: 2px;
   padding: 6px;
-  border-radius: 12px;
+  border-radius: 4px;
   background: var(--ui-accent);
   color: var(--ui-accent-ink);
   box-shadow: var(--ui-shadow-sm);
@@ -23,7 +23,8 @@
   min-width: 36px;
   padding: 0 12px;
   border: 0;
-  border-radius: 8px;
+  /* Nested inside a 4px bar: a rounder inner corner than its container reads as a mistake. */
+  border-radius: 3px;
   background: transparent;
   color: inherit;
   font-family: var(--ui-font);

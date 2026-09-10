@@ -42,19 +42,14 @@ export interface SlotBox {
   hover?: RefObject<HoverState> | null
 }
 
-/** A DOM control that wants the nav's glass behind it (the article launchers, the copy bar). */
+/** A DOM control that wants the nav's glass behind it (the article launchers). */
 export interface GlassBackedSlot {
   el: RefObject<HTMLElement | null>
   width: number
   height: number
   /** The disabled control wears a duller glass; live tuning otherwise, like the pill. */
   preset?: PresetName
-  /**
-   * Grow the glass beyond the control's own box, in px. A control that paints its own face —
-   * the copy bar's green — needs the glass to show around it rather than behind it.
-   */
-  pad?: number
-  /** Corner radius before padding; fully rounded when omitted. */
+  /** Corner radius; fully rounded when omitted. */
   radius?: number
 }
 
@@ -99,13 +94,7 @@ export function BentoScene({ eventSource, navEl, announcement, callout, glassBac
         {glassBacked.map((g, i) => (
           <Slot key={i} el={g.el}>
             {g.width > 0 && (
-              <GlassPlate
-                width={g.width + (g.pad ?? 0) * 2}
-                height={g.height + (g.pad ?? 0) * 2}
-                radius={g.radius === undefined ? undefined : g.radius + (g.pad ?? 0)}
-                preset={g.preset}
-                sampler={!BUFFERED}
-              />
+              <GlassPlate width={g.width} height={g.height} radius={g.radius} preset={g.preset} sampler={!BUFFERED} />
             )}
           </Slot>
         ))}
